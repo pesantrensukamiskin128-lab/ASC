@@ -34,15 +34,28 @@ class InstitutionController extends Controller
             ]);
         }
 
-        $institution->logo_url = $institution->logo_path
-            ? \Illuminate\Support\Facades\Storage::disk('public')->url($institution->logo_path)
-            : null;
-
-        $institution->letterhead_url = $institution->letterhead_path
-            ? \Illuminate\Support\Facades\Storage::disk('public')->url($institution->letterhead_path)
-            : null;
+        $institution->logo_url      = $this->resolveStorageUrl($institution->logo_path);
+        $institution->letterhead_url = $this->resolveStorageUrl($institution->letterhead_path);
 
         return response()->json($institution);
+    }
+
+    /**
+     * Resolve storage path ke absolute URL yang benar di semua environment.
+     * Menggunakan APP_URL eksplisit agar tidak bergantung pada request host,
+     * yang penting untuk Railway/reverse proxy.
+     */
+    private function resolveStorageUrl(?string $path): ?string
+    {
+        if (!$path) return null;
+
+        // Cek apakah file ada di storage
+        if (!\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+            return null;
+        }
+
+        $appUrl = rtrim(config('app.url'), '/');
+        return $appUrl . '/storage/' . ltrim($path, '/');
     }
 
     public function store(Request $request): JsonResponse
@@ -121,6 +134,7 @@ class InstitutionController extends Controller
         return response()->json([
             'message'   => 'Logo berhasil diupload.',
             'logo_path' => $path,
+            'logo_url'  => $this->resolveStorageUrl($path),
             'data'      => $institution->fresh(),
         ]);
     }
@@ -137,10 +151,10 @@ class InstitutionController extends Controller
         $institution->update(['letterhead_path' => $path]);
 
         return response()->json([
-            'message' => 'Kop surat berhasil diupload.',
-            'letterhead_path' => $path,
-            'letterhead_url' => \Illuminate\Support\Facades\Storage::disk('public')->url($path),
-            'data' => $institution->fresh(),
+            'message'          => 'Kop surat berhasil diupload.',
+            'letterhead_path'  => $path,
+            'letterhead_url'   => $this->resolveStorageUrl($path),
+            'data'             => $institution->fresh(),
         ]);
     }
 }
