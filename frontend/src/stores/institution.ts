@@ -25,6 +25,10 @@ export const useInstitutionStore = defineStore('institution', () => {
 
   async function fetch() {
     if (institution.value) return   // sudah ada data, tidak perlu fetch ulang
+    await refresh()
+  }
+
+  async function refresh() {
     try {
       const { data } = await api.get('/institution/public')
       institution.value = data ?? null
@@ -33,5 +37,5 @@ export const useInstitutionStore = defineStore('institution', () => {
     }
   }
 
-  return { institution, logoUrl, letterheadUrl, name, fetch }
+  return { institution, logoUrl, letterheadUrl, name, fetch, refresh }
 })

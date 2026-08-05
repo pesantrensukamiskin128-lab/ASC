@@ -5,6 +5,7 @@ import { useToast } from 'vue-toastification'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import api from '@/services/api'
 import { cleanPayload, extractErrorMessage } from '@/composables/useCrud'
+import { useInstitutionStore } from '@/stores/institution'
 
 interface Institution {
   id: number; code: string; name: string; short_name: string
@@ -14,6 +15,7 @@ interface Institution {
 }
 
 const toast = useToast()
+const institutionStore = useInstitutionStore()
 const institution  = ref<Institution | null>(null)
 const modalOpen    = ref(false)
 const saving       = ref(false)
@@ -100,8 +102,9 @@ async function uploadLogo(institutionId: number) {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
     toast.success(data.message)
-    // Refresh data institusi
+    // Refresh data institusi lokal + store global (untuk sidebar & login)
     await load()
+    await institutionStore.refresh()
   } catch (err: any) {
     toast.error(extractErrorMessage(err))
   } finally {
@@ -147,6 +150,7 @@ async function handleDeleteLogo() {
     const { data } = await api.put(`/institutions/${institution.value.id}`, { logo_path: null })
     institution.value = data.data
     toast.success('Logo berhasil dihapus.')
+    await institutionStore.refresh()
   } catch (err: any) {
     toast.error(extractErrorMessage(err))
   }
@@ -181,6 +185,7 @@ async function uploadLetterhead() {
     const { data } = await api.post(`/institutions/${institution.value.id}/letterhead`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
     toast.success(data.message)
     await load()
+    await institutionStore.refresh()
   } catch (err: any) { toast.error(extractErrorMessage(err)) }
   finally {
     uploadingLetterhead.value = false
@@ -196,6 +201,7 @@ async function deleteLetterhead() {
     await api.put(`/institutions/${institution.value.id}`, { letterhead_path: null })
     toast.success('Kop surat berhasil dihapus.')
     await load()
+    await institutionStore.refresh()
   } catch (err: any) { toast.error(extractErrorMessage(err)) }
 }
 </script>
