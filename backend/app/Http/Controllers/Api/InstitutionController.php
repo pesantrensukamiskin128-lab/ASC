@@ -20,17 +20,27 @@ class InstitutionController extends Controller
             'id', 'name', 'short_name', 'legal_entity_name', 'logo_path', 'letterhead_path', 'accreditation'
         )->first();
 
-        if ($institution && $institution->logo_path) {
-            $institution->logo_url = \Illuminate\Support\Facades\Storage::disk('public')->url($institution->logo_path);
-        } else {
-            $institution->logo_url = null;
+        if (!$institution) {
+            return response()->json([
+                'id'                => null,
+                'name'              => 'Al-Jawami Smart Campus',
+                'short_name'        => 'ASC',
+                'legal_entity_name' => null,
+                'logo_path'         => null,
+                'logo_url'          => null,
+                'letterhead_path'   => null,
+                'letterhead_url'    => null,
+                'accreditation'     => null,
+            ]);
         }
 
-        if ($institution && $institution->letterhead_path) {
-            $institution->letterhead_url = \Illuminate\Support\Facades\Storage::disk('public')->url($institution->letterhead_path);
-        } else {
-            $institution->letterhead_url = null;
-        }
+        $institution->logo_url = $institution->logo_path
+            ? \Illuminate\Support\Facades\Storage::disk('public')->url($institution->logo_path)
+            : null;
+
+        $institution->letterhead_url = $institution->letterhead_path
+            ? \Illuminate\Support\Facades\Storage::disk('public')->url($institution->letterhead_path)
+            : null;
 
         return response()->json($institution);
     }

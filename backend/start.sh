@@ -24,6 +24,16 @@ php artisan view:cache   || echo "WARN: view:cache failed, continuing without ca
 echo "→ Running migrations..."
 php artisan migrate --force || echo "WARN: migrate failed, check DB connection"
 
+# Jalankan seeder hanya jika tabel institutions kosong (deploy pertama)
+echo "→ Checking if seed is needed..."
+INST_COUNT=$(php artisan tinker --no-interaction --execute="echo \App\Models\Institution::count();" 2>/dev/null | tail -1 | tr -d '[:space:]')
+if [ "$INST_COUNT" = "0" ] || [ -z "$INST_COUNT" ]; then
+    echo "→ Running seeders (first deploy)..."
+    php artisan db:seed --force || echo "WARN: seeder failed, skipping"
+else
+    echo "→ Seed skipped (institutions table already has data)"
+fi
+
 # Storage symlink
 echo "→ Creating storage link..."
 php artisan storage:link --force 2>/dev/null || true
