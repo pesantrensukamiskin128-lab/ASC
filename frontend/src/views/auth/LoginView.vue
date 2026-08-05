@@ -45,7 +45,7 @@ async function handleLogin() {
             </span>
           </div>
           <h1 class="text-2xl font-bold text-gray-900">{{ institution.name }}</h1>
-          <p class="text-sm text-gray-500 mt-1">Sistem Informasi Akademik Terpadu</p>
+          <p class="text-sm text-gray-500 mt-1">Al-Jawami Smart Campus (ASC)</p>
         </div>
 
         <!-- Form -->

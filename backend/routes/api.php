@@ -53,7 +53,7 @@ use App\Http\Controllers\Api\PenelitianController;
 
 /*
 |--------------------------------------------------------------------------
-| API Routes - SIAT Al-Jawami
+| API Routes - Al-Jawami Smart Campus (ASC)
 |--------------------------------------------------------------------------
 */
 

@@ -211,7 +211,7 @@ const isParentActive = (children: { to: string }[]) =>
       </div>
       <div class="min-w-0">
         <p class="text-sm font-semibold text-gray-900 truncate">{{ institution.name }}</p>
-        <p class="text-xs text-gray-500 truncate">Sistem Akademik Terpadu</p>
+        <p class="text-xs text-gray-500 truncate">Al-Jawami Smart Campus</p>
       </div>
     </div>
 

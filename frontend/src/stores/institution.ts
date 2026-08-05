@@ -21,7 +21,7 @@ export const useInstitutionStore = defineStore('institution', () => {
   const logoUrl = computed(() => institution.value?.logo_url ?? null)
   const letterheadUrl = computed(() => institution.value?.letterhead_url ?? null)
 
-  const name = computed(() => institution.value?.short_name || institution.value?.name || 'SIAT')
+  const name = computed(() => institution.value?.short_name || institution.value?.name || 'ASC')
 
   async function fetch() {
     if (institution.value) return   // sudah ada data, tidak perlu fetch ulang
