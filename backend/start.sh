@@ -55,19 +55,13 @@ else
 fi
 
 # ============================================================
-# STORAGE LINK — buat symlink public/storage -> storage/app/public
-# Harus dilakukan setiap restart karena public/ ada di ephemeral layer
+# STORAGE LINK — tidak dibutuhkan lagi karena file served
+# langsung via route /storage/{path} di web.php
+# Tetap jalankan sebagai fallback untuk kompatibilitas
 # ============================================================
-echo "→ Creating storage link..."
-php artisan storage:link --force || echo "WARN: storage:link failed"
-
-# Verifikasi symlink
-if [ -L "public/storage" ]; then
-    echo "→ Storage link OK: $(readlink public/storage)"
-else
-    echo "WARN: Storage symlink not created, trying manual fallback..."
-    ln -sfn /app/storage/app/public /app/public/storage || true
-fi
+echo "→ Creating storage link (optional fallback)..."
+php artisan storage:link --force 2>/dev/null || true
+echo "→ Storage setup complete"
 
 # ============================================================
 # START SERVER
