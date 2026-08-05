@@ -18,12 +18,20 @@ RUN npm run build-only
 # Serve with Nginx
 FROM nginx:alpine
 
+# Install envsubst (sudah ada di nginx:alpine via gettext)
+RUN apk add --no-cache gettext
+
 # Copy built files
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Nginx config for SPA routing
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Nginx config template — PORT akan di-substitute saat startup
+COPY nginx.conf /etc/nginx/templates/default.conf.template
 
-EXPOSE 80
+# Hapus default config bawaan nginx
+RUN rm /etc/nginx/conf.d/default.conf 2>/dev/null || true
 
+EXPOSE ${PORT:-80}
+
+# nginx:alpine sudah punya envsubst support via /docker-entrypoint.d/
+# File *.template di /etc/nginx/templates/ otomatis di-process saat container start
 CMD ["nginx", "-g", "daemon off;"]
