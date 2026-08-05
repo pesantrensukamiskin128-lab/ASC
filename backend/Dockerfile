@@ -1,19 +1,27 @@
-FROM php:8.3-cli
+FROM php:8.3-cli-bookworm
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# Install system dependencies — split menjadi beberapa layer
+# agar lebih toleran terhadap timeout jaringan
+RUN apt-get update -qq
+
+RUN apt-get install -y --no-install-recommends \
     git \
     curl \
+    zip \
+    unzip
+
+RUN apt-get install -y --no-install-recommends \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
     libzip-dev \
     libfreetype6-dev \
     libjpeg62-turbo-dev \
-    zip \
-    unzip \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install \
+    libicu-dev \
+    libexif-dev
+
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) \
         pdo_mysql \
         mbstring \
         xml \
@@ -23,11 +31,10 @@ RUN apt-get update && apt-get install -y \
         exif \
         intl \
         pcntl \
-    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 
@@ -52,7 +59,6 @@ RUN php artisan config:cache \
 
 EXPOSE 8080
 
-# Copy start script
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
