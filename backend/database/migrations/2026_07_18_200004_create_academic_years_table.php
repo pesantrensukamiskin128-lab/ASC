@@ -10,11 +10,7 @@ return new class extends Migration
     {
         Schema::create('academic_years', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('code', 20)->unique();    // e.g. 2025/2026-1
-            $table->string('name');                  // e.g. Ganjil 2025/2026
-            $table->enum('semester', ['Ganjil', 'Genap', 'Pendek']);
-            $table->year('year_start');
-            $table->year('year_end');
+            $table->string('name');                  // e.g. Tahun Akademik 2025/2026
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
             $table->boolean('is_active')->default(false);

@@ -53,9 +53,9 @@ RUN chmod -R 775 storage bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
 
 # Cache config (tanpa DB — hanya config statis)
-RUN php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache
+# JANGAN jalankan config:cache saat build karena env vars Railway
+# baru tersedia saat runtime, bukan build time.
+# Cache akan dibuat oleh start.sh setelah env terload.
 
 EXPOSE 8080
 
