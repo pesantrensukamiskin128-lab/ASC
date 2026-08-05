@@ -57,7 +57,7 @@ RUN chmod -R 775 storage bootstrap/cache \
 # baru tersedia saat runtime, bukan build time.
 # Cache akan dibuat oleh start.sh setelah env terload.
 
-EXPOSE 8080
+EXPOSE ${PORT:-8080}
 
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
