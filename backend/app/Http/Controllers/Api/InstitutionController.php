@@ -55,6 +55,12 @@ class InstitutionController extends Controller
         }
 
         $appUrl = rtrim(config('app.url'), '/');
+
+        // Pastikan APP_URL punya scheme — jika tidak, tambahkan https://
+        if (!str_starts_with($appUrl, 'http://') && !str_starts_with($appUrl, 'https://')) {
+            $appUrl = 'https://' . $appUrl;
+        }
+
         return $appUrl . '/storage/' . ltrim($path, '/');
     }
 
