@@ -24,7 +24,6 @@ class RolePermissionSeeder extends Seeder
             'DOSEN',
             'MAHASISWA',
             'ALUMNI',
-            'LP2M',   // Lembaga Penelitian & Pengabdian Masyarakat
         ];
 
         foreach ($roles as $role) {
@@ -150,14 +149,7 @@ class RolePermissionSeeder extends Seeder
             'dashboard.view',
             'alumni.view', 'alumni.edit',
         ]);
-
-        // LP2M — verifikasi & publikasi karya dosen dan skripsi mahasiswa + kelola KKN
-        Role::findByName('LP2M')->givePermissionTo([
-            'dashboard.view',
-            'karya.view', 'karya.verify', 'karya.publish',
-            'skripsi.view', 'skripsi.publish',
-            'kkn.view', 'kkn.create', 'kkn.edit',
-            'mahasiswa.view', 'master-data.view',
-        ]);
+        // LP2M sekarang jabatan struktural (KETUA_LP2M / SEKRETARIS_LP2M)
+        // Permission di-manage via tabel position_permissions
     }
 }

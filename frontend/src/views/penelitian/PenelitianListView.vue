@@ -11,7 +11,7 @@ const toast  = useToast()
 const auth   = useAuthStore()
 
 const isAdmin    = auth.hasRole('SUPER_ADMIN') || auth.hasRole('ADMIN_AKADEMIK')
-const isLp2m     = auth.hasRole('LP2M') || isAdmin
+const isLp2m     = auth.hasPermission('karya.verify') || isAdmin
 const isDosen    = auth.hasRole('DOSEN')
 
 const items      = ref<any[]>([])

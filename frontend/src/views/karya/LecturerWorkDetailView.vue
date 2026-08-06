@@ -12,7 +12,7 @@ const router = useRouter()
 const toast  = useToast()
 const auth   = useAuthStore()
 
-const isAdmin = auth.hasRole('SUPER_ADMIN') || auth.hasRole('ADMIN_AKADEMIK') || auth.hasRole('LP2M')
+const isAdmin = auth.hasRole('SUPER_ADMIN') || auth.hasRole('ADMIN_AKADEMIK') || auth.hasPermission('karya.verify')
 const isDosen = auth.hasRole('DOSEN') && !isAdmin
 
 const loading = ref(true)

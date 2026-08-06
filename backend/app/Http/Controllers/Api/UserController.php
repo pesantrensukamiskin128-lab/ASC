@@ -87,6 +87,11 @@ class UserController extends Controller
 
     public function roles(): JsonResponse
     {
-        return response()->json(Role::all(['id', 'name']));
+        // Hanya tampilkan role yang aktif dipakai (role lama sudah dihapus oleh migration)
+        $validRoles = ['SUPER_ADMIN', 'ADMIN_AKADEMIK', 'ADMIN_PMB', 'ADMIN_KEUANGAN', 'DOSEN', 'MAHASISWA', 'ALUMNI'];
+
+        return response()->json(
+            Role::whereIn('name', $validRoles)->get(['id', 'name'])
+        );
     }
 }

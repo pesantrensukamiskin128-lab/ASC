@@ -12,7 +12,7 @@ const router = useRouter()
 const toast = useToast()
 const auth = useAuthStore()
 const isMahasiswa = computed(() => auth.hasRole('MAHASISWA'))
-const isLP2M      = computed(() => auth.hasRole('LP2M'))
+const isLP2M      = computed(() => auth.hasPermission('karya.verify'))
 
 const items = ref<any[]>([])
 const pagination = ref({ total: 0, currentPage: 1, lastPage: 1 })

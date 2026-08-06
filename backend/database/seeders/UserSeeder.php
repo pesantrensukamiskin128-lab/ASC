@@ -99,7 +99,8 @@ class UserSeeder extends Seeder
                 'email'    => 'lp2m@jawami.ac.id',
                 'username' => 'lp2m.demo',
                 'password' => Hash::make('password'),
-                'role'     => 'LP2M',
+                'role'     => 'DOSEN',
+                'position' => 'KETUA_LP2M',  // jabatan struktural
             ],
         ];
 

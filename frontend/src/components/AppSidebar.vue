@@ -92,7 +92,7 @@ const navigation = computed(() => [
       { label: 'Skripsi / TA', to: '/skripsi', show: auth.hasPermission('skripsi.create') || auth.hasPermission('skripsi.approve') },
       { label: 'Karya Dosen', to: '/karya-dosen', show: (auth.hasPermission('skripsi.view') || auth.hasPermission('karya.view')) && !auth.hasRole('MAHASISWA') },
       { label: 'Penelitian & Pengabdian', to: '/penelitian', show: auth.hasPermission('skripsi.view') && !auth.hasRole('MAHASISWA') },
-      { label: 'Periode Hibah', to: '/penelitian/periode', show: (auth.hasRole('LP2M') || auth.hasRole('SUPER_ADMIN') || auth.hasRole('ADMIN_AKADEMIK')) },
+      { label: 'Periode Hibah', to: '/penelitian/periode', show: (auth.hasPermission('karya.verify') || auth.hasRole('SUPER_ADMIN') || auth.hasRole('ADMIN_AKADEMIK')) },
       { label: 'Wisuda', to: '/wisuda', show: auth.hasPermission('wisuda.view') || auth.hasPermission('yudisium.view') },
       { label: 'Cuti Akademik', to: '/akademik/cuti', show: auth.hasPermission('krs.view') && !auth.hasRole('DOSEN') },
       { label: 'Transfer Nilai', to: '/akademik/transfer', show: auth.hasPermission('krs.view') && !auth.hasRole('DOSEN') },
@@ -116,7 +116,7 @@ const navigation = computed(() => [
   {
     label: 'LP2M',
     icon: ClipboardDocumentListIcon,
-    show: auth.hasRole('LP2M'),
+    show: auth.hasPermission('karya.verify'),
     children: [
       { label: 'Karya Dosen', to: '/karya-dosen' },
       { label: 'Skripsi / TA', to: '/skripsi' },
