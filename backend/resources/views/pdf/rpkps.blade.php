@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <title>RPKPS - {{ $rpkps->course?->name }}</title>
     <style>
-        @page { margin: 12mm 12mm 12mm 12mm; }
-        body { font-family: 'Times New Roman', serif; font-size: 11pt; margin: 0; padding: 0; line-height: 1.5; }
+        @page { margin: 10mm 12mm 20mm 12mm; }
+        body { font-family: 'Times New Roman', serif; font-size: 11pt; margin: 0; padding: 0; line-height: 1.5; position: relative; }
         table { width: 100%; border-collapse: collapse; }
 
         /* Semua border seragam 1px solid */
@@ -25,7 +25,7 @@
 
         /* Auth box */
         .auth-box { text-align: center; padding: 8px 5px; }
-        .auth-box img { width: 80px; height: 80px; margin: 5px 0; }
+        .auth-box img { width: 50px; height: 50px; margin: 5px 0; }
         .auth-box .name { font-weight: bold; text-decoration: underline; }
         .auth-box .nidn { font-size: 10pt; }
 
@@ -251,9 +251,9 @@
                 <p><strong>Ketua Program Studi</strong></p>
                 <br>
                 @if(($rpkps->status === 'DISETUJUI' || $rpkps->status === 'DIKUNCI') && $qrKaprodiUrl)
-                    <img src="{{ $qrKaprodiUrl }}" style="width:75px; height:75px;">
+                    <img src="{{ $qrKaprodiUrl }}" style="width:50px; height:50px;">
                 @else
-                    <div style="height:75px;"></div>
+                    <div style="height:50px;"></div>
                 @endif
                 <br><br>
                 <strong style="text-decoration:underline;">{{ $kaprodi?->display_name ?? $kaprodi?->full_name ?? '-' }}</strong><br>
@@ -263,9 +263,9 @@
                 <p><strong>Dosen Pengampu Mata Kuliah</strong></p>
                 <br>
                 @if(($rpkps->status === 'DISETUJUI' || $rpkps->status === 'DIKUNCI') && $qrDosenUrl)
-                    <img src="{{ $qrDosenUrl }}" style="width:75px; height:75px;">
+                    <img src="{{ $qrDosenUrl }}" style="width:50px; height:50px;">
                 @else
-                    <div style="height:75px;"></div>
+                    <div style="height:50px;"></div>
                 @endif
                 <br><br>
                 <strong style="text-decoration:underline;">{{ $rpkps->lecturer?->display_name ?? $rpkps->lecturer?->full_name ?? '-' }}</strong><br>
@@ -276,18 +276,18 @@
 </div>
 
 <div class="footer-info">
-    Kode: {{ $rpkps->code }} | Dicetak: {{ now()->format('d/m/Y H:i') }}
+    Kode: {{ $rpkps->code }}
 </div>
 
-{{-- Footer Verifikasi Elektronik --}}
+{{-- Footer Verifikasi Elektronik (fixed di bawah halaman) --}}
 @if($rpkps->verification_code)
-<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ccc;">
+<div style="position: fixed; bottom: 0; left: 0; right: 0; padding-top: 10px; border-top: 1px solid #ccc;">
     <table style="width:100%; border:none;">
         <tr>
-            <td style="width:70px; border:none; padding:0; vertical-align:middle;">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=65x65&data={{ urlencode($verifyUrl) }}" width="65" height="65" alt="QR Verifikasi">
+            <td style="width:60px; border:none; padding:0; vertical-align:middle;">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data={{ urlencode($verifyUrl) }}" width="60" height="60" alt="QR Verifikasi">
             </td>
-            <td style="border:none; padding:0 0 0 10px; vertical-align:middle; font-size:8px; color:#666; line-height:1.4;">
+            <td style="border:none; padding:0 0 0 8px; vertical-align:middle; font-size:8px; color:#666; line-height:1.4;">
                 Dokumen ini telah ditandatangani dan distempel secara elektronik melalui aplikasi Al-Jawami Smart Campus, scan QR Code untuk verifikasi.
             </td>
         </tr>

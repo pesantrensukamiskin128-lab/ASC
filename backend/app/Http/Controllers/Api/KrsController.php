@@ -316,9 +316,9 @@ class KrsController extends Controller
 
         // QR codes — link ke halaman verifikasi frontend (ukuran kecil untuk tanda tangan)
         $verifyUrl = rtrim(config('app.frontend_url'), '/') . "/verify/krs/{$krs->id}";
-        $qrKaprodi = "https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=" . urlencode($verifyUrl . '?signer=kaprodi');
-        $qrAdvisor = "https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=" . urlencode($verifyUrl . '?signer=dosen_wali');
-        $qrStudent = "https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=" . urlencode($verifyUrl . '?signer=mahasiswa');
+        $qrKaprodi = "https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=" . urlencode($verifyUrl . '?signer=kaprodi');
+        $qrAdvisor = "https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=" . urlencode($verifyUrl . '?signer=dosen_wali');
+        $qrStudent = "https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=" . urlencode($verifyUrl . '?signer=mahasiswa');
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.krs', [
             'krs' => $krs,

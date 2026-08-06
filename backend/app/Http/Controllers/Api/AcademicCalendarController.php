@@ -127,11 +127,17 @@ class AcademicCalendarController extends Controller
             $letterheadUrl = storage_path('app/public/' . $institution->letterhead_path);
         }
 
-        // Ambil nama Wakil Ketua I dari jabatan struktural
+        // Ambil nama Wakil Ketua I dari jabatan struktural (sertakan gelar)
         $wk1Position = \App\Models\LecturerPosition::where('position_code', 'WK1')
             ->where('is_active', true)
             ->first();
-        $wk1Name = $wk1Position?->lecturer?->full_name ?? '___________________';
+        $wk1Lecturer = $wk1Position?->lecturer;
+        $wk1Name = '___________________';
+        if ($wk1Lecturer) {
+            $front = $wk1Lecturer->degree_front ? $wk1Lecturer->degree_front . ' ' : '';
+            $back  = $wk1Lecturer->degree_back ? ', ' . $wk1Lecturer->degree_back : '';
+            $wk1Name = $front . $wk1Lecturer->full_name . $back;
+        }
 
         // Generate verification URL & QR
         $academicYearId = $request->academic_year_id ?? 'all';

@@ -96,7 +96,7 @@
   <div class="app-name">🎓 Al-Jawami Smart Campus</div>
   <h1>Panduan Pengguna</h1>
   <div class="subtitle">User Guide — Sistem Informasi Akademik Terpadu</div>
-  <div class="institution">Universitas Al-Jawami · Jatinangor, Sumedang</div>
+  <div class="institution">STAI YAPATA AL-JAWAMI BANDUNG</div>
   <div class="version">Versi 1.0 · Agustus 2026</div>
 </div>
 
@@ -265,3 +265,421 @@
 </div>
 
 <div class="info-box yellow"><p><strong>⚠️ Penting</strong> Pastikan selalu ada satu Tahun Akademik yang berstatus <em>Aktif</em>. Banyak fitur sistem bergantung pada data tahun akademik aktif.</p></div>
+
+<!-- BAB 7: SDM -->
+<h1 id="sdm">7. Modul SDM (Mahasiswa, Dosen, Staff)</h1>
+<p>Modul SDM digunakan untuk mengelola data seluruh civitas akademika. Diakses melalui menu <strong>SDM</strong> di sidebar.</p>
+
+<h3>7.1 Data Mahasiswa</h3>
+<p>Menu: <em>SDM → Mahasiswa</em></p>
+<ul>
+  <li>Menampilkan daftar mahasiswa dengan filter berdasarkan prodi, angkatan, dan status</li>
+  <li>Klik nama mahasiswa untuk melihat detail (profil, alamat, orang tua, riwayat pendidikan, dokumen)</li>
+  <li>Fitur <strong>Import Excel</strong> tersedia untuk input data massal</li>
+  <li>Fitur <strong>Export Excel</strong> untuk mengunduh daftar mahasiswa</li>
+</ul>
+
+<h3>7.2 Data Dosen</h3>
+<p>Menu: <em>SDM → Dosen</em></p>
+<ul>
+  <li>Daftar dosen lengkap dengan NIDN, jabatan fungsional, dan status</li>
+  <li>Halaman detail dosen berisi: data pribadi, jabatan struktural, karya ilmiah</li>
+  <li><strong>Jabatan Struktural</strong> — di halaman detail dosen, Anda dapat menambah/menghapus jabatan (Ketua, WK, Kaprodi, Dosen Wali, dll). Jabatan menentukan hak akses tambahan</li>
+</ul>
+
+<h3>7.3 Tenaga Kependidikan</h3>
+<p>Menu: <em>SDM → Tenaga Kependidikan</em></p>
+<p>Mengelola data staff non-dosen (admin, laboran, pustakawan, dll). Mendukung import/export Excel.</p>
+
+<div class="info-box blue"><p><strong>💡 Jabatan Struktural</strong> Jabatan seperti Ketua, Wakil Ketua, Kaprodi, dan Dosen Wali bukan "role" terpisah, melainkan jabatan yang melekat pada data dosen. Satu dosen bisa memiliki beberapa jabatan sekaligus, dan setiap jabatan memberikan hak akses tambahan secara otomatis.</p></div>
+
+<!-- BAB 8: PMB -->
+<h1 id="pmb">8. Modul PMB (Penerimaan Mahasiswa Baru)</h1>
+<p>Modul PMB mengelola seluruh proses penerimaan mahasiswa baru secara online. Diakses oleh <span class="badge badge-blue">ADMIN_PMB</span> dan <span class="badge badge-blue">SUPER_ADMIN</span>.</p>
+
+<h3>8.1 Sub-modul PMB (Admin)</h3>
+<table>
+  <tr><th>Menu</th><th>Fungsi</th></tr>
+  <tr><td>Dashboard PMB</td><td>Statistik pendaftaran: jumlah pendaftar, status, konversi</td></tr>
+  <tr><td>Periode &amp; Gelombang</td><td>Mengatur periode pendaftaran (tanggal buka/tutup, gelombang)</td></tr>
+  <tr><td>Jalur Seleksi</td><td>Mengelola jalur masuk: Reguler, Prestasi, Khusus, dll</td></tr>
+  <tr><td>Jenis Ujian</td><td>Mengatur komponen seleksi dan bobotnya (TPA, Wawancara, dll)</td></tr>
+  <tr><td>Pendaftar</td><td>Melihat dan memverifikasi data calon mahasiswa baru</td></tr>
+</table>
+
+<h3>8.2 Alur PMB Calon Mahasiswa</h3>
+<div class="steps">
+  <div class="step"><div class="step-num">1</div><div class="step-content"><h4>Registrasi Online</h4><p>Calon mahasiswa mengakses halaman PMB publik dan membuat akun pendaftaran.</p></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><h4>Isi Formulir</h4><p>Mengisi data pribadi, pilihan prodi, data keluarga, dan riwayat pendidikan.</p></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content"><h4>Upload Dokumen</h4><p>Mengunggah foto, ijazah, KK, dan dokumen pendukung lainnya.</p></div></div>
+  <div class="step"><div class="step-num">4</div><div class="step-content"><h4>Konfirmasi Pembayaran</h4><p>Melakukan pembayaran biaya pendaftaran dan mengkonfirmasi bukti transfer.</p></div></div>
+  <div class="step"><div class="step-num">5</div><div class="step-content"><h4>Verifikasi Admin</h4><p>Admin PMB memverifikasi kelengkapan berkas dan data pendaftar.</p></div></div>
+  <div class="step"><div class="step-num">6</div><div class="step-content"><h4>Seleksi &amp; Pengumuman</h4><p>Calon mahasiswa mengikuti seleksi, kemudian melihat status kelulusan.</p></div></div>
+</div>
+
+<!-- BAB 9: AKADEMIK -->
+<h1 id="akademik">9. Modul Akademik</h1>
+<p>Modul inti yang mengelola kegiatan belajar-mengajar. Tampilan menu berbeda tergantung apakah pengguna adalah dosen/admin atau mahasiswa.</p>
+
+<h3>9.1 Kurikulum OBE</h3>
+<p>Menu: <em>Akademik → Kurikulum OBE</em></p>
+<p>Mengelola kurikulum berbasis Outcome-Based Education:</p>
+<ul>
+  <li><strong>CPL (Capaian Pembelajaran Lulusan)</strong> — tujuan akhir pendidikan</li>
+  <li><strong>CPMK</strong> — capaian pembelajaran per mata kuliah</li>
+  <li><strong>Matriks CPL-MK</strong> — pemetaan mata kuliah terhadap CPL</li>
+  <li><strong>Profil Lulusan</strong> — deskripsi kompetensi lulusan program studi</li>
+</ul>
+
+<h3>9.2 RPKPS / RPS Digital</h3>
+<p>Menu: <em>Akademik → RPKPS / RPS</em></p>
+<p>Rencana Pembelajaran Semester digital dengan alur persetujuan:</p>
+<ul>
+  <li>Dosen membuat RPS → status <span class="badge badge-gray">DRAFT</span></li>
+  <li>Diajukan ke Kaprodi → status <span class="badge badge-blue">DIAJUKAN</span></li>
+  <li>Kaprodi review dan menyetujui → status <span class="badge badge-green">DISETUJUI</span></li>
+  <li>Dokumen dikunci → status <span class="badge badge-green">DIKUNCI</span> (tidak bisa diubah)</li>
+  <li>RPS yang sudah disetujui memiliki QR code untuk verifikasi keaslian</li>
+</ul>
+
+<h3>9.3 Penawaran Kelas</h3>
+<p>Menu: <em>Akademik → Penawaran Kelas</em></p>
+<p>Membuat dan mengelola kelas yang ditawarkan per semester: mata kuliah, dosen pengampu, kapasitas, jadwal, dan ruangan.</p>
+
+<h3>9.4 KRS &amp; Perwalian</h3>
+<p>Menu: <em>Akademik → KRS &amp; Perwalian</em> (admin/dosen) atau <em>Akademik → KRS Saya</em> (mahasiswa)</p>
+<ul>
+  <li>Mahasiswa mengisi KRS pada periode yang ditentukan</li>
+  <li>Dosen Wali menyetujui atau menolak KRS mahasiswa bimbingannya</li>
+  <li>Kaprodi menandatangani KRS yang sudah disetujui Dosen Wali</li>
+  <li>KRS yang telah disetujui dapat di-download sebagai PDF dengan QR verifikasi</li>
+</ul>
+
+<h3>9.5 Input Nilai</h3>
+<p>Menu: <em>Akademik → Input Nilai</em></p>
+<p>Dosen memasukkan nilai mahasiswa per komponen (tugas, UTS, UAS, dll). Mendukung import nilai dari file Excel.</p>
+
+<h3>9.6 KHS &amp; Transkrip</h3>
+<p>Menu: <em>Akademik → KHS &amp; Transkrip</em> atau <em>Akademik Saya → KHS / Transkrip</em></p>
+<p>Menampilkan Kartu Hasil Studi per semester dan transkrip kumulatif lengkap dengan IPK.</p>
+
+<!-- BAB 10: PERKULIAHAN -->
+<h1 id="perkuliahan">10. Modul Perkuliahan & Ujian</h1>
+<p>Mengelola aktivitas perkuliahan harian: presensi, jurnal pertemuan, dan ujian online.</p>
+
+<h3>10.1 Kelas &amp; Pertemuan</h3>
+<p>Setiap kelas memiliki halaman detail yang berisi:</p>
+<ul>
+  <li><strong>Daftar Mahasiswa</strong> — anggota kelas yang terdaftar via KRS</li>
+  <li><strong>Jurnal Pertemuan</strong> — catatan setiap pertemuan (topik, materi, metode)</li>
+  <li><strong>Presensi</strong> — rekap kehadiran per pertemuan (Hadir, Izin, Sakit, Alpha)</li>
+  <li><strong>Jadwal</strong> — hari, jam, dan ruangan perkuliahan</li>
+</ul>
+
+<h3>10.2 Presensi</h3>
+<p>Dosen membuka presensi untuk setiap pertemuan. Mahasiswa tercatat hadir/tidak hadir. Dosen dapat meng-edit presensi jika ada koreksi.</p>
+
+<h3>10.3 Bank Soal</h3>
+<p>Menu: <em>Akademik → Bank Soal</em></p>
+<p>Dosen menyimpan soal-soal yang dapat digunakan berulang kali untuk berbagai ujian:</p>
+<ul>
+  <li>Tipe soal: Pilihan Ganda, Benar/Salah, Esai, Studi Kasus, Matching, Upload File</li>
+  <li>Soal bisa diberi tag dan tingkat kesulitan (Mudah, Sedang, Sulit)</li>
+  <li>Soal dari bank soal bisa di-impor ke ujian online</li>
+</ul>
+
+<h3>10.4 Ujian Online</h3>
+<p>Fitur ujian berbasis komputer yang terintegrasi dengan kelas:</p>
+<ul>
+  <li>Dosen membuat ujian dengan durasi, tanggal mulai/selesai, dan soal</li>
+  <li>Mahasiswa mengerjakan ujian langsung di aplikasi</li>
+  <li>Hasil otomatis dinilai untuk soal objektif (pilihan ganda, benar/salah)</li>
+  <li>Soal esai dinilai manual oleh dosen</li>
+</ul>
+
+<!-- BAB 11: KEUANGAN -->
+<h1 id="keuangan">11. Modul Keuangan</h1>
+<p>Mengelola seluruh aspek keuangan mahasiswa. Diakses oleh <span class="badge badge-blue">ADMIN_KEUANGAN</span> dan mahasiswa (untuk melihat tagihan sendiri).</p>
+
+<h3>11.1 Fitur Admin Keuangan</h3>
+<table>
+  <tr><th>Menu</th><th>Fungsi</th></tr>
+  <tr><td>Dashboard Keuangan</td><td>Ringkasan tagihan, piutang, dan pemasukan</td></tr>
+  <tr><td>Jenis Tagihan</td><td>Mengatur tipe biaya: SPP, Herregistrasi, Wisuda, dll</td></tr>
+  <tr><td>Tagihan</td><td>Membuat tagihan per mahasiswa atau massal (per angkatan/prodi)</td></tr>
+  <tr><td>Pembayaran</td><td>Mencatat pembayaran masuk dan verifikasi bukti transfer</td></tr>
+  <tr><td>Beasiswa</td><td>Mengelola data penerima beasiswa dan potongan biaya</td></tr>
+</table>
+
+<h3>11.2 Keuangan Mahasiswa</h3>
+<p>Menu: <em>Keuangan Saya</em> (khusus role MAHASISWA)</p>
+<p>Mahasiswa dapat melihat:</p>
+<ul>
+  <li>Daftar tagihan beserta status (Belum Bayar, Sebagian, Lunas)</li>
+  <li>Riwayat pembayaran yang sudah dilakukan</li>
+  <li>Informasi beasiswa yang diterima</li>
+</ul>
+
+<!-- BAB 12: BIMBINGAN -->
+<h1 id="bimbingan">12. Modul Bimbingan Akademik</h1>
+<p>Mengelola proses bimbingan antara Dosen Wali dan mahasiswa bimbingannya.</p>
+
+<h3>12.1 Fitur Bimbingan</h3>
+<ul>
+  <li><strong>Dashboard Bimbingan</strong> — ringkasan mahasiswa bimbingan dan progress mereka</li>
+  <li><strong>Sesi Bimbingan</strong> — pencatatan pertemuan bimbingan (tanggal, topik, catatan)</li>
+  <li><strong>Catatan Akademik</strong> — rekam jejak akademik mahasiswa (IPK, keaktifan, masalah)</li>
+  <li><strong>Peringatan Akademik</strong> — mahasiswa yang IPK-nya di bawah batas atau masalah presensi</li>
+</ul>
+
+<h3>12.2 Alur Bimbingan</h3>
+<div class="steps">
+  <div class="step"><div class="step-num">1</div><div class="step-content"><h4>Mahasiswa mengajukan sesi bimbingan</h4><p>Melalui menu Bimbingan, mahasiswa membuat permintaan jadwal konsultasi.</p></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><h4>Dosen Wali menerima &amp; menjadwalkan</h4><p>Dosen melihat permintaan masuk dan menyetujui jadwalnya.</p></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content"><h4>Pelaksanaan &amp; dokumentasi</h4><p>Setelah bimbingan, dosen mengisi catatan hasil bimbingan sebagai dokumentasi.</p></div></div>
+</div>
+
+<!-- BAB 13: SKRIPSI -->
+<h1 id="skripsi">13. Modul Skripsi & Tugas Akhir</h1>
+<p>Mengelola seluruh alur tugas akhir dari pengajuan judul hingga sidang.</p>
+
+<h3>13.1 Alur Skripsi</h3>
+<div class="steps">
+  <div class="step"><div class="step-num">1</div><div class="step-content"><h4>Pengajuan Judul</h4><p>Mahasiswa mengajukan judul skripsi beserta deskripsi singkat.</p></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><h4>Persetujuan Kaprodi</h4><p>Kaprodi meninjau dan menyetujui judul serta menunjuk dosen pembimbing.</p></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content"><h4>Bimbingan</h4><p>Mahasiswa melakukan bimbingan berkala dengan pembimbing. Progres dicatat di sistem.</p></div></div>
+  <div class="step"><div class="step-num">4</div><div class="step-content"><h4>Seminar Proposal</h4><p>Setelah proposal siap, diajukan untuk seminar proposal.</p></div></div>
+  <div class="step"><div class="step-num">5</div><div class="step-content"><h4>Sidang Skripsi</h4><p>Setelah skripsi selesai dan mendapat persetujuan pembimbing, diajukan ke sidang.</p></div></div>
+  <div class="step"><div class="step-num">6</div><div class="step-content"><h4>Revisi &amp; Final</h4><p>Jika ada revisi, mahasiswa memperbaiki, lalu upload versi final.</p></div></div>
+</div>
+
+<h3>13.2 Fitur untuk Dosen Pembimbing</h3>
+<ul>
+  <li>Melihat daftar mahasiswa bimbingan skripsi</li>
+  <li>Menandai progress (proposal, bab 1-5, revisi, final)</li>
+  <li>Memberikan catatan bimbingan per sesi</li>
+  <li>Menyetujui pengajuan sidang</li>
+</ul>
+
+<!-- BAB 14: PENELITIAN -->
+<h1 id="penelitian">14. Modul Penelitian & Pengabdian</h1>
+<p>Mengelola aktivitas penelitian dan pengabdian masyarakat dosen. Diakses oleh <span class="badge badge-blue">DOSEN</span> dan <span class="badge badge-blue">LP2M</span>.</p>
+
+<h3>14.1 Karya Dosen</h3>
+<p>Menu: <em>Akademik → Karya Dosen</em></p>
+<p>Dosen dapat mendaftarkan karya ilmiah: jurnal, buku, HKI, prosiding, dll. LP2M memverifikasi dan mempublikasikan ke repository.</p>
+
+<h3>14.2 Penelitian &amp; Pengabdian</h3>
+<p>Menu: <em>Akademik → Penelitian &amp; Pengabdian</em></p>
+<ul>
+  <li>Mengajukan proposal penelitian/pengabdian</li>
+  <li>Mengelola anggota tim penelitian</li>
+  <li>Upload laporan kemajuan dan laporan akhir</li>
+  <li>Tracking status: Draft → Diajukan → Review → Diterima → Berjalan → Selesai</li>
+</ul>
+
+<h3>14.3 Periode Hibah</h3>
+<p>Menu: <em>Akademik → Periode Hibah</em></p>
+<p>LP2M/Admin mengatur periode pendanaan penelitian: sumber dana, kuota, batas waktu pengajuan.</p>
+
+<h3>14.4 Praktikum / KKN / PPL</h3>
+<p>Menu: <em>Akademik → Praktikum / KKN</em></p>
+<p>Mengelola program praktik lapangan:</p>
+<ul>
+  <li>Membuat program (KKN, PPL, Magang, Praktikum, PKL)</li>
+  <li>Mendata peserta, lokasi, dan pembimbing</li>
+  <li>Tracking progress dan penilaian</li>
+</ul>
+
+<!-- BAB 15: WISUDA & ALUMNI -->
+<h1 id="wisuda">15. Modul Wisuda & Alumni</h1>
+
+<h3>15.1 Wisuda</h3>
+<p>Menu: <em>Akademik → Wisuda</em></p>
+<ul>
+  <li>Admin membuat periode wisuda (pendaftaran, yudisium, pelaksanaan)</li>
+  <li>Mahasiswa yang memenuhi syarat mendaftar wisuda</li>
+  <li>Proses yudisium: verifikasi kelulusan, cek tagihan lunas, cek bebas pustaka</li>
+  <li>Daftar peserta wisuda dan cetak dokumen</li>
+</ul>
+
+<h3>15.2 Cuti Akademik</h3>
+<p>Menu: <em>Akademik → Cuti Akademik</em></p>
+<p>Pengajuan cuti akademik dengan alur persetujuan bertingkat:</p>
+<ol>
+  <li>Mahasiswa mengajukan cuti dengan alasan dan bukti pendukung</li>
+  <li>Dosen Wali menyetujui/menolak</li>
+  <li>Kaprodi menyetujui/menolak</li>
+  <li>Admin Akademik menerbitkan SK cuti</li>
+</ol>
+
+<h3>15.3 Transfer Nilai</h3>
+<p>Menu: <em>Akademik → Transfer Nilai</em></p>
+<p>Untuk mahasiswa pindahan: mengajukan pengakuan nilai dari institusi asal berdasarkan kesetaraan mata kuliah.</p>
+
+<h3>15.4 Alumni</h3>
+<p>Menu: <em>Alumni</em> (untuk admin) atau diakses langsung oleh pengguna dengan role ALUMNI.</p>
+<ul>
+  <li><strong>Dashboard Alumni</strong> — statistik alumni per prodi, tahun lulus, dan pekerjaan</li>
+  <li><strong>Data Alumni</strong> — profil lengkap alumni (data studi, pekerjaan saat ini)</li>
+  <li><strong>Tracer Study</strong> — survei penelusuran lulusan untuk akreditasi</li>
+</ul>
+
+<!-- BAB 16: LAPORAN -->
+<h1 id="laporan">16. Modul Laporan & Statistik</h1>
+<p>Menu: <em>Laporan</em> — diakses oleh pengguna dengan permission <code>dashboard.analytics</code> (Pimpinan, Admin Akademik, LPM).</p>
+
+<h3>16.1 Jenis Laporan</h3>
+<table>
+  <tr><th>Laporan</th><th>Isi</th></tr>
+  <tr><td>Ringkasan</td><td>Overview seluruh data: jumlah mahasiswa, dosen, prodi, keuangan</td></tr>
+  <tr><td>Statistik Mahasiswa</td><td>Grafik mahasiswa per prodi, angkatan, status, gender</td></tr>
+  <tr><td>Statistik Akademik</td><td>IPK rata-rata, tingkat kelulusan, distribusi nilai</td></tr>
+  <tr><td>Statistik Keuangan</td><td>Piutang, pemasukan, tunggakan per prodi/angkatan</td></tr>
+  <tr><td>Statistik SDM</td><td>Rasio dosen-mahasiswa, jabatan fungsional, pendidikan terakhir</td></tr>
+</table>
+
+<div class="info-box blue"><p><strong>💡 Tips</strong> Data laporan diambil secara real-time dari database. Gunakan filter (tahun akademik, prodi, semester) untuk mempersempit data yang ditampilkan.</p></div>
+
+<!-- BAB 17: PENGATURAN -->
+<h1 id="pengaturan">17. Pengaturan & Manajemen Pengguna</h1>
+<p>Menu: <em>Pengaturan</em> — diakses oleh <span class="badge badge-blue">SUPER_ADMIN</span> dan <span class="badge badge-blue">ADMIN_AKADEMIK</span>.</p>
+
+<h3>17.1 Manajemen Pengguna</h3>
+<p>Menu: <em>Pengaturan → Pengguna</em></p>
+<ul>
+  <li>Melihat daftar seluruh akun pengguna sistem</li>
+  <li>Membuat akun baru dan assign role</li>
+  <li>Menonaktifkan/mengaktifkan akun</li>
+  <li>Reset password pengguna</li>
+</ul>
+
+<h3>17.2 Audit Log</h3>
+<p>Menu: <em>Pengaturan → Audit Log</em></p>
+<p>Mencatat seluruh aktivitas pengguna di sistem: siapa melakukan apa, kapan, dan data apa yang berubah. Berguna untuk audit keamanan dan pelacakan masalah.</p>
+
+<h3>17.3 Repository</h3>
+<p>Menu: <em>Repository</em> (dapat diakses semua pengguna termasuk publik)</p>
+<p>Perpustakaan digital yang berisi karya ilmiah (skripsi, jurnal, prosiding) yang sudah dipublikasikan. Dapat diakses tanpa login untuk keperluan referensi.</p>
+
+<!-- BAB 18: PANDUAN MAHASISWA -->
+<h1 id="mahasiswa-guide">18. Panduan Khusus Mahasiswa</h1>
+<p>Berikut panduan lengkap untuk pengguna dengan role <span class="badge badge-blue">MAHASISWA</span>.</p>
+
+<h3>18.1 Menu yang Tersedia untuk Mahasiswa</h3>
+<table>
+  <tr><th>Menu</th><th>Fungsi</th></tr>
+  <tr><td>Dashboard</td><td>Ringkasan IPK, jadwal hari ini, notifikasi</td></tr>
+  <tr><td>KRS Saya</td><td>Mengisi dan melihat KRS per semester</td></tr>
+  <tr><td>RPS Mata Kuliah</td><td>Melihat RPS mata kuliah yang diambil</td></tr>
+  <tr><td>Kelas Saya</td><td>Melihat daftar kelas, presensi, dan ujian</td></tr>
+  <tr><td>KHS / Transkrip</td><td>Melihat nilai per semester dan transkrip kumulatif</td></tr>
+  <tr><td>Praktikum / KKN</td><td>Melihat program praktikum yang diikuti</td></tr>
+  <tr><td>Skripsi / TA</td><td>Mengajukan judul dan memantau progress skripsi</td></tr>
+  <tr><td>Cuti Akademik</td><td>Mengajukan cuti akademik</td></tr>
+  <tr><td>Daftar Wisuda</td><td>Mendaftar wisuda jika sudah memenuhi syarat</td></tr>
+  <tr><td>Keuangan Saya</td><td>Melihat tagihan dan riwayat pembayaran</td></tr>
+  <tr><td>Repository</td><td>Mengakses perpustakaan digital</td></tr>
+</table>
+
+<h3>18.2 Cara Mengisi KRS</h3>
+<div class="steps">
+  <div class="step"><div class="step-num">1</div><div class="step-content"><h4>Buka KRS Saya</h4><p>Klik menu <em>Akademik → KRS Saya</em>. Sistem menampilkan semester aktif.</p></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><h4>Pilih Mata Kuliah</h4><p>Klik <strong>+ Tambah Mata Kuliah</strong>, pilih dari daftar kelas yang ditawarkan. Perhatikan kapasitas dan jadwal agar tidak bentrok.</p></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content"><h4>Periksa Total SKS</h4><p>Pastikan total SKS tidak melebihi batas yang diperbolehkan berdasarkan IPK semester sebelumnya.</p></div></div>
+  <div class="step"><div class="step-num">4</div><div class="step-content"><h4>Ajukan KRS</h4><p>Klik <strong>Ajukan</strong>. KRS Anda akan dikirim ke Dosen Wali untuk persetujuan.</p></div></div>
+  <div class="step"><div class="step-num">5</div><div class="step-content"><h4>Tunggu Persetujuan</h4><p>Setelah Dosen Wali menyetujui, KRS ditandatangani Kaprodi. Anda bisa download PDF KRS.</p></div></div>
+</div>
+
+<h3>18.3 Melihat Jadwal &amp; Presensi</h3>
+<p>Buka <em>Akademik → Kelas Saya</em>. Anda akan melihat daftar kelas semester ini beserta jadwal (hari, jam, ruangan). Klik kelas untuk melihat detail presensi Anda dan mengikuti ujian online.</p>
+
+<h3>18.4 Mengajukan Skripsi</h3>
+<p>Buka <em>Akademik → Skripsi / TA</em> → klik <strong>Ajukan Judul Baru</strong>. Isi judul, abstrak singkat, dan latar belakang. Tunggu persetujuan dari Kaprodi.</p>
+
+<!-- BAB 19: PANDUAN DOSEN -->
+<h1 id="dosen-guide">19. Panduan Khusus Dosen</h1>
+<p>Berikut panduan untuk pengguna dengan role <span class="badge badge-blue">DOSEN</span> beserta jabatan struktural yang mungkin dimiliki.</p>
+
+<h3>19.1 Menu yang Tersedia untuk Dosen</h3>
+<table>
+  <tr><th>Menu</th><th>Fungsi</th></tr>
+  <tr><td>Dashboard</td><td>Ringkasan kelas diampu, jadwal, bimbingan</td></tr>
+  <tr><td>RPKPS / RPS</td><td>Membuat dan mengelola Rencana Pembelajaran Semester</td></tr>
+  <tr><td>Penawaran Kelas</td><td>Melihat kelas yang diampu</td></tr>
+  <tr><td>Input Nilai</td><td>Memasukkan nilai mahasiswa per kelas</td></tr>
+  <tr><td>Bank Soal</td><td>Mengelola bank soal untuk ujian</td></tr>
+  <tr><td>Skripsi / TA</td><td>Mengelola mahasiswa bimbingan skripsi</td></tr>
+  <tr><td>Karya Dosen</td><td>Mendaftarkan karya ilmiah</td></tr>
+  <tr><td>Penelitian</td><td>Mengajukan dan mengelola penelitian</td></tr>
+</table>
+
+<h3>19.2 Membuat RPS</h3>
+<div class="steps">
+  <div class="step"><div class="step-num">1</div><div class="step-content"><h4>Buka Menu RPS</h4><p>Klik <em>Akademik → RPKPS / RPS</em>.</p></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><h4>Buat RPS Baru</h4><p>Klik <strong>+ Buat RPS</strong>, pilih mata kuliah dan semester. Sistem otomatis generate kode unik.</p></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content"><h4>Isi Rencana Pembelajaran</h4><p>Lengkapi: deskripsi MK, CPL/CPMK, rencana mingguan (16 pertemuan), metode, media, dan asesmen.</p></div></div>
+  <div class="step"><div class="step-num">4</div><div class="step-content"><h4>Ajukan ke Kaprodi</h4><p>Jika sudah lengkap, klik <strong>Ajukan</strong>. Status berubah menjadi "Diajukan" dan menunggu review Kaprodi.</p></div></div>
+</div>
+
+<h3>19.3 Input Nilai Mahasiswa</h3>
+<div class="steps">
+  <div class="step"><div class="step-num">1</div><div class="step-content"><h4>Pilih Kelas</h4><p>Buka <em>Akademik → Input Nilai</em>, pilih kelas yang ingin dinilai.</p></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><h4>Isi Nilai</h4><p>Masukkan nilai per komponen (tugas, UTS, UAS) atau gunakan fitur Import Excel untuk input massal.</p></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content"><h4>Simpan &amp; Finalisasi</h4><p>Klik <strong>Simpan</strong>. Nilai akan otomatis dihitung ke huruf mutu dan ditampilkan di KHS mahasiswa.</p></div></div>
+</div>
+
+<h3>19.4 Presensi Perkuliahan</h3>
+<p>Buka halaman detail kelas → tab <strong>Jurnal Pertemuan</strong> → klik <strong>+ Buat Pertemuan</strong>. Isi topik materi, lalu buka absensi dan centang kehadiran mahasiswa.</p>
+
+<h3>19.5 Fitur Tambahan jika Memiliki Jabatan</h3>
+<table>
+  <tr><th>Jabatan</th><th>Fitur Tambahan</th></tr>
+  <tr><td>Dosen Wali</td><td>Menyetujui KRS, bimbingan akademik, monitoring mahasiswa</td></tr>
+  <tr><td>Kaprodi</td><td>Approve RPS, approve KRS, kelola kurikulum, tanda tangan digital</td></tr>
+  <tr><td>Dekan</td><td>View data fakultas, approve yudisium</td></tr>
+  <tr><td>Wakil Ketua I</td><td>Menandatangani kalender akademik, view semua data akademik</td></tr>
+  <tr><td>Ketua LPM</td><td>Audit mutu, reporting akreditasi</td></tr>
+  <tr><td>Ketua LP2M</td><td>Verifikasi karya dosen, kelola KKN</td></tr>
+</table>
+
+<!-- BAB 20: FAQ -->
+<h1 id="faq">20. FAQ & Pemecahan Masalah</h1>
+
+<h3>20.1 Pertanyaan Umum</h3>
+<table>
+  <tr><th>Pertanyaan</th><th>Jawaban</th></tr>
+  <tr><td>Lupa password, bagaimana cara reset?</td><td>Hubungi administrator (SUPER_ADMIN atau ADMIN_AKADEMIK) untuk direset melalui menu Pengaturan → Pengguna.</td></tr>
+  <tr><td>Mengapa saya tidak bisa mengakses menu tertentu?</td><td>Menu ditampilkan berdasarkan role dan jabatan Anda. Hubungi admin jika merasa hak akses Anda kurang.</td></tr>
+  <tr><td>KRS saya sudah diajukan tapi belum disetujui, apa yang harus dilakukan?</td><td>Hubungi Dosen Wali Anda. KRS menunggu persetujuan Dosen Wali terlebih dahulu, kemudian Kaprodi.</td></tr>
+  <tr><td>Bagaimana cara install aplikasi di HP?</td><td>Buka ASC di Chrome → tap menu (⋮) → Tambahkan ke layar utama. Lihat Bab 3 untuk detail.</td></tr>
+  <tr><td>Nilai saya belum muncul di KHS, kenapa?</td><td>Dosen belum menginput atau memfinalisasi nilai. Hubungi dosen pengampu mata kuliah terkait.</td></tr>
+  <tr><td>QR code di dokumen PDF tidak bisa di-scan?</td><td>Pastikan kualitas cetak cukup jelas. QR code mengarah ke halaman verifikasi online yang bisa diakses siapapun.</td></tr>
+  <tr><td>Bagaimana cara menambah jabatan struktural dosen?</td><td>Buka SDM → Dosen → klik nama dosen → scroll ke "Jabatan Struktural" → klik "+ Tambah Jabatan".</td></tr>
+</table>
+
+<h3>20.2 Masalah Teknis</h3>
+<table>
+  <tr><th>Masalah</th><th>Solusi</th></tr>
+  <tr><td>Halaman blank / tidak loading</td><td>Clear cache browser (Ctrl+Shift+Delete), lalu refresh. Jika masih bermasalah, coba mode Incognito.</td></tr>
+  <tr><td>Error "Sesi berakhir"</td><td>Login ulang. Sesi otomatis berakhir setelah 120 menit tidak aktif.</td></tr>
+  <tr><td>File upload gagal</td><td>Periksa ukuran file (logo maks 2MB, dokumen maks 5MB). Pastikan format file sesuai.</td></tr>
+  <tr><td>Data tidak tampil setelah ditambahkan</td><td>Refresh halaman. Jika tetap tidak muncul, cek filter yang aktif atau hubungi admin.</td></tr>
+  <tr><td>PDF tidak bisa didownload</td><td>Pastikan popup tidak diblokir browser. Coba klik kanan → "Save link as".</td></tr>
+</table>
+
+<hr>
+
+<div class="info-box green">
+  <p><strong>📞 Butuh Bantuan?</strong> Hubungi tim IT atau administrator sistem melalui email atau langsung ke kantor bagian akademik kampus. Sertakan screenshot error dan langkah-langkah yang dilakukan sebelum masalah terjadi.</p>
+</div>
+
+<div style="text-align: center; margin-top: 40px; padding: 20px; color: #9ca3af; font-size: 10pt;">
+  <p>— Akhir Dokumen —</p>
+  <p style="margin-top: 8px;">Al-Jawami Smart Campus (ASC) v1.0 · Panduan Pengguna · Agustus 2026</p>
+  <p>STAI YAPATA AL-JAWAMI BANDUNG</p>
+</div>
+
+</div><!-- end .content -->
+</body>
+</html>

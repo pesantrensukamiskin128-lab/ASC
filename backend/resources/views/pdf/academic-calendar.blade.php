@@ -4,7 +4,8 @@
     <meta charset="utf-8">
     <title>Kalender Akademik</title>
     <style>
-        body { font-family: Arial, sans-serif; font-size: 11px; margin: 0; padding: 10px 20px 20px; }
+        @page { margin: 1cm 2cm 2cm 2cm; }
+        body { font-family: Arial, sans-serif; font-size: 11px; margin: 0; padding: 0; position: relative; min-height: 100%; }
         .letterhead { text-align: center; margin-bottom: 5px; }
         .letterhead img { width: 100%; max-height: 130px; }
         .letterhead-text { text-align: center; margin-bottom: 5px; }
@@ -13,10 +14,10 @@
         .letterhead-text p { font-size: 10px; margin: 2px 0; color: #555; }
         .title { text-align: center; font-size: 14px; font-weight: bold; margin-bottom: 5px; margin-top: 15px; }
         .subtitle { text-align: center; font-size: 11px; color: #555; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { background-color: #2563eb; color: white; padding: 8px 6px; text-align: left; font-size: 10px; }
-        td { padding: 6px; border-bottom: 1px solid #e5e7eb; font-size: 10px; }
-        tr:nth-child(even) td { background-color: #f9fafb; }
+        table.data { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        table.data th { background-color: #2563eb; color: white; padding: 8px 6px; text-align: left; font-size: 10px; }
+        table.data td { padding: 6px; border-bottom: 1px solid #e5e7eb; font-size: 10px; }
+        table.data tr:nth-child(even) td { background-color: #f9fafb; }
         .category-badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 9px; font-weight: bold; }
         .cat-akademik { background: #dbeafe; color: #1d4ed8; }
         .cat-uts { background: #fef3c7; color: #92400e; }
@@ -26,20 +27,16 @@
         .cat-wisuda { background: #fce7f3; color: #9d174d; }
         .cat-lainnya { background: #f3f4f6; color: #374151; }
 
-        /* Tanda tangan — rata kiri tapi posisi di kanan */
         .sign-wrapper { margin-top: 30px; width: 100%; }
         .sign-area { float: right; width: 250px; text-align: left; }
         .sign-area p { margin: 2px 0; font-size: 11px; }
-        .sign-area .qr { margin: 6px 0; }
-        .sign-area .name { font-weight: bold; text-decoration: underline; margin-top: 4px; }
+        .sign-area .qr { margin: 5px 0; }
+        .sign-area .name { font-weight: bold; text-decoration: underline; margin-top: 3px; }
 
-        /* Footer verifikasi */
-        .verify-footer { clear: both; margin-top: 50px; padding-top: 15px; border-top: 1px solid #e5e7eb; }
-        .verify-footer table { border: none; margin: 0; }
-        .verify-footer td { border: none; padding: 0; vertical-align: middle; background: none !important; }
-        .verify-text { font-size: 9px; color: #666; line-height: 1.4; padding-left: 10px; max-width: 400px; }
-
-        .print-footer { margin-top: 10px; text-align: right; font-size: 9px; color: #999; }
+        .verify-footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 0 0; border-top: 1px solid #e5e7eb; }
+        .verify-footer table { width: 100%; border-collapse: collapse; }
+        .verify-footer td { border: none; padding: 0; vertical-align: middle; }
+        .verify-text { font-size: 8px; color: #666; line-height: 1.4; padding-left: 8px; }
     </style>
 </head>
 <body>
@@ -66,7 +63,7 @@
     <div class="title">KALENDER AKADEMIK</div>
     <div class="subtitle">{{ $academicYear }}</div>
 
-    <table>
+    <table class="data">
         <thead>
             <tr>
                 <th style="width: 30px;">No</th>
@@ -98,24 +95,24 @@
         </tbody>
     </table>
 
-    {{-- Tanda Tangan — rata kiri tapi di posisi kanan --}}
+    {{-- Tanda Tangan --}}
     <div class="sign-wrapper">
         <div class="sign-area">
             <p>Bandung, {{ now()->translatedFormat('d F Y') }}</p>
             <p>Wakil Ketua I Bidang Akademik</p>
             <div class="qr">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data={{ urlencode($verifyUrl) }}" width="60" height="60" alt="QR">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=50x50&data={{ urlencode($verifyUrl) }}" width="50" height="50" alt="QR">
             </div>
             <p class="name">{{ $wk1Name }}</p>
         </div>
     </div>
 
-    {{-- Footer Verifikasi --}}
+    {{-- Footer Verifikasi (fixed di bawah halaman) --}}
     <div class="verify-footer">
         <table>
             <tr>
-                <td style="width: 70px;">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=65x65&data={{ urlencode($verifyUrl) }}" width="65" height="65" alt="QR Verifikasi">
+                <td style="width: 60px;">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data={{ urlencode($verifyUrl) }}" width="60" height="60" alt="QR Verifikasi">
                 </td>
                 <td>
                     <div class="verify-text">
@@ -124,10 +121,6 @@
                 </td>
             </tr>
         </table>
-    </div>
-
-    <div class="print-footer">
-        Dicetak pada: {{ now()->format('d/m/Y H:i') }}
     </div>
 </body>
 </html>

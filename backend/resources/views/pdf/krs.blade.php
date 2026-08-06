@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <title>KRS - {{ $krs->student?->nim }}</title>
     <style>
-        @page { margin: 8mm 15mm 15mm 15mm; }
-        body { font-family: 'Times New Roman', serif; font-size: 11pt; margin: 0; padding: 0; line-height: 1.5; }
+        @page { margin: 10mm 15mm 20mm 15mm; }
+        body { font-family: 'Times New Roman', serif; font-size: 11pt; margin: 0; padding: 0; line-height: 1.5; position: relative; }
         table { width: 100%; border-collapse: collapse; }
         .bordered td, .bordered th { border: 1px solid #000; padding: 5px 8px; vertical-align: top; }
         .bordered th { font-weight: bold; text-align: center; }
@@ -19,7 +19,7 @@
         .info-table td { padding: 3px 8px; font-size: 11pt; border: none; }
         .info-label { width: 140px; font-weight: bold; }
         .sign-table td { padding: 8px 10px; text-align: center; vertical-align: top; border: none; width: 33%; }
-        .sign-table img { width: 60px; height: 60px; }
+        .sign-table img { width: 50px; height: 50px; }
         .sign-name { font-weight: bold; text-decoration: underline; font-size: 10pt; }
         .sign-role { font-size: 9pt; }
     </style>
@@ -156,17 +156,17 @@
 </div>
 
 <div style="margin-top: 15px; text-align: center; font-size: 9pt; color: #555;">
-    Dicetak: {{ now()->format('d/m/Y H:i') }} | Status: {{ $krs->status }}
+    Status: {{ $krs->status }}
 </div>
 
-{{-- Footer Verifikasi Elektronik --}}
-<div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #ccc;">
+{{-- Footer Verifikasi Elektronik (fixed di bawah halaman) --}}
+<div style="position: fixed; bottom: 0; left: 0; right: 0; padding-top: 10px; border-top: 1px solid #ccc;">
     <table style="width:100%; border:none;">
         <tr>
-            <td style="width:70px; border:none; padding:0; vertical-align:middle;">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=65x65&data={{ urlencode($verifyUrl) }}" width="65" height="65" alt="QR Verifikasi">
+            <td style="width:60px; border:none; padding:0; vertical-align:middle;">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data={{ urlencode($verifyUrl) }}" width="60" height="60" alt="QR Verifikasi">
             </td>
-            <td style="border:none; padding:0 0 0 10px; vertical-align:middle; font-size:9px; color:#666; line-height:1.4;">
+            <td style="border:none; padding:0 0 0 8px; vertical-align:middle; font-size:8px; color:#666; line-height:1.4;">
                 Dokumen ini telah ditandatangani dan distempel secara elektronik melalui aplikasi Al-Jawami Smart Campus, scan QR Code untuk verifikasi.
             </td>
         </tr>
