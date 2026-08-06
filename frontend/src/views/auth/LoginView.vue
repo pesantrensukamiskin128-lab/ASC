@@ -153,7 +153,7 @@ function categoryColor(cat: string): string {
 
         <!-- Desktop: Welcome text -->
         <div class="hidden lg:block mb-8">
-          <h2 class="text-2xl font-bold text-gray-900">Selamat Datang 👋</h2>
+          <h2 class="text-2xl font-bold text-gray-900">Assalamu'alaikum! 👋</h2>
           <p class="text-gray-500 text-sm mt-1">Masuk ke akun Anda untuk melanjutkan</p>
         </div>
 
