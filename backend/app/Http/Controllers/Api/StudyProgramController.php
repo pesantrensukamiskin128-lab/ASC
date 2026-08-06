@@ -75,6 +75,14 @@ class StudyProgramController extends Controller
             return response()->json(['message' => 'Tidak dapat menghapus prodi yang masih memiliki mahasiswa.'], 422);
         }
 
+        if ($studyProgram->courses()->count() > 0) {
+            return response()->json(['message' => 'Tidak dapat menghapus prodi yang masih memiliki mata kuliah. Hapus atau pindahkan mata kuliah terlebih dahulu.'], 422);
+        }
+
+        if (\App\Models\Classes::where('study_program_id', $studyProgram->id)->count() > 0) {
+            return response()->json(['message' => 'Tidak dapat menghapus prodi yang masih memiliki kelas aktif.'], 422);
+        }
+
         $studyProgram->delete();
 
         return response()->json(['message' => 'Program studi berhasil dihapus.']);

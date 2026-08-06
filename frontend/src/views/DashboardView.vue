@@ -39,7 +39,7 @@ function formatCurrency(n: number) {
     <!-- Welcome -->
     <div>
       <h1 class="text-2xl font-bold text-gray-900">
-        Selamat datang, {{ auth.user?.name }} 👋
+        Assalamu'alaikum, {{ auth.user?.name }} 👋
       </h1>
       <p class="text-sm text-gray-500 mt-1">
         {{ auth.user?.roles[0]?.replace(/_/g, ' ') }} — 

@@ -314,8 +314,8 @@ class KrsController extends Controller
             if ($pos) $kaprodi = \App\Models\Lecturer::find($pos->lecturer_id);
         }
 
-        // QR codes
-        $verifyUrl = url("/verify/krs/{$krs->id}");
+        // QR codes — link ke halaman verifikasi frontend
+        $verifyUrl = rtrim(config('app.frontend_url'), '/') . "/verify/krs/{$krs->id}";
         $qrKaprodi = "https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=" . urlencode($verifyUrl . '?signer=kaprodi');
         $qrAdvisor = "https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=" . urlencode($verifyUrl . '?signer=dosen_wali');
         $qrStudent = "https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=" . urlencode($verifyUrl . '?signer=mahasiswa');

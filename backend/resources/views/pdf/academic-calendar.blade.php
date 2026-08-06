@@ -11,8 +11,7 @@
         .letterhead-text h1 { font-size: 16px; margin: 0; text-transform: uppercase; }
         .letterhead-text h2 { font-size: 13px; margin: 2px 0; font-weight: normal; }
         .letterhead-text p { font-size: 10px; margin: 2px 0; color: #555; }
-        .divider { border-bottom: 3px double #000; margin: 10px 0 20px; }
-        .title { text-align: center; font-size: 14px; font-weight: bold; margin-bottom: 5px; }
+        .title { text-align: center; font-size: 14px; font-weight: bold; margin-bottom: 5px; margin-top: 20px; }
         .subtitle { text-align: center; font-size: 11px; color: #555; margin-bottom: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th { background-color: #2563eb; color: white; padding: 8px 6px; text-align: left; font-size: 10px; }
@@ -26,8 +25,10 @@
         .cat-kkn { background: #ede9fe; color: #5b21b6; }
         .cat-wisuda { background: #fce7f3; color: #9d174d; }
         .footer { margin-top: 30px; text-align: right; font-size: 10px; color: #666; }
-        .sign-area { margin-top: 40px; text-align: right; padding-right: 40px; }
+        .sign-area { margin-top: 40px; text-align: right; padding-right: 20px; }
         .sign-area p { margin: 2px 0; font-size: 11px; }
+        .sign-area .qr { margin: 8px 0; }
+        .sign-area .name { font-weight: bold; text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -36,7 +37,6 @@
         <div class="letterhead">
             <img src="{{ $letterheadUrl }}" alt="Kop Surat">
         </div>
-        <div class="divider"></div>
     @elseif($institution)
         <div class="letterhead-text">
             <h1>{{ $institution->name }}</h1>
@@ -50,7 +50,6 @@
                 @if($institution->website) | {{ $institution->website }} @endif
             </p>
         </div>
-        <div class="divider"></div>
     @endif
 
     <div class="title">KALENDER AKADEMIK</div>
@@ -88,14 +87,14 @@
         </tbody>
     </table>
 
-    @if($institution)
     <div class="sign-area">
-        <p>{{ $institution->address ? explode(',', $institution->address)[0] : '' }}, {{ now()->translatedFormat('d F Y') }}</p>
+        <p>Bandung, {{ now()->translatedFormat('d F Y') }}</p>
         <p>Wakil Ketua I Bidang Akademik</p>
-        <br><br><br>
-        <p>_________________________</p>
+        <div class="qr">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data={{ urlencode($verifyUrl) }}" width="80" height="80" alt="QR Verifikasi">
+        </div>
+        <p class="name">{{ $wk1Name }}</p>
     </div>
-    @endif
 
     <div class="footer">
         Dicetak pada: {{ now()->format('d/m/Y H:i') }}

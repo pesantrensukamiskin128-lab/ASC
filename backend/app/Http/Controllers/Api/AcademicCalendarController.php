@@ -108,13 +108,26 @@ class AcademicCalendarController extends Controller
             $letterheadUrl = storage_path('app/public/' . $institution->letterhead_path);
         }
 
+        // Ambil nama Wakil Ketua I dari jabatan struktural
+        $wk1Position = \App\Models\LecturerPosition::where('position_code', 'WK1')
+            ->where('is_active', true)
+            ->first();
+        $wk1Name = $wk1Position?->lecturer?->full_name ?? '___________________';
+
+        // Generate verification URL & QR
+        $academicYearId = $request->academic_year_id ?? 'all';
+        $verifyUrl = rtrim(config('app.frontend_url'), '/')
+            . '/verify/academic-calendar/' . $academicYearId;
+
         $pdf = Pdf::loadView('pdf.academic-calendar', [
-            'events' => $events,
-            'institution' => $institution,
+            'events'        => $events,
+            'institution'   => $institution,
             'letterheadUrl' => $letterheadUrl,
-            'academicYear' => $request->academic_year_id
+            'academicYear'  => $request->academic_year_id
                 ? \App\Models\AcademicYear::find($request->academic_year_id)?->name
                 : 'Semua Tahun Akademik',
+            'wk1Name'       => $wk1Name,
+            'verifyUrl'     => $verifyUrl,
         ])->setPaper('a4', 'portrait')
           ->setOption('isRemoteEnabled', true);
 

@@ -496,8 +496,8 @@ class RpkpsController extends Controller
             }
         }
 
-        // QR Code data — URL verifikasi
-        $verifyUrl = url("/verify/rpkps/{$rpkp->verification_code}");
+        // QR Code data — URL verifikasi frontend
+        $verifyUrl = rtrim(config('app.frontend_url'), '/') . "/verify/rpkps/{$rpkp->verification_code}";
         $qrDosenUrl = "https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=" . urlencode($verifyUrl . '?signer=dosen');
         $qrKaprodiUrl = "https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=" . urlencode($verifyUrl . '?signer=kaprodi');
 
