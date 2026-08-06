@@ -104,15 +104,20 @@ class UserSeeder extends Seeder
         ];
 
         foreach ($users as $data) {
-            $user = User::firstOrCreate(
-                ['email' => $data['email']],
-                [
+            $user = User::where('email', $data['email'])
+                ->orWhere('username', $data['username'])
+                ->first();
+
+            if (!$user) {
+                $user = User::create([
                     'name'      => $data['name'],
+                    'email'     => $data['email'],
                     'username'  => $data['username'],
                     'password'  => $data['password'],
                     'is_active' => true,
-                ]
-            );
+                ]);
+            }
+
             $user->syncRoles([$data['role']]);
 
             // Assign jabatan struktural jika ada, dan user punya data dosen
