@@ -77,16 +77,31 @@ class StudyProgramController extends Controller
 
         try {
             \Illuminate\Support\Facades\DB::transaction(function () use ($studyProgram) {
-                // Hapus semua data terkait yang punya FK ke study_programs tanpa cascade
-                \App\Models\Classes::where('study_program_id', $studyProgram->id)->delete();
+                $courseIds = $studyProgram->courses()->pluck('id')->toArray();
+
+                if (!empty($courseIds)) {
+                    // Hapus data yang merujuk ke courses milik prodi ini
+                    \Illuminate\Support\Facades\DB::table('classes')->whereIn('course_id', $courseIds)->delete();
+                    \Illuminate\Support\Facades\DB::table('rpkps')->whereIn('course_id', $courseIds)->delete();
+                    \Illuminate\Support\Facades\DB::table('course_learning_outcomes')->whereIn('course_id', $courseIds)->delete();
+                    \Illuminate\Support\Facades\DB::table('cpl_course_mappings')->whereIn('course_id', $courseIds)->delete();
+                    \Illuminate\Support\Facades\DB::table('curriculum_courses')->whereIn('course_id', $courseIds)->delete();
+                }
+
+                // Hapus kelas langsung yang merujuk prodi
+                \App\Models\ClassModel::where('study_program_id', $studyProgram->id)->delete();
+
+                // Hapus courses
                 $studyProgram->courses()->delete();
 
-                // Tabel lain yang mungkin punya FK (nullable — set null)
+                // Tabel lain yang punya FK ke study_programs
                 \Illuminate\Support\Facades\DB::table('theses')
                     ->where('study_program_id', $studyProgram->id)->delete();
                 \Illuminate\Support\Facades\DB::table('alumni')
                     ->where('study_program_id', $studyProgram->id)->delete();
                 \Illuminate\Support\Facades\DB::table('applicant_choices')
+                    ->where('study_program_id', $studyProgram->id)->delete();
+                \Illuminate\Support\Facades\DB::table('concentrations')
                     ->where('study_program_id', $studyProgram->id)->delete();
                 \Illuminate\Support\Facades\DB::table('lecturers')
                     ->where('study_program_id', $studyProgram->id)
