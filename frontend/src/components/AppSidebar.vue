@@ -172,6 +172,22 @@ const navigation = computed(() => [
     show: true,
   },
   {
+    label: 'Persuratan',
+    icon: ClipboardDocumentListIcon,
+    show: auth.hasPermission('surat-keluar.view') || auth.hasPermission('surat-masuk.view') || auth.hasPermission('disposisi.receive'),
+    children: [
+      { label: 'Surat Keluar', to: '/persuratan/surat-keluar', show: auth.hasPermission('surat-keluar.view') },
+      { label: 'Surat Masuk', to: '/persuratan/surat-masuk', show: auth.hasPermission('surat-masuk.view') },
+      { label: 'Disposisi', to: '/persuratan/disposisi', show: auth.hasPermission('disposisi.view') || auth.hasPermission('disposisi.receive') },
+    ].filter(c => c.show !== false),
+  },
+  {
+    label: 'Agenda Kegiatan',
+    to: '/agenda',
+    icon: CalendarDaysIcon,
+    show: auth.hasPermission('agenda.view'),
+  },
+  {
     label: 'Pengaturan',
     icon: Cog6ToothIcon,
     show: auth.hasPermission('user.view'),

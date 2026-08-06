@@ -41,6 +41,13 @@ const router = createRouter({
       ],
     },
 
+    // Presensi Publik (tanpa AppLayout)
+    {
+      path: '/presensi/:token',
+      name: 'event-attend',
+      component: () => import('@/views/agenda/EventAttendView.vue'),
+    },
+
     // PMB Public Pages (tanpa AppLayout)
     {
       path: '/pmb',
@@ -681,6 +688,68 @@ const router = createRouter({
           path: 'profile',
           name: 'profile',
           component: () => import('@/views/ProfileView.vue'),
+        },
+
+        // =========================================================
+        // PERSURATAN
+        // =========================================================
+        {
+          path: 'persuratan/surat-keluar',
+          name: 'outgoing-letters',
+          component: () => import('@/views/persuratan/OutgoingLetterListView.vue'),
+          meta: { permission: 'surat-keluar.view' },
+        },
+        {
+          path: 'persuratan/surat-keluar/buat',
+          name: 'outgoing-letter-create',
+          component: () => import('@/views/persuratan/OutgoingLetterFormView.vue'),
+          meta: { permission: 'surat-keluar.create' },
+        },
+        {
+          path: 'persuratan/surat-keluar/:id',
+          name: 'outgoing-letter-detail',
+          component: () => import('@/views/persuratan/OutgoingLetterDetailView.vue'),
+          meta: { permission: 'surat-keluar.view' },
+        },
+        {
+          path: 'persuratan/surat-keluar/:id/edit',
+          name: 'outgoing-letter-edit',
+          component: () => import('@/views/persuratan/OutgoingLetterFormView.vue'),
+          meta: { permission: 'surat-keluar.edit' },
+        },
+        {
+          path: 'persuratan/surat-masuk',
+          name: 'incoming-letters',
+          component: () => import('@/views/persuratan/IncomingLetterView.vue'),
+          meta: { permission: 'surat-masuk.view' },
+        },
+        {
+          path: 'persuratan/disposisi',
+          name: 'dispositions',
+          component: () => import('@/views/persuratan/DispositionView.vue'),
+          meta: { permission: 'disposisi.view' },
+        },
+
+        // =========================================================
+        // AGENDA KEGIATAN
+        // =========================================================
+        {
+          path: 'agenda',
+          name: 'events',
+          component: () => import('@/views/agenda/EventListView.vue'),
+          meta: { permission: 'agenda.view' },
+        },
+        {
+          path: 'agenda/buat',
+          name: 'event-create',
+          component: () => import('@/views/agenda/EventListView.vue'),
+          meta: { permission: 'agenda.create' },
+        },
+        {
+          path: 'agenda/:id',
+          name: 'event-detail',
+          component: () => import('@/views/agenda/EventDetailView.vue'),
+          meta: { permission: 'agenda.view' },
         },
 
         { path: 'forbidden', name: 'forbidden', component: () => import('@/views/ForbiddenView.vue') },
