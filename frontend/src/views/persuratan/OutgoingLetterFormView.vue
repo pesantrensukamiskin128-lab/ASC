@@ -35,11 +35,11 @@ onMounted(async () => {
   const [typesRes, signersRes, usersRes] = await Promise.all([
     api.get('/outgoing-letters/letter-types'),
     api.get('/outgoing-letters/signers'),
-    api.get('/users', { params: { per_page: 200 } }),
+    api.get('/users/list'),
   ])
   letterTypes.value = typesRes.data
   signers.value = signersRes.data
-  allUsers.value = usersRes.data.data ?? usersRes.data
+  allUsers.value = usersRes.data
 
   if (isEdit) {
     const { data } = await api.get(`/outgoing-letters/${editId}`)

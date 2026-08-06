@@ -29,8 +29,8 @@ const fileInput = ref<File | null>(null)
 
 onMounted(async () => {
   load()
-  const { data } = await api.get('/users', { params: { per_page: 200 } })
-  allUsers.value = data.data ?? data
+  const { data } = await api.get('/users/list')
+  allUsers.value = data
 })
 
 function load(page = 1) { fetchAll({ search: search.value, page }) }

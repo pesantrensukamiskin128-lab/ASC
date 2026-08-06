@@ -149,6 +149,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('rooms/all', [RoomController::class, 'all']);
     Route::get('classes/all', [ClassController::class, 'all']);
 
+    // Daftar user ringkas (untuk pilih penerima surat, disposisi, agenda)
+    Route::get('users/list', [UserController::class, 'list']);
+
     // --- User Management ---
     Route::middleware('role:SUPER_ADMIN|ADMIN_AKADEMIK')->group(function () {
         Route::apiResource('users', UserController::class);

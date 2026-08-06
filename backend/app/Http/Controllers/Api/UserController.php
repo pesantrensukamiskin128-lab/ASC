@@ -94,4 +94,17 @@ class UserController extends Controller
             Role::whereIn('name', $validRoles)->get(['id', 'name'])
         );
     }
+
+    /** Daftar user ringkas — untuk pilih penerima surat, disposisi, peserta agenda */
+    public function list(Request $request): JsonResponse
+    {
+        $users = User::where('is_active', true)
+            ->when($request->search, fn($q) => $q->where('name', 'like', "%{$request->search}%"))
+            ->select('id', 'name', 'email')
+            ->orderBy('name')
+            ->limit(200)
+            ->get();
+
+        return response()->json($users);
+    }
 }
