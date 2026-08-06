@@ -69,23 +69,22 @@ class StudyProgramController extends Controller
         ]);
     }
 
-    public function destroy(StudyProgram $studyProgram): JsonResponse
+    public function destroy(Request $request, StudyProgram $studyProgram): JsonResponse
     {
         if ($studyProgram->students()->count() > 0) {
-            return response()->json(['message' => 'Tidak dapat menghapus prodi yang masih memiliki mahasiswa.'], 422);
+            return response()->json(['message' => 'Tidak dapat menghapus prodi yang masih memiliki mahasiswa aktif.'], 422);
         }
 
-        if ($studyProgram->courses()->count() > 0) {
-            return response()->json(['message' => 'Tidak dapat menghapus prodi yang masih memiliki mata kuliah. Hapus atau pindahkan mata kuliah terlebih dahulu.'], 422);
-        }
+        // Hapus relasi yang menghalangi (mata kuliah, kelas) sebelum hapus prodi
+        // Kelas yang merujuk prodi ini
+        \App\Models\Classes::where('study_program_id', $studyProgram->id)->delete();
 
-        if (\App\Models\Classes::where('study_program_id', $studyProgram->id)->count() > 0) {
-            return response()->json(['message' => 'Tidak dapat menghapus prodi yang masih memiliki kelas aktif.'], 422);
-        }
+        // Mata kuliah milik prodi ini
+        $studyProgram->courses()->delete();
 
         $studyProgram->delete();
 
-        return response()->json(['message' => 'Program studi berhasil dihapus.']);
+        return response()->json(['message' => 'Program studi beserta mata kuliah terkait berhasil dihapus.']);
     }
 
     public function all(Request $request): JsonResponse

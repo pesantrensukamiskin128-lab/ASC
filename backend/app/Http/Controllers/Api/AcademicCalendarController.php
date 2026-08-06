@@ -133,10 +133,12 @@ class AcademicCalendarController extends Controller
             ->first();
         $wk1Lecturer = $wk1Position?->lecturer;
         $wk1Name = '___________________';
+        $wk1Nidn = '-';
         if ($wk1Lecturer) {
             $front = $wk1Lecturer->degree_front ? $wk1Lecturer->degree_front . ' ' : '';
             $back  = $wk1Lecturer->degree_back ? ', ' . $wk1Lecturer->degree_back : '';
             $wk1Name = $front . $wk1Lecturer->full_name . $back;
+            $wk1Nidn = $wk1Lecturer->nidn ?? '-';
         }
 
         // Generate verification URL & QR
@@ -152,6 +154,7 @@ class AcademicCalendarController extends Controller
                 ? \App\Models\AcademicYear::find($request->academic_year_id)?->name
                 : 'Semua Tahun Akademik',
             'wk1Name'       => $wk1Name,
+            'wk1Nidn'       => $wk1Nidn,
             'verifyUrl'     => $verifyUrl,
         ])->setPaper('a4', 'portrait')
           ->setOption('isRemoteEnabled', true);

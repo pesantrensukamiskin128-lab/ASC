@@ -104,6 +104,7 @@
                 <img src="https://api.qrserver.com/v1/create-qr-code/?size=50x50&data={{ urlencode($verifyUrl) }}" width="50" height="50" alt="QR">
             </div>
             <p class="name">{{ $wk1Name }}</p>
+            <p style="font-size: 10px; margin-top: 2px;">NIDN: {{ $wk1Nidn }}</p>
         </div>
     </div>
 
