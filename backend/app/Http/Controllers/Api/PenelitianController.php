@@ -24,9 +24,18 @@ class PenelitianController extends Controller
         $user       = Auth::user();
         $roles      = $user->getRoleNames()->toArray();
         $isAdmin    = in_array('SUPER_ADMIN', $roles) || in_array('ADMIN_AKADEMIK', $roles);
-        $isLp2m     = in_array('LPM', $roles) || $isAdmin;
-        $isKaprodi  = in_array('KAPRODI', $roles) || $isAdmin;
+        $isLp2m     = in_array('LP2M', $roles) || $isAdmin;
         $isKeuangan = in_array('ADMIN_KEUANGAN', $roles) || $isAdmin;
+
+        // Cek jabatan Kaprodi via position system
+        $isKaprodi = false;
+        if ($user->lecturer) {
+            $isKaprodi = \App\Models\LecturerPosition::where('lecturer_id', $user->lecturer->id)
+                ->where('is_active', true)
+                ->whereIn('position_code', ['KAPRODI', 'SEKPRODI'])
+                ->exists();
+        }
+        $isKaprodi = $isKaprodi || $isAdmin;
 
         return [
             'user'       => $user,

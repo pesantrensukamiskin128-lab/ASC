@@ -14,18 +14,16 @@ class RolePermissionSeeder extends Seeder
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         // Roles sesuai struktur organisasi
+        // NOTE: PIMPINAN, KAPRODI, DOSEN_WALI, LPM sudah digantikan oleh sistem jabatan
+        // struktural (tabel lecturer_positions + position_permissions)
         $roles = [
             'SUPER_ADMIN',
-            'PIMPINAN',
             'ADMIN_AKADEMIK',
             'ADMIN_PMB',
             'ADMIN_KEUANGAN',
-            'KAPRODI',
             'DOSEN',
-            'DOSEN_WALI',
             'MAHASISWA',
             'ALUMNI',
-            'LPM',
             'LP2M',   // Lembaga Penelitian & Pengabdian Masyarakat
         ];
 
@@ -89,19 +87,9 @@ class RolePermissionSeeder extends Seeder
         // SUPER_ADMIN — akses penuh
         Role::findByName('SUPER_ADMIN')->givePermissionTo(Permission::all());
 
-        // PIMPINAN — view semua, analytics
-        Role::findByName('PIMPINAN')->givePermissionTo([
-            'dashboard.view', 'dashboard.analytics',
-            'master-data.view', 'mahasiswa.view',
-            'kurikulum.view', 'rps.view', 'krs.view',
-            'jadwal.view', 'presensi.view', 'nilai.view', 'khs.view',
-            'keuangan.view', 'skripsi.view', 'yudisium.view', 'wisuda.view',
-            'alumni.view', 'lpm.view', 'lpm.report',
-        ]);
-
         // ADMIN_AKADEMIK — kelola data akademik
         Role::findByName('ADMIN_AKADEMIK')->givePermissionTo([
-            'dashboard.view',
+            'dashboard.view', 'dashboard.analytics',
             'user.view', 'user.create', 'user.edit',
             'master-data.view', 'master-data.create', 'master-data.edit',
             'mahasiswa.view', 'mahasiswa.create', 'mahasiswa.edit',
@@ -112,6 +100,8 @@ class RolePermissionSeeder extends Seeder
             'wisuda.view', 'wisuda.create', 'wisuda.edit',
             'cuti.view', 'cuti.edit', 'cuti.approve',
             'kkn.view', 'kkn.edit',
+            'alumni.view',
+            'lpm.view', 'lpm.report',
         ]);
 
         // ADMIN_PMB — kelola penerimaan mahasiswa baru
@@ -129,21 +119,8 @@ class RolePermissionSeeder extends Seeder
             'mahasiswa.view', 'master-data.view',
         ]);
 
-        // KAPRODI — kelola akademik prodi
-        Role::findByName('KAPRODI')->givePermissionTo([
-            'dashboard.view',
-            'kurikulum.view', 'kurikulum.create', 'kurikulum.edit',
-            'rps.view', 'rps.approve',
-            'krs.view', 'krs.approve',
-            'jadwal.view', 'jadwal.create', 'jadwal.edit',
-            'presensi.view', 'nilai.view', 'khs.view',
-            'mahasiswa.view', 'master-data.view',
-            'skripsi.view', 'skripsi.approve',
-            'yudisium.view', 'wisuda.view',
-            'lpm.view',
-        ]);
-
         // DOSEN — mengajar & membimbing
+        // Permission jabatan (Kaprodi, Wali, dll) ditambahkan otomatis lewat tabel position_permissions
         Role::findByName('DOSEN')->givePermissionTo([
             'dashboard.view',
             'rps.view', 'rps.create', 'rps.edit',
@@ -152,15 +129,6 @@ class RolePermissionSeeder extends Seeder
             'bimbingan.view', 'bimbingan.create', 'bimbingan.edit',
             'skripsi.view', 'skripsi.create', 'skripsi.edit',
             'kkn.view',
-        ]);
-
-        // DOSEN_WALI — perwalian & bimbingan akademik
-        Role::findByName('DOSEN_WALI')->givePermissionTo([
-            'dashboard.view',
-            'krs.view', 'krs.approve',
-            'bimbingan.view', 'bimbingan.create', 'bimbingan.edit',
-            'mahasiswa.view', 'nilai.view', 'khs.view',
-            'jadwal.view',
         ]);
 
         // MAHASISWA — akses data diri & akademik sendiri
@@ -183,26 +151,12 @@ class RolePermissionSeeder extends Seeder
             'alumni.view', 'alumni.edit',
         ]);
 
-        // LPM — audit mutu & pelaporan
-        Role::findByName('LPM')->givePermissionTo([
-            'dashboard.view', 'dashboard.analytics',
-            'lpm.view', 'lpm.audit', 'lpm.report',
-            'kurikulum.view', 'rps.view',
-            'presensi.view', 'nilai.view', 'khs.view',
-            'mahasiswa.view', 'master-data.view',
-        ]);
-
         // LP2M — verifikasi & publikasi karya dosen dan skripsi mahasiswa + kelola KKN
-        Role::firstOrCreate(['name' => 'LP2M', 'guard_name' => 'web']);
         Role::findByName('LP2M')->givePermissionTo([
             'dashboard.view',
-            // Karya dosen: lihat, verifikasi, publikasi
             'karya.view', 'karya.verify', 'karya.publish',
-            // Skripsi: lihat semua, publikasi ke repository
             'skripsi.view', 'skripsi.publish',
-            // KKN / PPL / Magang / Praktikum: kelola penuh
             'kkn.view', 'kkn.create', 'kkn.edit',
-            // Data pendukung
             'mahasiswa.view', 'master-data.view',
         ]);
     }

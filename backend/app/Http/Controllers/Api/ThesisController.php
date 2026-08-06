@@ -29,7 +29,7 @@ class ThesisController extends Controller
         $user      = auth()->user();
         $isAdmin   = $user->hasRole('SUPER_ADMIN') || $user->hasRole('ADMIN_AKADEMIK');
         $isKaprodi = false;
-        $isDosenWali = $user->hasRole('DOSEN_WALI');
+        $isDosenWali = false;
         $lecturerId  = null;
 
         if ($user->lecturer) {
@@ -37,6 +37,10 @@ class ThesisController extends Controller
             $isKaprodi  = \App\Models\LecturerPosition::where('lecturer_id', $lecturerId)
                 ->where('is_active', true)
                 ->whereIn('position_code', ['KAPRODI', 'SEKPRODI'])
+                ->exists();
+            $isDosenWali = \App\Models\LecturerPosition::where('lecturer_id', $lecturerId)
+                ->where('is_active', true)
+                ->where('position_code', 'DOSEN_WALI')
                 ->exists();
         }
 

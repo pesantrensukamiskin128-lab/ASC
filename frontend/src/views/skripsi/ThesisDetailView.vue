@@ -20,7 +20,7 @@ const lecturers = ref<any[]>([])
 const isAdmin     = auth.user?.roles?.includes('SUPER_ADMIN') || auth.user?.roles?.includes('ADMIN_AKADEMIK')
 const isMahasiswa = auth.hasRole('MAHASISWA')
 const isKaprodi   = auth.hasPermission('skripsi.approve')
-const isDosenWali = auth.hasRole('DOSEN_WALI')
+const isDosenWali = auth.hasPermission('krs.approve')
 const isDosen     = auth.hasRole('DOSEN') && !isMahasiswa
 
 const canReviewTitle    = computed(() => isAdmin || isKaprodi || isDosenWali)

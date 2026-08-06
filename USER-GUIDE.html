@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Guide — Al-Jawami Smart Campus (ASC)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt; color: #1a1a2e; line-height: 1.6; }
+  @page { margin: 2cm 2.5cm; }
+  @media print {
+    .no-print { display: none; }
+    h2 { page-break-before: always; }
+    h2:first-of-type { page-break-before: avoid; }
+    table { page-break-inside: avoid; }
+    .cover { page-break-after: always; }
+  }
+
+  /* Cover */
+  .cover { text-align: center; padding: 80px 40px; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); color: white; border-radius: 8px; }
+  .cover h1 { font-size: 28pt; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px; }
+  .cover .subtitle { font-size: 14pt; opacity: 0.9; margin-bottom: 40px; }
+  .cover .app-name { font-size: 18pt; font-weight: 600; background: rgba(255,255,255,0.15); padding: 12px 32px; border-radius: 50px; margin-bottom: 16px; }
+  .cover .version { font-size: 10pt; opacity: 0.7; margin-top: 48px; }
+  .cover .institution { font-size: 12pt; opacity: 0.85; }
+
+  /* Content */
+  .content { max-width: 800px; margin: 0 auto; padding: 20px; }
+  h1 { font-size: 20pt; color: #1e3a8a; border-bottom: 3px solid #2563eb; padding-bottom: 8px; margin: 32px 0 16px; }
+  h2 { font-size: 15pt; color: #1e3a8a; border-left: 4px solid #2563eb; padding-left: 12px; margin: 28px 0 12px; }
+  h3 { font-size: 12pt; color: #374151; margin: 20px 0 8px; }
+  h4 { font-size: 11pt; color: #4b5563; margin: 14px 0 6px; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+
+  /* TOC */
+  .toc { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px 28px; margin: 24px 0; }
+  .toc h2 { border-left: none; padding-left: 0; margin-top: 0; }
+  .toc ol { margin-left: 20px; }
+  .toc li { margin-bottom: 6px; font-size: 10.5pt; }
+  .toc a { color: #2563eb; text-decoration: none; }
+
+  /* Info boxes */
+  .info-box { border-radius: 8px; padding: 14px 18px; margin: 16px 0; }
+  .info-box.blue { background: #eff6ff; border-left: 4px solid #2563eb; }
+  .info-box.green { background: #f0fdf4; border-left: 4px solid #16a34a; }
+  .info-box.yellow { background: #fefce8; border-left: 4px solid #ca8a04; }
+  .info-box.red { background: #fff1f2; border-left: 4px solid #e11d48; }
+  .info-box p { margin: 0; font-size: 10.5pt; }
+  .info-box strong { display: block; margin-bottom: 4px; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 10pt; }
+  th { background: #1e3a8a; color: white; padding: 8px 12px; text-align: left; font-weight: 600; }
+  td { padding: 7px 12px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+  tr:nth-child(even) td { background: #f9fafb; }
+  tr:hover td { background: #eff6ff; }
+  td code { background: #f3f4f6; padding: 1px 5px; border-radius: 3px; font-size: 9pt; font-family: monospace; color: #dc2626; }
+
+  /* Badges */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 8.5pt; font-weight: 600; margin: 1px; }
+  .badge-blue { background: #dbeafe; color: #1d4ed8; }
+  .badge-green { background: #dcfce7; color: #15803d; }
+  .badge-purple { background: #f3e8ff; color: #7e22ce; }
+  .badge-orange { background: #ffedd5; color: #c2410c; }
+  .badge-gray { background: #f3f4f6; color: #374151; }
+
+  /* Steps */
+  .steps { counter-reset: step; }
+  .step { display: flex; gap: 16px; margin-bottom: 16px; align-items: flex-start; }
+  .step-num { background: #2563eb; color: white; min-width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11pt; flex-shrink: 0; margin-top: 2px; }
+  .step-content h4 { margin-top: 2px; color: #1e3a8a; }
+
+  /* Role cards */
+  .role-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 16px 0; }
+  .role-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px; }
+  .role-card h4 { color: #1e3a8a; margin-bottom: 6px; font-size: 11pt; }
+  .role-card p { font-size: 10pt; color: #6b7280; margin: 0; }
+
+  /* Separator */
+  hr { border: none; border-top: 2px solid #e5e7eb; margin: 28px 0; }
+
+  /* Print button */
+  .print-btn { position: fixed; bottom: 24px; right: 24px; background: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 50px; cursor: pointer; font-size: 12pt; font-weight: 600; box-shadow: 0 4px 12px rgba(37,99,235,0.4); z-index: 100; }
+  .print-btn:hover { background: #1d4ed8; }
+</style>
+</head>
+<body>
+
+<!-- PRINT BUTTON -->
+<button class="print-btn no-print" onclick="window.print()">🖨️ Simpan sebagai PDF</button>
+
+<!-- COVER PAGE -->
+<div class="cover">
+  <div class="app-name">🎓 Al-Jawami Smart Campus</div>
+  <h1>Panduan Pengguna</h1>
+  <div class="subtitle">User Guide — Sistem Informasi Akademik Terpadu</div>
+  <div class="institution">Universitas Al-Jawami · Jatinangor, Sumedang</div>
+  <div class="version">Versi 1.0 · Agustus 2026</div>
+</div>
+
+<div class="content">
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+  <h2>📋 Daftar Isi</h2>
+  <ol>
+    <li><a href="#pendahuluan">Pendahuluan & Tentang Aplikasi</a></li>
+    <li><a href="#akses">Cara Mengakses & Login</a></li>
+    <li><a href="#install-pwa">Instalasi Aplikasi (PWA)</a></li>
+    <li><a href="#navigasi">Navigasi & Antarmuka</a></li>
+    <li><a href="#role">Peran Pengguna (Role)</a></li>
+    <li><a href="#master-data">Modul Master Data</a></li>
+    <li><a href="#sdm">Modul SDM (Mahasiswa, Dosen, Staff)</a></li>
+    <li><a href="#pmb">Modul PMB (Penerimaan Mahasiswa Baru)</a></li>
+    <li><a href="#akademik">Modul Akademik</a></li>
+    <li><a href="#perkuliahan">Modul Perkuliahan & Ujian</a></li>
+    <li><a href="#keuangan">Modul Keuangan</a></li>
+    <li><a href="#bimbingan">Modul Bimbingan Akademik</a></li>
+    <li><a href="#skripsi">Modul Skripsi & Tugas Akhir</a></li>
+    <li><a href="#penelitian">Modul Penelitian & Pengabdian</a></li>
+    <li><a href="#wisuda">Modul Wisuda & Alumni</a></li>
+    <li><a href="#laporan">Modul Laporan & Statistik</a></li>
+    <li><a href="#pengaturan">Pengaturan & Manajemen Pengguna</a></li>
+    <li><a href="#mahasiswa-guide">Panduan Khusus Mahasiswa</a></li>
+    <li><a href="#dosen-guide">Panduan Khusus Dosen</a></li>
+    <li><a href="#faq">FAQ & Pemecahan Masalah</a></li>
+  </ol>
+</div>
+
+<!-- BAB 1: PENDAHULUAN -->
+<h1 id="pendahuluan">1. Pendahuluan & Tentang Aplikasi</h1>
+<p><strong>Al-Jawami Smart Campus (ASC)</strong> adalah sistem informasi akademik terpadu yang dirancang untuk mendukung seluruh proses administrasi dan akademik di Universitas Al-Jawami. Sistem ini menggabungkan berbagai modul dalam satu platform terintegrasi yang dapat diakses melalui browser web maupun diinstal sebagai aplikasi di perangkat mobile dan desktop.</p>
+
+<h3>1.1 Fitur Utama</h3>
+<ul>
+  <li><strong>Manajemen Akademik</strong> — KRS, jadwal perkuliahan, presensi, penilaian, KHS &amp; transkrip</li>
+  <li><strong>Kurikulum OBE</strong> — Kurikulum berbasis Outcome-Based Education, RPKPS/RPS digital</li>
+  <li><strong>PMB Online</strong> — Pendaftaran mahasiswa baru secara daring dengan berbagai jalur seleksi</li>
+  <li><strong>Keuangan</strong> — Tagihan, pembayaran, dan beasiswa mahasiswa</li>
+  <li><strong>Penelitian &amp; Pengabdian</strong> — Pengelolaan karya dosen, hibah penelitian, publikasi</li>
+  <li><strong>Skripsi &amp; TA</strong> — Manajemen tugas akhir dengan alur persetujuan digital</li>
+  <li><strong>Repository Digital</strong> — Perpustakaan digital karya ilmiah yang dapat diakses publik</li>
+  <li><strong>Alumni &amp; Tracer Study</strong> — Pengelolaan data alumni dan survey penelusuran lulusan</li>
+  <li><strong>Laporan &amp; Analitik</strong> — Dashboard statistik untuk pengambilan keputusan</li>
+</ul>
+
+<h3>1.2 Persyaratan Teknis</h3>
+<table>
+  <tr><th>Komponen</th><th>Persyaratan</th></tr>
+  <tr><td>Browser</td><td>Chrome 90+, Firefox 88+, Edge 90+, Safari 14+</td></tr>
+  <tr><td>Koneksi Internet</td><td>Minimal 1 Mbps (untuk akses optimal)</td></tr>
+  <tr><td>Perangkat</td><td>Desktop, laptop, tablet, atau smartphone</td></tr>
+  <tr><td>Resolusi Layar</td><td>Minimal 360px (mobile) / 1024px (desktop)</td></tr>
+</table>
+
+<!-- BAB 2: LOGIN -->
+<h1 id="akses">2. Cara Mengakses & Login</h1>
+
+<h3>2.1 Membuka Aplikasi</h3>
+<p>Buka browser dan ketikkan alamat URL aplikasi ASC yang diberikan oleh administrator institusi.</p>
+
+<div class="info-box blue"><p><strong>💡 Info</strong> Halaman awal akan menampilkan logo institusi dan form login. Jika logo belum muncul, tunggu beberapa detik hingga data institusi selesai dimuat.</p></div>
+
+<h3>2.2 Proses Login</h3>
+<div class="steps">
+  <div class="step"><div class="step-num">1</div><div class="step-content"><h4>Masukkan Email</h4><p>Ketik alamat email yang telah didaftarkan oleh administrator sistem.</p></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><h4>Masukkan Password</h4><p>Ketik password Anda. Password bersifat case-sensitive (huruf besar dan kecil dibedakan).</p></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content"><h4>Klik Tombol Masuk</h4><p>Klik tombol <strong>Masuk</strong> atau tekan Enter. Sistem akan memverifikasi kredensial dan mengarahkan ke Dashboard.</p></div></div>
+</div>
+
+<div class="info-box yellow"><p><strong>⚠️ Perhatian</strong> Jika muncul pesan "Login gagal", pastikan email dan password sudah benar. Hubungi administrator jika Anda lupa password.</p></div>
+
+<h3>2.3 Keamanan Sesi</h3>
+<p>Sesi login berlaku selama 120 menit sejak aktivitas terakhir. Setelah itu, sistem akan meminta login ulang secara otomatis untuk menjaga keamanan data.</p>
+
+<!-- BAB 3: PWA -->
+<h1 id="install-pwa">3. Instalasi Aplikasi (PWA)</h1>
+<p>ASC mendukung <strong>Progressive Web App (PWA)</strong> — aplikasi dapat diinstal di perangkat Anda layaknya aplikasi native tanpa perlu mengunduh dari App Store.</p>
+
+<h3>3.1 Instalasi di Desktop (Chrome / Edge)</h3>
+<div class="steps">
+  <div class="step"><div class="step-num">1</div><div class="step-content"><h4>Buka Aplikasi di Browser</h4><p>Akses URL aplikasi ASC di Chrome atau Edge.</p></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><h4>Klik Ikon Install</h4><p>Perhatikan ikon <strong>Install</strong> (⊕) di sebelah kanan address bar, atau buka menu browser → <em>Install Al-Jawami Smart Campus</em>.</p></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content"><h4>Konfirmasi Instalasi</h4><p>Klik <strong>Install</strong> pada dialog yang muncul. Aplikasi akan terbuka di jendela tersendiri.</p></div></div>
+</div>
+
+<h3>3.2 Instalasi di Android (Chrome)</h3>
+<div class="steps">
+  <div class="step"><div class="step-num">1</div><div class="step-content"><h4>Buka di Chrome Android</h4><p>Akses URL aplikasi ASC menggunakan Chrome di Android.</p></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><h4>Tap Banner atau Menu</h4><p>Jika muncul banner "Tambahkan ke layar utama", tap banner tersebut. Atau buka menu (⋮) → <em>Tambahkan ke layar utama</em>.</p></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content"><h4>Konfirmasi</h4><p>Tap <strong>Tambahkan</strong>. Ikon ASC akan muncul di layar utama perangkat Anda.</p></div></div>
+</div>
+
+<div class="info-box green"><p><strong>✅ Manfaat PWA</strong> Setelah diinstal, aplikasi dapat dibuka lebih cepat, memiliki tampilan fullscreen, dan tetap menampilkan halaman terakhir meski koneksi terputus sementara.</p></div>
+
+<!-- BAB 4: NAVIGASI -->
+<h1 id="navigasi">4. Navigasi & Antarmuka</h1>
+
+<h3>4.1 Layout Utama</h3>
+<p>Antarmuka ASC terdiri dari beberapa bagian utama:</p>
+<ul>
+  <li><strong>Sidebar (kiri)</strong> — Menu navigasi utama yang berisi semua modul sesuai hak akses pengguna</li>
+  <li><strong>Header (atas)</strong> — Menampilkan nama pengguna, notifikasi, dan akses profil</li>
+  <li><strong>Area Konten (tengah)</strong> — Tempat tampilan halaman aktif</li>
+</ul>
+
+<h3>4.2 Navigasi Sidebar</h3>
+<p>Menu di sidebar ditampilkan berdasarkan role dan permission yang dimiliki pengguna. Klik menu yang memiliki tanda panah (▶) untuk memperluas sub-menu.</p>
+
+<h3>4.3 Tombol Aksi Umum</h3>
+<table>
+  <tr><th>Tombol</th><th>Fungsi</th></tr>
+  <tr><td><span class="badge badge-blue">+ Tambah</span></td><td>Menambahkan data baru</td></tr>
+  <tr><td><span class="badge badge-orange">✏️ Edit</span></td><td>Mengubah data yang sudah ada</td></tr>
+  <tr><td><span class="badge badge-gray">🗑️ Hapus</span></td><td>Menghapus data (biasanya meminta konfirmasi)</td></tr>
+  <tr><td><span class="badge badge-green">📥 Export</span></td><td>Mengunduh data dalam format Excel/PDF</td></tr>
+  <tr><td><span class="badge badge-purple">📤 Import</span></td><td>Mengunggah data dari file Excel</td></tr>
+</table>
+
+<!-- BAB 5: ROLE -->
+<h1 id="role">5. Peran Pengguna (Role)</h1>
+<p>Setiap pengguna ASC memiliki satu atau lebih peran yang menentukan fitur apa saja yang dapat diakses.</p>
+
+<div class="role-grid">
+  <div class="role-card"><h4>👑 SUPER_ADMIN</h4><p>Akses penuh ke seluruh sistem. Mengelola konfigurasi, pengguna, dan semua data.</p></div>
+  <div class="role-card"><h4>🏛️ PIMPINAN</h4><p>Melihat semua data dan laporan analitik untuk keperluan pengambilan keputusan.</p></div>
+  <div class="role-card"><h4>📚 ADMIN_AKADEMIK</h4><p>Mengelola semua data akademik: mahasiswa, jadwal, nilai, kurikulum, wisuda.</p></div>
+  <div class="role-card"><h4>🎓 ADMIN_PMB</h4><p>Mengelola proses penerimaan mahasiswa baru: pendaftaran, seleksi, verifikasi.</p></div>
+  <div class="role-card"><h4>💰 ADMIN_KEUANGAN</h4><p>Mengelola tagihan, pembayaran, dan beasiswa mahasiswa.</p></div>
+  <div class="role-card"><h4>🗂️ KAPRODI</h4><p>Mengelola akademik program studi: kurikulum, KRS, kelas, persetujuan RPS.</p></div>
+  <div class="role-card"><h4>👨‍🏫 DOSEN</h4><p>Input presensi, nilai, membuat RPS, mengelola skripsi bimbingan, karya ilmiah.</p></div>
+  <div class="role-card"><h4>🤝 DOSEN_WALI</h4><p>Perwalian akademik: menyetujui KRS, bimbingan, memantau perkembangan mahasiswa.</p></div>
+  <div class="role-card"><h4>🎒 MAHASISWA</h4><p>Mengisi KRS, melihat jadwal, nilai, KHS, mengajukan cuti, mendaftar wisuda.</p></div>
+  <div class="role-card"><h4>🏅 ALUMNI</h4><p>Melihat data alumni, mengisi tracer study, mengakses repository.</p></div>
+  <div class="role-card"><h4>📊 LPM</h4><p>Lembaga Penjaminan Mutu: audit akademik dan pelaporan mutu.</p></div>
+  <div class="role-card"><h4>🔬 LP2M</h4><p>Lembaga Penelitian: verifikasi karya dosen, publikasi repository, kelola KKN.</p></div>
+</div>
+
+<!-- BAB 6: MASTER DATA -->
+<h1 id="master-data">6. Modul Master Data</h1>
+<p>Modul Master Data diakses oleh <span class="badge badge-blue">SUPER_ADMIN</span> dan <span class="badge badge-blue">ADMIN_AKADEMIK</span>. Berisi data referensi yang menjadi dasar semua modul lainnya.</p>
+
+<h3>6.1 Sub-modul Master Data</h3>
+<table>
+  <tr><th>Sub-modul</th><th>Deskripsi</th><th>Menu</th></tr>
+  <tr><td><strong>Institusi</strong></td><td>Profil institusi, logo, kop surat, akreditasi</td><td>Master Data → Institusi</td></tr>
+  <tr><td><strong>Fakultas</strong></td><td>Daftar fakultas dan nama dekan</td><td>Master Data → Fakultas</td></tr>
+  <tr><td><strong>Program Studi</strong></td><td>Program studi, jenjang, akreditasi</td><td>Master Data → Program Studi</td></tr>
+  <tr><td><strong>Konsentrasi</strong></td><td>Peminatan/konsentrasi dalam program studi</td><td>Master Data → Konsentrasi</td></tr>
+  <tr><td><strong>Tahun Akademik</strong></td><td>Periode tahun akademik aktif</td><td>Master Data → Tahun Akademik</td></tr>
+  <tr><td><strong>Semester</strong></td><td>Semester (Ganjil/Genap/Pendek) per tahun akademik</td><td>Master Data → Semester</td></tr>
+  <tr><td><strong>Kalender Akademik</strong></td><td>Jadwal kegiatan akademik tahunan</td><td>Master Data → Kalender Akademik</td></tr>
+  <tr><td><strong>Gedung</strong></td><td>Daftar gedung kampus</td><td>Master Data → Gedung</td></tr>
+  <tr><td><strong>Ruangan</strong></td><td>Daftar ruang kuliah beserta kapasitas</td><td>Master Data → Ruangan</td></tr>
+  <tr><td><strong>Mata Kuliah</strong></td><td>Katalog mata kuliah dengan SKS dan tipe</td><td>Master Data → Mata Kuliah</td></tr>
+</table>
+
+<h3>6.2 Mengelola Tahun Akademik</h3>
+<div class="steps">
+  <div class="step"><div class="step-num">1</div><div class="step-content"><h4>Buka Menu Tahun Akademik</h4><p>Klik <em>Master Data → Tahun Akademik</em> di sidebar.</p></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><h4>Tambah Tahun Akademik Baru</h4><p>Klik tombol <strong>+ Tambah</strong>, isi nama (contoh: "Tahun Akademik 2025/2026"), tanggal mulai dan selesai.</p></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content"><h4>Aktifkan Tahun Akademik</h4><p>Centang <em>Aktif</em> pada tahun akademik yang sedang berjalan. Hanya satu yang dapat aktif dalam satu waktu.</p></div></div>
+</div>
+
+<div class="info-box yellow"><p><strong>⚠️ Penting</strong> Pastikan selalu ada satu Tahun Akademik yang berstatus <em>Aktif</em>. Banyak fitur sistem bergantung pada data tahun akademik aktif.</p></div>

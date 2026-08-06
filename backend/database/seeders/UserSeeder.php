@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\Lecturer;
+use App\Models\LecturerPosition;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -23,7 +25,8 @@ class UserSeeder extends Seeder
                 'email'    => 'pimpinan@jawami.ac.id',
                 'username' => 'pimpinan',
                 'password' => Hash::make('password'),
-                'role'     => 'PIMPINAN',
+                'role'     => 'DOSEN',
+                'position' => 'KETUA',  // jabatan struktural
             ],
             [
                 'name'     => 'Admin Akademik',
@@ -51,7 +54,8 @@ class UserSeeder extends Seeder
                 'email'    => 'kaprodi.if@jawami.ac.id',
                 'username' => 'kaprodi.if',
                 'password' => Hash::make('password'),
-                'role'     => 'KAPRODI',
+                'role'     => 'DOSEN',
+                'position' => 'KAPRODI',  // jabatan struktural
             ],
             [
                 'name'     => 'Dosen Demo',
@@ -65,7 +69,8 @@ class UserSeeder extends Seeder
                 'email'    => 'dosen.wali@jawami.ac.id',
                 'username' => 'dosen.wali',
                 'password' => Hash::make('password'),
-                'role'     => 'DOSEN_WALI',
+                'role'     => 'DOSEN',
+                'position' => 'DOSEN_WALI',  // jabatan struktural
             ],
             [
                 'name'     => 'Mahasiswa Demo',
@@ -86,7 +91,15 @@ class UserSeeder extends Seeder
                 'email'    => 'lpm@jawami.ac.id',
                 'username' => 'lpm.demo',
                 'password' => Hash::make('password'),
-                'role'     => 'LPM',
+                'role'     => 'DOSEN',
+                'position' => 'KETUA_LPM',  // jabatan struktural
+            ],
+            [
+                'name'     => 'LP2M Demo',
+                'email'    => 'lp2m@jawami.ac.id',
+                'username' => 'lp2m.demo',
+                'password' => Hash::make('password'),
+                'role'     => 'LP2M',
             ],
         ];
 
@@ -101,6 +114,17 @@ class UserSeeder extends Seeder
                 ]
             );
             $user->syncRoles([$data['role']]);
+
+            // Assign jabatan struktural jika ada, dan user punya data dosen
+            if (!empty($data['position'])) {
+                $lecturer = Lecturer::where('user_id', $user->id)->first();
+                if ($lecturer) {
+                    LecturerPosition::firstOrCreate(
+                        ['lecturer_id' => $lecturer->id, 'position_code' => $data['position'], 'is_active' => true],
+                        ['position_name' => LecturerPosition::POSITIONS[$data['position']] ?? $data['position']]
+                    );
+                }
+            }
         }
     }
 }
