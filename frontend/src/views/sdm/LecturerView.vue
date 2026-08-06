@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { PlusIcon, PencilIcon, TrashIcon, CameraIcon, EyeIcon } from '@heroicons/vue/24/outline'
 import { useCrud } from '@/composables/useCrud'
 import { useExcel } from '@/composables/useExcel'
+import { useAuthStore } from '@/stores/auth'
 import { useToast } from 'vue-toastification'
 import DataTable from '@/components/ui/DataTable.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
@@ -25,6 +26,8 @@ interface Lecturer {
 }
 
 const router = useRouter()
+const auth = useAuthStore()
+const canCreate = auth.hasPermission('mahasiswa.create') || auth.hasRole('SUPER_ADMIN')
 const { items, pagination, loading, fetchAll, create, update, remove } = useCrud<Lecturer>('/lecturers')
 const { exporting, importing, importErrors, exportExcel, importExcel } = useExcel('/lecturers')
 
@@ -184,14 +187,16 @@ async function uploadPhoto(file: File) {
       <div class="flex items-center gap-2">
         <ExcelButtons
           :exporting="exporting"
-          :importing="importing"
+          :importing="canCreate ? importing : false"
           :import-errors="importErrors"
           :export-params="{ study_program_id: filterProgram }"
           template-type="lecturers"
+          :hide-import="!canCreate"
           @export="exportExcel($event, 'dosen.xlsx')"
           @import="importExcel($event, () => load())"
         />
         <button
+          v-if="canCreate"
           class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
           @click="openCreate"
         >

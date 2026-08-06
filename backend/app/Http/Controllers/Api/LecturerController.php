@@ -17,16 +17,39 @@ class LecturerController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        // Jika user adalah Kaprodi, filter hanya dosen prodi-nya
+        $kaprodiProdiId = $this->getKaprodiProdiId();
+
         $data = Lecturer::with(['studyProgram.faculty', 'activePositions'])
+            ->when($kaprodiProdiId, fn($q) => $q->where('study_program_id', $kaprodiProdiId))
             ->when($request->search, fn($q) => $q
                 ->where('full_name', 'like', "%{$request->search}%")
                 ->orWhere('nidn', 'like', "%{$request->search}%")
                 ->orWhere('nuptk', 'like', "%{$request->search}%"))
-            ->when($request->study_program_id, fn($q) => $q->where('study_program_id', $request->study_program_id))
+            ->when($request->study_program_id && !$kaprodiProdiId, fn($q) => $q->where('study_program_id', $request->study_program_id))
             ->when($request->status !== null, fn($q) => $q->where('status', $request->boolean('status')))
             ->paginate($request->per_page ?? 15);
 
         return response()->json($data);
+    }
+
+    /** Ambil prodi ID jika user saat ini adalah Kaprodi (bukan admin) */
+    private function getKaprodiProdiId(): ?int
+    {
+        $user = auth()->user();
+        if ($user->hasRole('SUPER_ADMIN') || $user->hasRole('ADMIN_AKADEMIK')) {
+            return null;
+        }
+        $lecturer = $user->lecturer;
+        if (!$lecturer) return null;
+
+        $position = \App\Models\LecturerPosition::where('lecturer_id', $lecturer->id)
+            ->where('is_active', true)
+            ->whereIn('position_code', ['KAPRODI', 'SEKPRODI'])
+            ->where('scope_type', 'study_program')
+            ->first();
+
+        return $position?->scope_id;
     }
 
     public function store(Request $request): JsonResponse

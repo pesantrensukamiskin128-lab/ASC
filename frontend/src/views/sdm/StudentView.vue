@@ -4,12 +4,15 @@ import { useRouter } from 'vue-router'
 import { PlusIcon, PencilIcon, TrashIcon, EyeIcon } from '@heroicons/vue/24/outline'
 import { useCrud } from '@/composables/useCrud'
 import { useExcel } from '@/composables/useExcel'
+import { useAuthStore } from '@/stores/auth'
 import DataTable from '@/components/ui/DataTable.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import ExcelButtons from '@/components/ui/ExcelButtons.vue'
 import api from '@/services/api'
 
 const router = useRouter()
+const auth = useAuthStore()
+const canCreate = auth.hasPermission('mahasiswa.create')
 
 interface StudyProgram { id: number; name: string; code: string }
 interface AcademicYear { id: number; name: string }
@@ -96,14 +99,15 @@ async function handleDelete(item: Student) {
       <div class="flex items-center gap-2">
         <ExcelButtons
           :exporting="exporting"
-          :importing="importing"
+          :importing="canCreate ? importing : false"
           :import-errors="importErrors"
           :export-params="{ study_program_id: filterProgram, status: filterStatus }"
           template-type="students"
+          :hide-import="!canCreate"
           @export="exportExcel($event, 'mahasiswa.xlsx')"
           @import="importExcel($event, () => load())"
         />
-        <button class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors" @click="openCreate">
+        <button v-if="canCreate" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors" @click="openCreate">
           <PlusIcon class="w-4 h-4" /> Tambah Mahasiswa
         </button>
       </div>

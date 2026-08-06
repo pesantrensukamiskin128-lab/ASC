@@ -61,8 +61,8 @@ const navigation = computed(() => [
     children: [
       { label: 'Mahasiswa', to: '/sdm/students' },
       { label: 'Dosen', to: '/sdm/lecturers' },
-      { label: 'Tenaga Kependidikan', to: '/sdm/staff' },
-    ],
+      { label: 'Tenaga Kependidikan', to: '/sdm/staff', show: auth.hasRole('SUPER_ADMIN') || auth.hasRole('ADMIN_AKADEMIK') },
+    ].filter(c => c.show !== false),
   },
   {
     label: 'PMB',
