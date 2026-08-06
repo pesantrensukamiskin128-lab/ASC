@@ -15,6 +15,25 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class AcademicCalendarController extends Controller
 {
+    /** Public endpoint — kalender akademik untuk halaman login (tanpa auth) */
+    public function publicCalendar(): JsonResponse
+    {
+        $events = AcademicCalendar::with('academicYear')
+            ->where('end_date', '>=', now()->subDays(7))
+            ->orderBy('start_date')
+            ->limit(10)
+            ->get()
+            ->map(fn($e) => [
+                'id'         => $e->id,
+                'title'      => $e->title,
+                'start_date' => $e->start_date?->format('Y-m-d'),
+                'end_date'   => $e->end_date?->format('Y-m-d'),
+                'category'   => $e->category,
+            ]);
+
+        return response()->json($events);
+    }
+
     public function index(Request $request): JsonResponse
     {
         $data = AcademicCalendar::with('academicYear')
