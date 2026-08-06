@@ -75,16 +75,45 @@ class StudyProgramController extends Controller
             return response()->json(['message' => 'Tidak dapat menghapus prodi yang masih memiliki mahasiswa aktif.'], 422);
         }
 
-        // Hapus relasi yang menghalangi (mata kuliah, kelas) sebelum hapus prodi
-        // Kelas yang merujuk prodi ini
-        \App\Models\Classes::where('study_program_id', $studyProgram->id)->delete();
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($studyProgram) {
+                // Hapus semua data terkait yang punya FK ke study_programs tanpa cascade
+                \App\Models\Classes::where('study_program_id', $studyProgram->id)->delete();
+                $studyProgram->courses()->delete();
 
-        // Mata kuliah milik prodi ini
-        $studyProgram->courses()->delete();
+                // Tabel lain yang mungkin punya FK (nullable — set null)
+                \Illuminate\Support\Facades\DB::table('theses')
+                    ->where('study_program_id', $studyProgram->id)->delete();
+                \Illuminate\Support\Facades\DB::table('alumni')
+                    ->where('study_program_id', $studyProgram->id)->delete();
+                \Illuminate\Support\Facades\DB::table('applicant_choices')
+                    ->where('study_program_id', $studyProgram->id)->delete();
+                \Illuminate\Support\Facades\DB::table('lecturers')
+                    ->where('study_program_id', $studyProgram->id)
+                    ->update(['study_program_id' => null]);
 
-        $studyProgram->delete();
+                $studyProgram->delete();
+            });
 
-        return response()->json(['message' => 'Program studi beserta mata kuliah terkait berhasil dihapus.']);
+            return response()->json(['message' => 'Program studi beserta data terkait berhasil dihapus.']);
+        } catch (\Illuminate\Database\QueryException $e) {
+            \Illuminate\Support\Facades\Log::error('Gagal hapus prodi: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Gagal menghapus prodi. Masih ada data terkait yang tidak bisa dihapus otomatis: ' . $this->extractFkTable($e->getMessage()),
+            ], 422);
+        }
+    }
+
+    /** Extract nama tabel dari error FK constraint */
+    private function extractFkTable(string $message): string
+    {
+        if (preg_match('/REFERENCES `(\w+)`/', $message, $m)) {
+            return 'tabel ' . $m[1];
+        }
+        if (preg_match('/a foreign key constraint fails \(`[^`]+`\.`(\w+)`/', $message, $m)) {
+            return 'tabel ' . $m[1];
+        }
+        return 'tabel terkait';
     }
 
     public function all(Request $request): JsonResponse
