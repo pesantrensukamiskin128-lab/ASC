@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AcademicCalendar;
+use App\Models\AcademicYear;
 use App\Models\Krs;
+use App\Models\LecturerPosition;
 use App\Models\Rpkps;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -138,6 +141,47 @@ class VerifyController extends Controller
             'approved_by'   => $approvedByName,
             'is_valid'      => in_array($rpkps->status, ['DISETUJUI', 'DIKUNCI']),
             'signer_info'   => $signatureInfo,
+        ]);
+    }
+
+    /**
+     * Verifikasi Kalender Akademik via QR Code
+     * URL: /api/verify/academic-calendar/{id}
+     */
+    public function verifyAcademicCalendar(int $id): JsonResponse
+    {
+        // id bisa berupa academic_year_id atau 'all'
+        if ($id === 0) {
+            return response()->json([
+                'valid'   => false,
+                'message' => 'ID kalender akademik tidak valid.',
+            ], 404);
+        }
+
+        $academicYear = AcademicYear::find($id);
+        if (!$academicYear) {
+            return response()->json([
+                'valid'   => false,
+                'message' => 'Tahun akademik tidak ditemukan.',
+            ], 404);
+        }
+
+        $eventsCount = AcademicCalendar::where('academic_year_id', $id)->count();
+
+        // Ambil WK1 yang menandatangani
+        $wk1Position = LecturerPosition::where('position_code', 'WK1')
+            ->where('is_active', true)
+            ->first();
+        $wk1Name = $wk1Position?->lecturer?->full_name ?? null;
+
+        return response()->json([
+            'valid'         => true,
+            'document'      => 'KALENDER AKADEMIK',
+            'academic_year' => $academicYear->name,
+            'events_count'  => $eventsCount,
+            'signed_by'     => $wk1Name,
+            'position'      => 'Wakil Ketua I Bidang Akademik',
+            'is_valid'      => true,
         ]);
     }
 }

@@ -496,10 +496,10 @@ class RpkpsController extends Controller
             }
         }
 
-        // QR Code data — URL verifikasi frontend
+        // QR Code data — URL verifikasi frontend (ukuran kecil untuk tanda tangan)
         $verifyUrl = rtrim(config('app.frontend_url'), '/') . "/verify/rpkps/{$rpkp->verification_code}";
-        $qrDosenUrl = "https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=" . urlencode($verifyUrl . '?signer=dosen');
-        $qrKaprodiUrl = "https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=" . urlencode($verifyUrl . '?signer=kaprodi');
+        $qrDosenUrl = "https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=" . urlencode($verifyUrl . '?signer=dosen');
+        $qrKaprodiUrl = "https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=" . urlencode($verifyUrl . '?signer=kaprodi');
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.rpkps', [
             'rpkps' => $rpkp,

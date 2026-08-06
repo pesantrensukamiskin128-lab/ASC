@@ -276,11 +276,24 @@
 </div>
 
 <div class="footer-info">
-    @if($rpkps->verification_code)
-        Dokumen ini dapat diverifikasi di: {{ $verifyUrl }}<br>
-    @endif
     Kode: {{ $rpkps->code }} | Dicetak: {{ now()->format('d/m/Y H:i') }}
 </div>
+
+{{-- Footer Verifikasi Elektronik --}}
+@if($rpkps->verification_code)
+<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ccc;">
+    <table style="width:100%; border:none;">
+        <tr>
+            <td style="width:70px; border:none; padding:0; vertical-align:middle;">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=65x65&data={{ urlencode($verifyUrl) }}" width="65" height="65" alt="QR Verifikasi">
+            </td>
+            <td style="border:none; padding:0 0 0 10px; vertical-align:middle; font-size:8px; color:#666; line-height:1.4;">
+                Dokumen ini telah ditandatangani dan distempel secara elektronik melalui aplikasi Al-Jawami Smart Campus, scan QR Code untuk verifikasi.
+            </td>
+        </tr>
+    </table>
+</div>
+@endif
 
 </body>
 </html>

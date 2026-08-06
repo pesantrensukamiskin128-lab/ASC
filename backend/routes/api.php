@@ -68,6 +68,7 @@ Route::prefix('auth')->group(function () {
 Route::prefix('verify')->group(function () {
     Route::get('krs/{id}',       [VerifyController::class, 'verifyKrs']);
     Route::get('rpkps/{code}',   [VerifyController::class, 'verifyRpkps']);
+    Route::get('academic-calendar/{id}', [VerifyController::class, 'verifyAcademicCalendar']);
 });
 
 // 2FA verification (setelah login, sebelum full access)

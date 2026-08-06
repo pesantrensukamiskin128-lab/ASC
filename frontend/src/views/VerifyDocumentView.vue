@@ -49,7 +49,12 @@ function statusColor(status: string): string {
 }
 
 function docTypeLabel(type: string): string {
-  return type === 'krs' ? 'KRS' : 'RPS/RPKPS'
+  const map: Record<string, string> = {
+    krs: 'KRS',
+    rpkps: 'RPS/RPKPS',
+    'academic-calendar': 'Kalender Akademik',
+  }
+  return map[type] ?? type.toUpperCase()
 }
 </script>
 
@@ -210,6 +215,33 @@ function docTypeLabel(type: string): string {
           </div>
           <div :class="['rounded-lg p-3 text-sm text-center font-medium', result.is_valid ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-yellow-50 text-yellow-700 border border-yellow-200']">
             {{ result.is_valid ? '✓ Dokumen ini sah dan telah diverifikasi' : '⚠ Dokumen belum final (masih dalam proses)' }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Academic Calendar Result -->
+      <div v-if="!loading && isValid && docType === 'academic-calendar'" class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="bg-blue-700 px-5 py-4 text-white">
+          <p class="text-xs font-medium opacity-80 uppercase tracking-wide">{{ result.document }}</p>
+          <p class="text-lg font-bold mt-0.5">{{ result.academic_year }}</p>
+        </div>
+        <div class="p-5 space-y-4">
+          <div class="grid grid-cols-2 gap-3 text-sm">
+            <div class="bg-gray-50 rounded-lg p-3">
+              <p class="text-xs text-gray-400">Jumlah Kegiatan</p>
+              <p class="font-medium text-gray-800">{{ result.events_count }} kegiatan</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-3">
+              <p class="text-xs text-gray-400">Ditandatangani oleh</p>
+              <p class="font-medium text-gray-800">{{ result.signed_by ?? '-' }}</p>
+            </div>
+          </div>
+          <div v-if="result.signed_by" class="border-t border-gray-100 pt-3 text-sm">
+            <p class="text-xs text-gray-400">Jabatan</p>
+            <p class="font-medium text-gray-700">{{ result.position }}</p>
+          </div>
+          <div class="rounded-lg p-3 text-sm text-center font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+            ✓ Dokumen ini sah dan telah diverifikasi secara elektronik
           </div>
         </div>
       </div>
