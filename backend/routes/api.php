@@ -45,6 +45,10 @@ use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\StudyProgramController;
 use App\Http\Controllers\Api\TemplateController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\OutgoingLetterController;
+use App\Http\Controllers\Api\IncomingLetterController;
+use App\Http\Controllers\Api\DispositionController;
+use App\Http\Controllers\Api\EventController;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\VerifyController;
@@ -81,6 +85,10 @@ Route::get('institution/public', [InstitutionController::class, 'public']);
 
 // Public academic calendar & announcements (untuk halaman login)
 Route::get('public/academic-calendar', [AcademicCalendarController::class, 'publicCalendar']);
+
+// Public event attendance (presensi tamu via form)
+Route::get('events/token/{token}', [\App\Http\Controllers\Api\EventController::class, 'getByToken']);
+Route::post('events/token/{token}/attend-public', [\App\Http\Controllers\Api\EventController::class, 'attendPublic']);
 
 // =========================================================
 // REPOSITORY PUBLIK (tanpa login)
@@ -823,3 +831,52 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 });
 
+
+    // =========================================================================
+    // PERSURATAN (Surat Keluar, Surat Masuk, Disposisi)
+    // =========================================================================
+
+    // Surat Keluar
+    Route::prefix('outgoing-letters')->group(function () {
+        Route::get('/', [OutgoingLetterController::class, 'index']);
+        Route::get('letter-types', [OutgoingLetterController::class, 'letterTypes']);
+        Route::get('signers', [OutgoingLetterController::class, 'signers']);
+        Route::post('/', [OutgoingLetterController::class, 'store']);
+        Route::get('{outgoingLetter}', [OutgoingLetterController::class, 'show']);
+        Route::put('{outgoingLetter}', [OutgoingLetterController::class, 'update']);
+        Route::delete('{outgoingLetter}', [OutgoingLetterController::class, 'destroy']);
+        Route::post('{outgoingLetter}/send', [OutgoingLetterController::class, 'send']);
+        Route::post('{outgoingLetter}/review', [OutgoingLetterController::class, 'review']);
+        Route::post('{outgoingLetter}/sign', [OutgoingLetterController::class, 'sign']);
+        Route::post('{outgoingLetter}/distribute', [OutgoingLetterController::class, 'distribute']);
+    });
+
+    // Surat Masuk
+    Route::prefix('incoming-letters')->group(function () {
+        Route::get('/', [IncomingLetterController::class, 'index']);
+        Route::post('/', [IncomingLetterController::class, 'store']);
+        Route::get('{incomingLetter}', [IncomingLetterController::class, 'show']);
+        Route::delete('{incomingLetter}', [IncomingLetterController::class, 'destroy']);
+        Route::post('{incomingLetter}/disposition', [IncomingLetterController::class, 'createDisposition']);
+    });
+
+    // Disposisi (penerima)
+    Route::prefix('dispositions')->group(function () {
+        Route::get('/', [DispositionController::class, 'index']);
+        Route::post('{disposition}/read', [DispositionController::class, 'markRead']);
+        Route::post('{disposition}/respond', [DispositionController::class, 'respond']);
+    });
+
+    // =========================================================================
+    // AGENDA KEGIATAN & PRESENSI
+    // =========================================================================
+    Route::prefix('events')->group(function () {
+        Route::get('/', [EventController::class, 'index']);
+        Route::post('/', [EventController::class, 'store']);
+        Route::get('{event}', [EventController::class, 'show']);
+        Route::put('{event}', [EventController::class, 'update']);
+        Route::delete('{event}', [EventController::class, 'destroy']);
+        Route::post('{event}/toggle-open', [EventController::class, 'toggleOpen']);
+        // Presensi via app (user login)
+        Route::post('attend/{token}', [EventController::class, 'attend']);
+    });
