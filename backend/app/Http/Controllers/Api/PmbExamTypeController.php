@@ -11,7 +11,7 @@ class PmbExamTypeController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(PmbExamType::orderBy('name')->get());
+        return response()->json(PmbExamType::orderBy('name')->paginate(50));
     }
 
     public function store(Request $request): JsonResponse
