@@ -55,10 +55,24 @@ async function uploadPendingDocs(letterId: number | string) {
   pendingFiles.value = []
 }
 
+function applyTemplate(tpl: any) {
+  if (form.body && !confirm('Isi surat saat ini akan ditimpa oleh template. Lanjutkan?')) return
+  if (tpl.letter_type_id) form.letter_type_id = tpl.letter_type_id
+  if (tpl.subject) form.subject = tpl.subject
+  if (tpl.recipient) form.recipient = tpl.recipient
+  if (tpl.attachment_note) form.attachment_note = tpl.attachment_note
+  if (tpl.city) form.city = tpl.city
+  form.body = tpl.body
+  if (tpl.appendix_body) form.appendix_body = tpl.appendix_body
+  showTemplateModal.value = false
+  toast.success(`Template "${tpl.name}" diterapkan.`)
+}
+
 const letterTypes = ref<any[]>([])
 const signers = ref<any[]>([])
 const allUsers = ref<any[]>([])
-
+const templates = ref<any[]>([])
+const showTemplateModal = ref(false)
 const form = reactive({
   letter_type_id: '',
   subject: '',
@@ -74,14 +88,16 @@ const form = reactive({
 })
 
 onMounted(async () => {
-  const [typesRes, signersRes, usersRes] = await Promise.all([
+  const [typesRes, signersRes, usersRes, tplRes] = await Promise.all([
     api.get('/outgoing-letters/letter-types'),
     api.get('/outgoing-letters/signers'),
     api.get('/user-list'),
+    api.get('/letter-templates', { params: { per_page: 50 } }),
   ])
   letterTypes.value = typesRes.data
   signers.value = signersRes.data
   allUsers.value = usersRes.data
+  templates.value = tplRes.data.data ?? tplRes.data
 
   if (isEdit) {
     const { data } = await api.get(`/outgoing-letters/${editId}`)
@@ -156,6 +172,17 @@ async function handleSave(andSend = false) {
     </div>
 
     <form class="space-y-5" @submit.prevent="handleSave(false)">
+      <!-- Template picker -->
+      <div v-if="templates.length && !isEdit" class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-amber-800">💡 Gunakan Template</p>
+          <p class="text-xs text-amber-600 mt-0.5">Isi form otomatis dari template yang sudah disimpan</p>
+        </div>
+        <button type="button" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-lg" @click="showTemplateModal = true">
+          Pilih Template
+        </button>
+      </div>
+
       <div class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
         <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wide">Informasi Surat</h2>
 
@@ -274,5 +301,28 @@ async function handleSave(andSend = false) {
         </button>
       </div>
     </form>
+
+    <!-- Template Picker Modal -->
+    <div v-if="showTemplateModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showTemplateModal = false">
+      <div class="bg-white rounded-xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto">
+        <h3 class="text-lg font-bold text-gray-900 mb-4">Pilih Template</h3>
+        <div v-if="!templates.length" class="text-center text-gray-400 py-6">Belum ada template tersimpan.</div>
+        <div v-else class="space-y-2">
+          <div v-for="tpl in templates" :key="tpl.id"
+            class="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50/50 cursor-pointer transition-colors"
+            @click="applyTemplate(tpl)">
+            <div>
+              <p class="text-sm font-medium text-gray-900">{{ tpl.name }}</p>
+              <p v-if="tpl.description" class="text-xs text-gray-500 mt-0.5">{{ tpl.description }}</p>
+              <p v-if="tpl.letter_type" class="text-[10px] text-gray-400 mt-0.5">{{ tpl.letter_type.code }} - {{ tpl.letter_type.name }}</p>
+            </div>
+            <span class="text-blue-600 text-xs font-medium">Gunakan →</span>
+          </div>
+        </div>
+        <div class="mt-4 text-right">
+          <button class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg" @click="showTemplateModal = false">Tutup</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>

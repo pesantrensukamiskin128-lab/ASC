@@ -10,6 +10,8 @@ const router = useRouter()
 const auth = useAuthStore()
 const toast = useToast()
 
+const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api'
+
 const letter = ref<any>(null)
 const loading = ref(true)
 const actionLoading = ref(false)
@@ -156,6 +158,12 @@ async function handleDistribute() {
 
       <!-- Action Buttons -->
       <div class="flex flex-wrap gap-3">
+        <a v-if="['DITANDATANGANI','TERKIRIM'].includes(letter.status)"
+          :href="`${apiBaseUrl}/outgoing-letters/${letter.id}/pdf`"
+          target="_blank"
+          class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg inline-flex items-center gap-2">
+          📄 Download PDF
+        </a>
         <button v-if="canReview" :disabled="actionLoading" class="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg" @click="handleReview('approve')">
           ✓ Periksa & Teruskan
         </button>

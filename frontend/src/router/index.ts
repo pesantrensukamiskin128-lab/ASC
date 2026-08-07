@@ -729,6 +729,12 @@ const router = createRouter({
           component: () => import('@/views/persuratan/DispositionView.vue'),
           meta: { permission: 'disposisi.view' },
         },
+        {
+          path: 'persuratan/template-surat',
+          name: 'letter-templates',
+          component: () => import('@/views/persuratan/LetterTemplateView.vue'),
+          meta: { permission: 'surat-keluar.create' },
+        },
 
         // =========================================================
         // AGENDA KEGIATAN

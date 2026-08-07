@@ -179,6 +179,7 @@ const navigation = computed(() => [
       { label: 'Surat Keluar', to: '/persuratan/surat-keluar', show: auth.hasPermission('surat-keluar.view') },
       { label: 'Surat Masuk', to: '/persuratan/surat-masuk', show: auth.hasPermission('surat-masuk.view') },
       { label: 'Disposisi', to: '/persuratan/disposisi', show: auth.hasPermission('disposisi.view') || auth.hasPermission('disposisi.receive') },
+      { label: 'Template Surat', to: '/persuratan/template-surat', show: auth.hasPermission('surat-keluar.create') },
     ].filter(c => c.show !== false),
   },
   {
