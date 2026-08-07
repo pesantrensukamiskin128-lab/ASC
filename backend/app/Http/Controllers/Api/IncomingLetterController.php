@@ -82,6 +82,11 @@ class IncomingLetterController extends Controller
 
         $incomingLetter->update(['status' => 'DIDISPOSISI']);
 
+        // Notifikasi ke setiap penerima disposisi
+        foreach ($validated['recipient_ids'] as $recipientId) {
+            \App\Models\AppNotification::send($recipientId, 'Disposisi Baru', "Anda menerima disposisi: \"{$validated['instruction']}\" untuk surat dari {$incomingLetter->sender}.", 'warning', '/persuratan/disposisi');
+        }
+
         return response()->json(['message' => 'Disposisi berhasil dibuat.', 'data' => $disposition->load('recipients')], 201);
     }
 

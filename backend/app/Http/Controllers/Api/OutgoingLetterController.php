@@ -115,6 +115,13 @@ class OutgoingLetterController extends Controller
         $outgoingLetter->revision_note = null;
         $outgoingLetter->save();
 
+        // Notifikasi ke pemeriksa atau penandatangan
+        $targetId = $outgoingLetter->reviewer_id ?? $outgoingLetter->signer_id;
+        if ($targetId) {
+            $role = $outgoingLetter->reviewer_id ? 'diperiksa' : 'ditandatangani';
+            \App\Models\AppNotification::send($targetId, 'Surat Menunggu', "Surat \"{$outgoingLetter->subject}\" perlu {$role}.", 'warning', '/persuratan/surat-keluar/' . $outgoingLetter->id);
+        }
+
         return response()->json(['message' => 'Surat berhasil dikirim.', 'data' => $outgoingLetter->fresh()]);
     }
 
@@ -125,7 +132,7 @@ class OutgoingLetterController extends Controller
             return response()->json(['message' => 'Surat tidak dalam status menunggu pemeriksaan.'], 422);
         }
 
-        $action = $request->input('action'); // 'approve' | 'revise'
+        $action = $request->input('action');
 
         if ($action === 'revise') {
             $request->validate(['revision_note' => 'required|string']);
@@ -133,6 +140,8 @@ class OutgoingLetterController extends Controller
                 'status'        => 'REVISI_PEMERIKSA',
                 'revision_note' => $request->revision_note,
             ]);
+            // Notifikasi ke pembuat surat
+            \App\Models\AppNotification::send($outgoingLetter->created_by, 'Surat Perlu Revisi', "Surat \"{$outgoingLetter->subject}\" dikembalikan oleh pemeriksa. Catatan: {$request->revision_note}", 'error', '/persuratan/surat-keluar/' . $outgoingLetter->id);
             return response()->json(['message' => 'Surat dikembalikan untuk revisi.', 'data' => $outgoingLetter->fresh()]);
         }
 
@@ -140,6 +149,11 @@ class OutgoingLetterController extends Controller
             'status'      => 'MENUNGGU_PENANDATANGAN',
             'reviewed_at' => now(),
         ]);
+
+        // Notifikasi ke penandatangan
+        if ($outgoingLetter->signer_id) {
+            \App\Models\AppNotification::send($outgoingLetter->signer_id, 'Surat Menunggu Tanda Tangan', "Surat \"{$outgoingLetter->subject}\" sudah diperiksa dan perlu ditandatangani.", 'warning', '/persuratan/surat-keluar/' . $outgoingLetter->id);
+        }
 
         return response()->json(['message' => 'Surat diperiksa dan diteruskan ke penandatangan.', 'data' => $outgoingLetter->fresh()]);
     }
@@ -151,7 +165,7 @@ class OutgoingLetterController extends Controller
             return response()->json(['message' => 'Surat tidak dalam status menunggu tanda tangan.'], 422);
         }
 
-        $action = $request->input('action'); // 'sign' | 'revise'
+        $action = $request->input('action');
 
         if ($action === 'revise') {
             $request->validate(['revision_note' => 'required|string']);
@@ -159,15 +173,19 @@ class OutgoingLetterController extends Controller
                 'status'        => 'REVISI_PENANDATANGAN',
                 'revision_note' => $request->revision_note,
             ]);
+            // Notifikasi ke pembuat surat
+            \App\Models\AppNotification::send($outgoingLetter->created_by, 'Surat Perlu Revisi', "Surat \"{$outgoingLetter->subject}\" dikembalikan oleh penandatangan. Catatan: {$request->revision_note}", 'error', '/persuratan/surat-keluar/' . $outgoingLetter->id);
             return response()->json(['message' => 'Surat dikembalikan untuk revisi.', 'data' => $outgoingLetter->fresh()]);
         }
 
-        // Generate nomor surat & tandatangani
         $outgoingLetter->update([
             'status'        => 'DITANDATANGANI',
             'signed_at'     => now(),
             'letter_number' => $outgoingLetter->generateNumber(),
         ]);
+
+        // Notifikasi ke pembuat (admin) bahwa surat sudah ditandatangani
+        \App\Models\AppNotification::send($outgoingLetter->created_by, 'Surat Ditandatangani ✓', "Surat \"{$outgoingLetter->subject}\" telah ditandatangani. Nomor: {$outgoingLetter->letter_number}", 'success', '/persuratan/surat-keluar/' . $outgoingLetter->id);
 
         return response()->json(['message' => 'Surat berhasil ditandatangani.', 'data' => $outgoingLetter->fresh()]);
     }
@@ -187,6 +205,11 @@ class OutgoingLetterController extends Controller
 
         if (!empty($validated['internal_recipient_ids'])) {
             $outgoingLetter->internalRecipients()->syncWithoutDetaching($validated['internal_recipient_ids']);
+
+            // Notifikasi ke setiap penerima internal
+            foreach ($validated['internal_recipient_ids'] as $recipientId) {
+                \App\Models\AppNotification::send($recipientId, 'Surat Masuk', "Anda menerima surat: \"{$outgoingLetter->subject}\" (No. {$outgoingLetter->letter_number})", 'info', '/persuratan/surat-saya');
+            }
         }
 
         if (isset($validated['external_recipients'])) {

@@ -29,6 +29,11 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = response.user
       localStorage.setItem('auth_token', response.access_token)
       await router.push('/dashboard')
+
+      // Subscribe push notification (non-blocking)
+      import('@/utils/pushNotification').then(({ subscribePushNotification }) => {
+        subscribePushNotification()
+      }).catch(() => {})
     } finally {
       loading.value = false
     }

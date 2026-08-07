@@ -54,8 +54,10 @@ export default defineConfig({
       workbox: {
         // Cache strategi untuk assets statis
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        // Exclude file asli yang besar — hanya icon yang sudah di-resize yang di-cache
+        // Exclude file asli yang besar
         globIgnores: ['Icon ASC.png', 'icons/pwa-icon.svg'],
+        // Import custom push notification handler
+        importScripts: ['sw-push.js'],
         // Jangan cache API calls — data akademik harus selalu fresh
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],

@@ -18,12 +18,21 @@ class AppNotification extends Model
 
     public static function send(int $userId, string $title, ?string $message = null, string $type = 'info', ?string $link = null): self
     {
-        return self::create([
+        $notif = self::create([
             'user_id' => $userId,
             'title'   => $title,
             'message' => $message,
             'type'    => $type,
             'link'    => $link,
         ]);
+
+        // Trigger push notification (async-safe, non-blocking)
+        try {
+            \App\Services\PushNotificationService::sendToUser($userId, $title, $message, $link);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Push notification failed: ' . $e->getMessage());
+        }
+
+        return $notif;
     }
 }

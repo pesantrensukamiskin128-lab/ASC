@@ -337,6 +337,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('notifications/send', [NotificationController::class, 'send']);
     });
 
+    // --- Push Notification ---
+    Route::get('push/vapid-key', [\App\Http\Controllers\Api\PushController::class, 'vapidKey']);
+    Route::post('push/subscribe', [\App\Http\Controllers\Api\PushController::class, 'subscribe']);
+    Route::post('push/unsubscribe', [\App\Http\Controllers\Api\PushController::class, 'unsubscribe']);
+
     // --- Penilaian ---
     Route::middleware('role:SUPER_ADMIN|ADMIN_AKADEMIK|DOSEN')->group(function () {
         Route::get('grades', [GradeController::class, 'index']);

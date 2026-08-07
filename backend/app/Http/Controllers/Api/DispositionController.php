@@ -61,6 +61,9 @@ class DispositionController extends Controller
                 'read_at'      => DB::raw('COALESCE(read_at, NOW())'),
             ]);
 
+        // Notifikasi ke pembuat disposisi
+        \App\Models\AppNotification::send($disposition->created_by, 'Disposisi Dijawab', auth()->user()->name . " menjawab disposisi: \"{$request->response}\"", 'info', '/persuratan/surat-masuk');
+
         return response()->json(['message' => 'Jawaban disposisi berhasil dikirim.']);
     }
 }
