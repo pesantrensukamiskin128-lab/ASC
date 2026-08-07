@@ -47,9 +47,12 @@ class QrCodeHelper
             $newH = (int)($logoH * $scale);
 
             $resizedLogo = imagecreatetruecolor($newW, $newH);
+            // Transparent background agar tidak ada border kotak hitam
+            imagealphablending($resizedLogo, false);
             imagesavealpha($resizedLogo, true);
             $transparent = imagecolorallocatealpha($resizedLogo, 0, 0, 0, 127);
-            imagefill($resizedLogo, 0, 0, $transparent);
+            imagefilledrectangle($resizedLogo, 0, 0, $newW - 1, $newH - 1, $transparent);
+            imagealphablending($resizedLogo, true);
             imagecopyresampled($resizedLogo, $logoImage, 0, 0, 0, 0, $newW, $newH, $logoW, $logoH);
 
             // Background putih bulat di tengah QR (dengan border putih tebal)

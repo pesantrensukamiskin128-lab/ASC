@@ -285,8 +285,7 @@ function docTypeLabel(type: string): string {
 
       <!-- Footer -->
       <div class="mt-6 text-center text-xs text-gray-400">
-        <p>Halaman ini dapat diakses oleh siapapun untuk verifikasi keaslian dokumen.</p>
-        <p class="mt-1">Al-Jawami Smart Campus</p>
+        <p>Al-Jawami Smart Campus</p>
       </div>
     </div>
   </div>
