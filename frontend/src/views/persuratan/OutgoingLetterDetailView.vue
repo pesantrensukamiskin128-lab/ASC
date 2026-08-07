@@ -12,6 +12,53 @@ const toast = useToast()
 
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api'
 
+const previewLoading = ref(false)
+const downloadLoading = ref(false)
+const showPdfModal = ref(false)
+const pdfBlobUrl = ref('')
+
+async function handlePreviewPdf() {
+  previewLoading.value = true
+  try {
+    const res = await api.get(`/outgoing-letters/${letter.value.id}/preview-pdf`, { responseType: 'blob' })
+    const blob = new Blob([res.data], { type: 'application/pdf' })
+    pdfBlobUrl.value = URL.createObjectURL(blob)
+    showPdfModal.value = true
+  } catch (e: any) {
+    toast.error('Gagal memuat preview PDF.')
+  } finally {
+    previewLoading.value = false
+  }
+}
+
+async function handleDownloadPdf() {
+  downloadLoading.value = true
+  try {
+    const res = await api.get(`/outgoing-letters/${letter.value.id}/pdf`, { responseType: 'blob' })
+    const blob = new Blob([res.data], { type: 'application/pdf' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `surat-${letter.value.letter_number?.replace(/\//g, '-') || letter.value.id}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  } catch (e: any) {
+    toast.error('Gagal mengunduh PDF.')
+  } finally {
+    downloadLoading.value = false
+  }
+}
+
+function closePdfModal() {
+  showPdfModal.value = false
+  if (pdfBlobUrl.value) {
+    URL.revokeObjectURL(pdfBlobUrl.value)
+    pdfBlobUrl.value = ''
+  }
+}
+
 const letter = ref<any>(null)
 const loading = ref(true)
 const actionLoading = ref(false)
@@ -158,17 +205,18 @@ async function handleDistribute() {
 
       <!-- Action Buttons -->
       <div class="flex flex-wrap gap-3">
-        <a :href="`${apiBaseUrl}/outgoing-letters/${letter.id}/preview-pdf`"
-          target="_blank"
-          class="px-4 py-2.5 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg inline-flex items-center gap-2">
-          👁 Preview PDF
-        </a>
-        <a v-if="['DITANDATANGANI','TERKIRIM'].includes(letter.status)"
-          :href="`${apiBaseUrl}/outgoing-letters/${letter.id}/pdf`"
-          target="_blank"
-          class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg inline-flex items-center gap-2">
-          📄 Download PDF
-        </a>
+        <button
+          class="px-4 py-2.5 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg inline-flex items-center gap-2"
+          :disabled="previewLoading"
+          @click="handlePreviewPdf">
+          {{ previewLoading ? '⏳ Memuat...' : '👁 Preview PDF' }}
+        </button>
+        <button v-if="['DITANDATANGANI','TERKIRIM'].includes(letter.status)"
+          class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg inline-flex items-center gap-2"
+          :disabled="downloadLoading"
+          @click="handleDownloadPdf">
+          {{ downloadLoading ? '⏳ Memuat...' : '📄 Download PDF' }}
+        </button>
         <button v-if="canReview" :disabled="actionLoading" class="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg" @click="handleReview('approve')">
           ✓ Periksa & Teruskan
         </button>
@@ -216,5 +264,21 @@ async function handleDistribute() {
         </div>
       </div>
     </template>
+
+    <!-- PDF Preview Modal (popup fullscreen, mobile-friendly) -->
+    <div v-if="showPdfModal" class="fixed inset-0 z-50 bg-black/70 flex flex-col">
+      <div class="flex items-center justify-between px-4 py-3 bg-gray-900">
+        <h3 class="text-white text-sm font-medium">Preview Surat PDF</h3>
+        <button class="text-white hover:text-gray-300 text-lg" @click="closePdfModal">✕</button>
+      </div>
+      <div class="flex-1 overflow-hidden">
+        <iframe :src="pdfBlobUrl" class="w-full h-full border-0" />
+      </div>
+      <!-- Mobile fallback: tombol buka di tab baru jika iframe tidak support -->
+      <div class="px-4 py-2 bg-gray-900 flex items-center justify-center gap-3 lg:hidden">
+        <a :href="pdfBlobUrl" target="_blank" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg">Buka di Tab Baru</a>
+        <button class="px-4 py-2 bg-gray-600 text-white text-sm rounded-lg" @click="closePdfModal">Tutup</button>
+      </div>
+    </div>
   </div>
 </template>
