@@ -18,7 +18,8 @@ RUN apt-get install -y --no-install-recommends \
     libfreetype6-dev \
     libjpeg62-turbo-dev \
     libicu-dev \
-    libexif-dev
+    libexif-dev \
+    libmagickwand-dev
 
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
@@ -31,6 +32,8 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
         exif \
         intl \
         pcntl \
+    && pecl install imagick \
+    && docker-php-ext-enable imagick \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
