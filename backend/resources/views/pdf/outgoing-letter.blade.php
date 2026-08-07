@@ -5,34 +5,34 @@
     <title>Surat - {{ $letter->letter_number ?? 'Draft' }}</title>
     <style>
         @page { margin: 5mm 10mm 10mm 10mm; }
-        body { font-family: 'Times New Roman', serif; font-size: 12pt; margin: 0; padding: 0; line-height: 1.2; }
+        body { font-family: 'Times New Roman', serif; font-size: 12pt; margin: 0; padding: 0; line-height: 1.15; }
         .letterhead { text-align: center; margin-bottom: 3px; }
         .letterhead img { width: 100%; }
-        .letter-info { margin-top: 10px; font-size: 12pt; line-height: 1.2; }
+        .letter-info { margin-top: 8px; font-size: 12pt; line-height: 1.15; }
         .letter-info table { border: none; width: auto; }
-        .letter-info td { padding: 0 0 1px 0; vertical-align: top; border: none; line-height: 1.2; }
-        .letter-info .label { width: 80px; }
-        .recipient-block { margin-top: 12px; padding-left: 50px; font-size: 12pt; line-height: 1.3; }
-        .recipient-block .di-tempat { margin-top: 4px; }
-        .letter-body { margin-top: 12px; text-align: justify; font-size: 12pt; line-height: 1.3; padding-left: 50px; }
-        .letter-body p { margin: 3px 0; }
+        .letter-info td { padding: 0; vertical-align: top; border: none; line-height: 1.15; }
+        .letter-info .label { width: 75px; }
+        .recipient-block { margin-top: 8px; font-size: 12pt; line-height: 1.15; padding-left: 40px; }
+        .recipient-block p { margin: 0; }
+        .letter-body { margin-top: 8px; text-align: justify; font-size: 12pt; line-height: 1.15; }
+        .letter-body p { margin: 2px 0; }
         .letter-body table { width: 100%; border-collapse: collapse; margin: 4px 0; }
-        .letter-body table td, .letter-body table th { border: 1px solid #333; padding: 3px 6px; font-size: 11pt; line-height: 1.2; }
+        .letter-body table td, .letter-body table th { border: 1px solid #333; padding: 2px 5px; font-size: 11pt; line-height: 1.15; }
         .letter-body table[data-borderless="true"] td,
         .letter-body table[data-borderless="true"] th { border: none; }
-        .letter-body ul { list-style-type: disc; padding-left: 20px; margin: 3px 0; }
-        .letter-body ol { list-style-type: decimal; padding-left: 20px; margin: 3px 0; }
-        .letter-body li { margin: 1px 0; }
-        .sign-wrapper { margin-top: 20px; width: 100%; }
+        .letter-body ul { list-style-type: disc; padding-left: 20px; margin: 2px 0; }
+        .letter-body ol { list-style-type: decimal; padding-left: 20px; margin: 2px 0; }
+        .letter-body li { margin: 0; }
+        .sign-wrapper { margin-top: 15px; width: 100%; }
         .sign-area { float: right; width: 240px; text-align: left; }
-        .sign-area p { margin: 1px 0; font-size: 11pt; line-height: 1.3; }
-        .sign-area .qr { margin: 4px 0; }
+        .sign-area p { margin: 0; font-size: 11pt; line-height: 1.2; }
+        .sign-area .qr { margin: 3px 0; }
         .sign-area .name { font-weight: bold; text-decoration: underline; margin-top: 2px; }
         .sign-area .nidn { font-size: 10pt; }
-        .verify-footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 6px 0 0; border-top: 1px solid #d1d5db; }
+        .verify-footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 5px 0 0; border-top: 1px solid #d1d5db; }
         .verify-footer table { width: 100%; border-collapse: collapse; }
         .verify-footer td { border: none; padding: 0; vertical-align: middle; }
-        .verify-text { font-size: 10pt; color: #555; line-height: 1.3; padding-left: 6px; }
+        .verify-text { font-size: 10pt; color: #555; line-height: 1.2; padding-left: 6px; }
         .watermark { position: fixed; top: 40%; left: 10%; transform: rotate(-35deg); font-size: 80pt; color: rgba(200,200,200,0.25); font-weight: bold; z-index: -1; letter-spacing: 10px; }
     </style>
 </head>
@@ -61,7 +61,7 @@
     <div class="recipient-block">
         <p>Kepada Yang Terhormat,</p>
         <p>{!! nl2br(e($letter->recipient)) !!}</p>
-        <p class="di-tempat">di-</p>
+        <p>di-</p>
         <p style="padding-left: 20px;">Tempat</p>
     </div>
 
@@ -89,7 +89,7 @@
         </div>
     </div>
 
-    {{-- Footer Verifikasi (hanya di surat final) --}}
+    {{-- Footer Verifikasi --}}
     @if($isFinal)
     <div class="verify-footer">
         <table>

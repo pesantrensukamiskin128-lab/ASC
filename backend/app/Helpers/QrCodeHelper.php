@@ -8,7 +8,7 @@ use App\Models\Institution;
 class QrCodeHelper
 {
     /**
-     * Generate QR code dengan logo di tengah sebagai SVG data URI.
+     * Generate QR code PNG dengan logo di tengah sebagai base64 data URI.
      * Warna: biru (#1e3a8a).
      */
     public static function generateWithLogo(string $data, int $size = 200): string
@@ -16,41 +16,45 @@ class QrCodeHelper
         try {
             $logoPath = self::getLogoPath();
 
-            $qr = QrCode::size($size)
-                ->color(30, 58, 138)
-                ->backgroundColor(255, 255, 255)
-                ->errorCorrection('H')
-                ->margin(1);
-
             if ($logoPath && file_exists($logoPath)) {
-                $svg = $qr->merge($logoPath, 0.2, true)->generate($data);
-            } else {
-                $svg = $qr->generate($data);
+                $png = QrCode::format('png')
+                    ->size($size)
+                    ->color(30, 58, 138)
+                    ->backgroundColor(255, 255, 255)
+                    ->errorCorrection('H')
+                    ->margin(1)
+                    ->merge($logoPath, 0.2, true)
+                    ->generate($data);
+
+                return 'data:image/png;base64,' . base64_encode($png);
             }
 
-            return 'data:image/svg+xml;base64,' . base64_encode($svg);
+            // Tanpa logo — fallback ke PNG biasa
+            return self::generate($data, $size);
         } catch (\Exception $e) {
-            // Fallback: SVG tanpa logo
+            \Illuminate\Support\Facades\Log::warning('QR with logo failed: ' . $e->getMessage());
             return self::generate($data, $size);
         }
     }
 
     /**
-     * Generate QR code tanpa logo sebagai SVG data URI.
+     * Generate QR code PNG tanpa logo sebagai base64 data URI.
      */
     public static function generate(string $data, int $size = 150): string
     {
         try {
-            $svg = QrCode::size($size)
+            $png = QrCode::format('png')
+                ->size($size)
                 ->color(30, 58, 138)
                 ->backgroundColor(255, 255, 255)
                 ->errorCorrection('M')
                 ->margin(1)
                 ->generate($data);
 
-            return 'data:image/svg+xml;base64,' . base64_encode($svg);
+            return 'data:image/png;base64,' . base64_encode($png);
         } catch (\Exception $e) {
-            // Ultimate fallback: use external API
+            // Ultimate fallback: external API
+            \Illuminate\Support\Facades\Log::warning('QR generate failed: ' . $e->getMessage());
             $color = '1e3a8a';
             return "https://api.qrserver.com/v1/create-qr-code/?size={$size}x{$size}&color={$color}&data=" . urlencode($data);
         }
