@@ -303,9 +303,24 @@ class OutgoingLetterController extends Controller
 
     public function destroy(OutgoingLetter $outgoingLetter): JsonResponse
     {
-        if (!in_array($outgoingLetter->status, ['DRAFT', 'REVISI_PEMERIKSA', 'REVISI_PENANDATANGAN'])) {
+        $user = auth()->user();
+        $isAdmin = $user->hasRole('SUPER_ADMIN') || $user->hasRole('ADMIN_UMUM');
+
+        // Admin bisa hapus surat apapun statusnya
+        if (!$isAdmin && !in_array($outgoingLetter->status, ['DRAFT', 'REVISI_PEMERIKSA', 'REVISI_PENANDATANGAN'])) {
             return response()->json(['message' => 'Hanya surat berstatus Draft/Revisi yang bisa dihapus.'], 422);
         }
+
+        // Hapus dokumen pendukung dari storage
+        if ($outgoingLetter->supporting_documents) {
+            foreach ($outgoingLetter->supporting_documents as $doc) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($doc['path'] ?? '');
+            }
+        }
+
+        // Hapus penerima internal
+        $outgoingLetter->internalRecipients()->detach();
+
         $outgoingLetter->delete();
         return response()->json(['message' => 'Surat berhasil dihapus.']);
     }

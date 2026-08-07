@@ -107,7 +107,7 @@ async function handleDelete(item: any) {
                 <button v-if="canCreate && ['DRAFT','REVISI_PEMERIKSA','REVISI_PENANDATANGAN'].includes(item.status)" class="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50" @click="router.push(`/persuratan/surat-keluar/${item.id}/edit`)">
                   <PencilIcon class="w-4 h-4" />
                 </button>
-                <button v-if="canCreate && ['DRAFT','REVISI_PEMERIKSA','REVISI_PENANDATANGAN'].includes(item.status)" class="p-1.5 rounded-lg text-red-500 hover:bg-red-50" @click="handleDelete(item)">
+                <button v-if="canCreate" class="p-1.5 rounded-lg text-red-500 hover:bg-red-50" @click="handleDelete(item)">
                   <TrashIcon class="w-4 h-4" />
                 </button>
               </div>
