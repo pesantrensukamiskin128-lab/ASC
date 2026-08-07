@@ -832,8 +832,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('penelitian/{penelitian}/allocate-funding', [PenelitianController::class, 'allocateFunding']);
         Route::post('penelitian/{penelitian}/disburse-funding/{stage}', [PenelitianController::class, 'disburseFunding']);
     });
-});
-
 
     // =========================================================================
     // PERSURATAN (Surat Keluar, Surat Masuk, Disposisi)
@@ -883,3 +881,4 @@ Route::middleware('auth:sanctum')->group(function () {
         // Presensi via app (user login)
         Route::post('attend/{token}', [EventController::class, 'attend']);
     });
+});
