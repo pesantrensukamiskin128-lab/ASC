@@ -2,22 +2,22 @@
 
 namespace App\Helpers;
 
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Models\Institution;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class QrCodeHelper
 {
     /**
-     * Generate QR code PNG dengan logo di tengah menggunakan GD manual overlay.
+     * Generate QR code biru dengan logo di tengah.
+     * Menggunakan external API untuk generate QR, lalu overlay logo via GD.
      */
     public static function generateWithLogo(string $data, int $size = 200): string
     {
         try {
-            // Generate QR tanpa logo dulu (SVG → convert ke PNG via Imagick)
-            $qrPng = self::generateRawPng($data, $size);
+            $qrPng = self::fetchQrPng($data, $size);
             if (!$qrPng) {
-                return self::fallbackExternal($data, $size);
+                return self::fallbackUrl($data, $size);
             }
 
             $logoPath = self::getLogoPath();
@@ -25,7 +25,7 @@ class QrCodeHelper
                 return 'data:image/png;base64,' . base64_encode($qrPng);
             }
 
-            // Overlay logo manual pakai GD
+            // Overlay logo via GD
             $qrImage = @imagecreatefromstring($qrPng);
             if (!$qrImage) {
                 return 'data:image/png;base64,' . base64_encode($qrPng);
@@ -33,7 +33,9 @@ class QrCodeHelper
 
             $logoImage = self::loadImage($logoPath);
             if (!$logoImage) {
-                return 'data:image/png;base64,' . base64_encode($qrPng);
+                $result = 'data:image/png;base64,' . base64_encode($qrPng);
+                imagedestroy($qrImage);
+                return $result;
             }
 
             // Resize logo ke 22% dari QR
@@ -45,25 +47,24 @@ class QrCodeHelper
             $newH = (int)($logoH * $scale);
 
             $resizedLogo = imagecreatetruecolor($newW, $newH);
-            imagealphablending($resizedLogo, false);
             imagesavealpha($resizedLogo, true);
+            $transparent = imagecolorallocatealpha($resizedLogo, 0, 0, 0, 127);
+            imagefill($resizedLogo, 0, 0, $transparent);
             imagecopyresampled($resizedLogo, $logoImage, 0, 0, 0, 0, $newW, $newH, $logoW, $logoH);
 
-            // Buat background putih bulat di tengah QR
-            $cx = (int)($size / 2);
-            $cy = (int)($size / 2);
-            $padding = 4;
-            $bgRadius = (int)(max($newW, $newH) / 2) + $padding;
-
+            // Background putih bulat di tengah QR
+            $cx = (int)(imagesx($qrImage) / 2);
+            $cy = (int)(imagesy($qrImage) / 2);
+            $padding = 5;
+            $bgSize = max($newW, $newH) + ($padding * 2);
             $white = imagecolorallocate($qrImage, 255, 255, 255);
-            imagefilledellipse($qrImage, $cx, $cy, $bgRadius * 2, $bgRadius * 2, $white);
+            imagefilledellipse($qrImage, $cx, $cy, $bgSize, $bgSize, $white);
 
-            // Tempel logo di tengah
+            // Tempel logo
             $logoX = $cx - (int)($newW / 2);
             $logoY = $cy - (int)($newH / 2);
             imagecopy($qrImage, $resizedLogo, $logoX, $logoY, 0, 0, $newW, $newH);
 
-            // Output ke PNG string
             ob_start();
             imagepng($qrImage);
             $finalPng = ob_get_clean();
@@ -74,66 +75,56 @@ class QrCodeHelper
 
             return 'data:image/png;base64,' . base64_encode($finalPng);
         } catch (\Exception $e) {
-            Log::error('QR with logo failed: ' . $e->getMessage());
-            return self::generate($data, $size);
+            Log::error('QR with logo error: ' . $e->getMessage());
+            return self::fallbackUrl($data, $size);
         }
     }
 
     /**
-     * Generate QR code tanpa logo.
+     * Generate QR code biru tanpa logo.
      */
     public static function generate(string $data, int $size = 150): string
     {
         try {
-            $png = self::generateRawPng($data, $size);
-            if ($png) {
-                return 'data:image/png;base64,' . base64_encode($png);
+            $qrPng = self::fetchQrPng($data, $size);
+            if ($qrPng) {
+                return 'data:image/png;base64,' . base64_encode($qrPng);
             }
-            return self::fallbackExternal($data, $size);
         } catch (\Exception $e) {
-            Log::error('QR generate failed: ' . $e->getMessage());
-            return self::fallbackExternal($data, $size);
+            Log::warning('QR generate error: ' . $e->getMessage());
         }
+
+        return self::fallbackUrl($data, $size);
     }
 
     /**
-     * Generate raw PNG bytes via simple-qrcode SVG → GD conversion.
+     * Fetch QR PNG dari external API (warna biru).
      */
-    private static function generateRawPng(string $data, int $size): ?string
+    private static function fetchQrPng(string $data, int $size): ?string
     {
-        try {
-            // Generate sebagai SVG (tidak butuh Imagick)
-            $svg = QrCode::size($size)
-                ->color(30, 58, 138)
-                ->backgroundColor(255, 255, 255)
-                ->errorCorrection('H')
-                ->margin(1)
-                ->generate($data);
+        $url = "https://api.qrserver.com/v1/create-qr-code/?"
+            . http_build_query([
+                'size' => "{$size}x{$size}",
+                'color' => '1e3a8a',
+                'bgcolor' => 'ffffff',
+                'data' => $data,
+                'format' => 'png',
+                'qzone' => 1,
+                'ecc' => 'H',
+            ]);
 
-            // Convert SVG ke PNG via GD + Imagick (jika ada)
-            if (extension_loaded('imagick')) {
-                $im = new \Imagick();
-                $im->readImageBlob($svg);
-                $im->setImageFormat('png');
-                $im->resizeImage($size, $size, \Imagick::FILTER_LANCZOS, 1);
-                $png = $im->getImageBlob();
-                $im->clear();
-                $im->destroy();
-                return $png;
-            }
+        $response = Http::withoutVerifying()->timeout(10)->get($url);
 
-            // Fallback: buat simple QR via GD langsung
-            return null;
-        } catch (\Exception $e) {
-            Log::warning('generateRawPng failed: ' . $e->getMessage());
-            return null;
+        if ($response->successful() && str_starts_with($response->header('Content-Type') ?? '', 'image/')) {
+            return $response->body();
         }
+
+        return null;
     }
 
-    private static function fallbackExternal(string $data, int $size): string
+    private static function fallbackUrl(string $data, int $size): string
     {
-        $color = '1e3a8a';
-        return "https://api.qrserver.com/v1/create-qr-code/?size={$size}x{$size}&color={$color}&data=" . urlencode($data);
+        return "https://api.qrserver.com/v1/create-qr-code/?size={$size}x{$size}&color=1e3a8a&data=" . urlencode($data);
     }
 
     private static function getLogoPath(): ?string
@@ -145,13 +136,11 @@ class QrCodeHelper
     }
 
     /**
-     * Load gambar dari path apapun formatnya, handle ICC profile warning.
+     * Load gambar — suppress ICC profile warnings.
      */
     private static function loadImage(string $path): ?\GdImage
     {
         $mime = @mime_content_type($path);
-
-        // Suppress warnings (libpng ICC profile warning)
         $image = match ($mime) {
             'image/png' => @imagecreatefrompng($path),
             'image/jpeg', 'image/jpg' => @imagecreatefromjpeg($path),
@@ -159,7 +148,6 @@ class QrCodeHelper
             'image/gif' => @imagecreatefromgif($path),
             default => null,
         };
-
         return $image ?: null;
     }
 }
