@@ -42,21 +42,20 @@ class OutgoingLetter extends Model
             ->withTimestamps();
     }
 
-    /** Generate nomor surat: 001/A/STAI-AJ/VIII/2026 */
+    /** Generate nomor surat: 001/A/STAI-YAB/VIII/2026 */
     public function generateNumber(): string
     {
         $year = $this->letter_date->format('Y');
         $month = $this->romanMonth($this->letter_date->month);
         $code = $this->letterType->code ?? 'X';
-        $institution = Institution::first();
-        $orgCode = $institution?->short_name ? str_replace(' ', '-', $institution->short_name) : 'ASC';
 
+        // Urutan berdasarkan tahun + jenis surat
         $count = self::whereYear('letter_date', $year)
             ->where('letter_type_id', $this->letter_type_id)
             ->whereNotNull('letter_number')
             ->count() + 1;
 
-        return str_pad($count, 3, '0', STR_PAD_LEFT) . "/{$code}/{$orgCode}/{$month}/{$year}";
+        return str_pad($count, 3, '0', STR_PAD_LEFT) . "/{$code}/STAI-YAB/{$month}/{$year}";
     }
 
     private function romanMonth(int $m): string

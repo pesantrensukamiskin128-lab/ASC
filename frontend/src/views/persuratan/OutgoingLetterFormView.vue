@@ -2,6 +2,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useToast } from 'vue-toastification'
+import RichTextEditor from '@/components/ui/RichTextEditor.vue'
 import api from '@/services/api'
 
 const router = useRouter()
@@ -150,11 +151,11 @@ async function handleSave(andSend = false) {
         <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wide">Isi Surat</h2>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Isi Surat <span class="text-red-500">*</span></label>
-          <textarea v-model="form.body" required rows="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono" placeholder="Tulis isi surat di sini..." />
+          <RichTextEditor v-model="form.body" placeholder="Tulis isi surat di sini..." min-height="300px" />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Isi Lampiran (opsional)</label>
-          <textarea v-model="form.appendix_body" rows="5" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono" placeholder="Isi lampiran jika ada..." />
+          <RichTextEditor v-model="form.appendix_body" placeholder="Isi lampiran jika ada..." min-height="150px" />
         </div>
       </div>
 
