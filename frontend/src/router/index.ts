@@ -682,6 +682,12 @@ const router = createRouter({
           component: () => import('@/views/AuditLogView.vue'),
           meta: { permission: 'user.view' },
         },
+        {
+          path: 'settings/lms',
+          name: 'lms-integration',
+          component: () => import('@/views/settings/LmsIntegrationView.vue'),
+          meta: { permission: 'user.view' },
+        },
 
         // Profil
         {

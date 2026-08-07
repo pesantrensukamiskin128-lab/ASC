@@ -126,7 +126,7 @@ Jika backend dan frontend ada di satu repo:
 Klik service backend → **Variables** → tambahkan satu per satu:
 
 ```
-APP_NAME          = SIAT Al-Jawami
+APP_NAME          = Al-Jawami Smart Campus
 APP_ENV           = production
 APP_DEBUG         = false
 APP_KEY           = base64:HASIL_KEY_GENERATE_TADI

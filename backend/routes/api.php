@@ -895,4 +895,16 @@ Route::middleware('auth:sanctum')->group(function () {
         // Presensi via app (user login)
         Route::post('attend/{token}', [EventController::class, 'attend']);
     });
+
+    // =========================================================================
+    // INTEGRASI LMS
+    // =========================================================================
+    Route::middleware('role:SUPER_ADMIN|ADMIN_AKADEMIK')->prefix('lms')->group(function () {
+        Route::get('config', [\App\Http\Controllers\Api\LmsIntegrationController::class, 'config']);
+        Route::post('config', [\App\Http\Controllers\Api\LmsIntegrationController::class, 'saveConfig']);
+        Route::post('test-connection', [\App\Http\Controllers\Api\LmsIntegrationController::class, 'testConnection']);
+        Route::post('sync-all', [\App\Http\Controllers\Api\LmsIntegrationController::class, 'syncAll']);
+        Route::post('sync/{type}', [\App\Http\Controllers\Api\LmsIntegrationController::class, 'syncType']);
+        Route::get('logs', [\App\Http\Controllers\Api\LmsIntegrationController::class, 'logs']);
+    });
 });

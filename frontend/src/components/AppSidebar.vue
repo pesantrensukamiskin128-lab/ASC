@@ -195,7 +195,8 @@ const navigation = computed(() => [
     children: [
       { label: 'Pengguna', to: '/users' },
       { label: 'Audit Log', to: '/audit-log' },
-    ],
+      { label: 'Integrasi LMS', to: '/settings/lms', show: auth.hasRole('SUPER_ADMIN') || auth.hasRole('ADMIN_AKADEMIK') },
+    ].filter(c => c.show !== false),
   },
 ])
 
