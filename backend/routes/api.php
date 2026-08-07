@@ -897,6 +897,42 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // =========================================================================
+    // PENGAJUAN SURAT (Mahasiswa & Dosen)
+    // =========================================================================
+    Route::prefix('letter-requests')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\LetterRequestController::class, 'index']);
+        Route::post('/', [\App\Http\Controllers\Api\LetterRequestController::class, 'store']);
+        Route::post('{letterRequest}/process', [\App\Http\Controllers\Api\LetterRequestController::class, 'process']);
+    });
+
+    // Surat masuk untuk user (surat keluar yang dikirim ke mereka)
+    Route::get('my-incoming-letters', function (\Illuminate\Http\Request $request) {
+        $userId = auth()->id();
+        $data = \App\Models\OutgoingLetter::with(['letterType', 'creator'])
+            ->where('status', 'TERKIRIM')
+            ->whereHas('internalRecipients', fn($q) => $q->where('user_id', $userId))
+            ->orderByDesc('sent_at')
+            ->paginate($request->per_page ?? 15);
+        return response()->json($data);
+    });
+
+    // Surat yang perlu ditandatangani/diperiksa oleh user saat ini
+    Route::get('my-pending-letters', function () {
+        $userId = auth()->id();
+        $data = \App\Models\OutgoingLetter::with(['letterType', 'creator'])
+            ->where(function ($q) use ($userId) {
+                $q->where(fn($q2) => $q2->where('reviewer_id', $userId)->where('status', 'MENUNGGU_PEMERIKSA'))
+                  ->orWhere(fn($q2) => $q2->where('signer_id', $userId)->where('status', 'MENUNGGU_PENANDATANGAN'));
+            })
+            ->orderByDesc('created_at')
+            ->get();
+        return response()->json($data);
+    });
+
+    // Study programs list (untuk filter distribusi)
+    Route::get('study-programs/all', [\App\Http\Controllers\Api\StudyProgramController::class, 'all']);
+
+    // =========================================================================
     // INTEGRASI LMS
     // =========================================================================
     Route::middleware('role:SUPER_ADMIN|ADMIN_AKADEMIK')->prefix('lms')->group(function () {

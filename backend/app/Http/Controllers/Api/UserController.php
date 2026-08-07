@@ -135,15 +135,21 @@ class UserController extends Controller
                 }
 
                 return [
-                    'id'           => $u->id,
-                    'name'         => $u->name,
-                    'email'        => $u->email,
-                    'role_label'   => $label,
-                    'role'         => $role,
-                    'has_position' => $hasPosition,
+                    'id'               => $u->id,
+                    'name'             => $u->name,
+                    'email'            => $u->email,
+                    'role_label'       => $label,
+                    'role'             => $role,
+                    'has_position'     => $hasPosition,
+                    'study_program_id' => $lecturer?->study_program_id ?? $this->getStudentProdiId($u->id),
                 ];
             });
 
         return response()->json($users);
+    }
+
+    private function getStudentProdiId(int $userId): ?int
+    {
+        return \App\Models\Student::where('user_id', $userId)->value('study_program_id');
     }
 }

@@ -72,6 +72,8 @@ const internalRecipientIds = ref<number[]>([])
 const allUsers = ref<any[]>([])
 const distributeSearch = ref('')
 const distributeFilter = ref('all')
+const distributeProdi = ref('')
+const prodiList = ref<any[]>([])
 
 const filteredDistributeUsers = computed(() => {
   let users = allUsers.value
@@ -83,6 +85,11 @@ const filteredDistributeUsers = computed(() => {
     users = users.filter((u: any) => u.role === 'MAHASISWA')
   } else if (distributeFilter.value === 'struktural') {
     users = users.filter((u: any) => u.has_position)
+  }
+
+  // Filter by prodi
+  if (distributeProdi.value && (distributeFilter.value === 'dosen' || distributeFilter.value === 'mahasiswa')) {
+    users = users.filter((u: any) => u.study_program_id == distributeProdi.value)
   }
 
   // Filter by search
@@ -116,8 +123,12 @@ onMounted(async () => {
     const { data } = await api.get(`/outgoing-letters/${route.params.id}`)
     letter.value = data
     if (data.status === 'DITANDATANGANI') {
-      const { data: users } = await api.get('/user-list')
-      allUsers.value = users
+      const [usersRes, prodiRes] = await Promise.all([
+        api.get('/user-list'),
+        api.get('/study-programs/all'),
+      ])
+      allUsers.value = usersRes.data
+      prodiList.value = prodiRes.data
     }
   } catch { toast.error('Gagal memuat data surat.') }
   finally { loading.value = false }
@@ -295,11 +306,19 @@ async function handleDistribute() {
           <input v-model="distributeSearch" type="text" placeholder="Cari nama..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
 
           <!-- Filter buttons -->
-          <div class="flex flex-wrap gap-2 mb-3">
+          <div class="flex flex-wrap gap-2 mb-2">
             <button type="button" :class="['px-2.5 py-1 rounded-full text-xs font-medium border', distributeFilter === 'all' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 text-gray-600 hover:bg-gray-100']" @click="distributeFilter = 'all'">Semua</button>
             <button type="button" :class="['px-2.5 py-1 rounded-full text-xs font-medium border', distributeFilter === 'dosen' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 text-gray-600 hover:bg-gray-100']" @click="distributeFilter = 'dosen'">Dosen</button>
             <button type="button" :class="['px-2.5 py-1 rounded-full text-xs font-medium border', distributeFilter === 'mahasiswa' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 text-gray-600 hover:bg-gray-100']" @click="distributeFilter = 'mahasiswa'">Mahasiswa</button>
             <button type="button" :class="['px-2.5 py-1 rounded-full text-xs font-medium border', distributeFilter === 'struktural' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 text-gray-600 hover:bg-gray-100']" @click="distributeFilter = 'struktural'">Struktural</button>
+          </div>
+
+          <!-- Filter prodi (muncul saat filter dosen/mahasiswa) -->
+          <div v-if="distributeFilter === 'dosen' || distributeFilter === 'mahasiswa'" class="mb-2">
+            <select v-model="distributeProdi" class="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs">
+              <option value="">Semua Program Studi</option>
+              <option v-for="p in prodiList" :key="p.id" :value="p.id">{{ p.name }}</option>
+            </select>
           </div>
 
           <!-- Select all -->

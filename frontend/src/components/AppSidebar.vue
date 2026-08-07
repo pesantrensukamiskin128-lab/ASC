@@ -174,12 +174,22 @@ const navigation = computed(() => [
   {
     label: 'Persuratan',
     icon: ClipboardDocumentListIcon,
-    show: auth.hasPermission('surat-keluar.view') || auth.hasPermission('surat-masuk.view') || auth.hasPermission('disposisi.receive'),
+    show: auth.hasPermission('surat-keluar.view') || auth.hasPermission('surat-masuk.view') || auth.hasPermission('disposisi.receive') || auth.hasRole('MAHASISWA') || auth.hasRole('DOSEN'),
     children: [
-      { label: 'Surat Keluar', to: '/persuratan/surat-keluar', show: auth.hasPermission('surat-keluar.view') },
-      { label: 'Surat Masuk', to: '/persuratan/surat-masuk', show: auth.hasPermission('surat-masuk.view') },
-      { label: 'Disposisi', to: '/persuratan/disposisi', show: auth.hasPermission('disposisi.view') || auth.hasPermission('disposisi.receive') },
+      // Admin: semua menu
+      { label: 'Surat Keluar', to: '/persuratan/surat-keluar', show: auth.hasPermission('surat-keluar.create') },
+      { label: 'Surat Masuk (Eksternal)', to: '/persuratan/surat-masuk', show: auth.hasPermission('surat-masuk.create') },
       { label: 'Template Surat', to: '/persuratan/template-surat', show: auth.hasPermission('surat-keluar.create') },
+      // Struktural: tanda tangan + surat masuk + disposisi
+      { label: 'Tanda Tangan Surat', to: '/persuratan/tanda-tangan', show: auth.hasPermission('surat-keluar.sign') || auth.hasPermission('surat-keluar.review') },
+      // Semua (kecuali admin): surat masuk dari admin
+      { label: 'Surat Masuk', to: '/persuratan/surat-saya', show: !auth.hasPermission('surat-keluar.create') },
+      // Disposisi
+      { label: 'Disposisi', to: '/persuratan/disposisi', show: auth.hasPermission('disposisi.view') || auth.hasPermission('disposisi.receive') },
+      // Pengajuan surat (dosen & mahasiswa)
+      { label: 'Pengajuan Surat', to: '/persuratan/pengajuan', show: !auth.hasPermission('surat-keluar.create') },
+      // Admin: lihat pengajuan masuk
+      { label: 'Pengajuan Surat', to: '/persuratan/pengajuan-masuk', show: auth.hasPermission('surat-keluar.create') },
     ].filter(c => c.show !== false),
   },
   {

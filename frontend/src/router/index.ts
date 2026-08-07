@@ -741,6 +741,27 @@ const router = createRouter({
           component: () => import('@/views/persuratan/LetterTemplateView.vue'),
           meta: { permission: 'surat-keluar.create' },
         },
+        {
+          path: 'persuratan/surat-saya',
+          name: 'my-incoming-letters',
+          component: () => import('@/views/persuratan/MyIncomingLetterView.vue'),
+        },
+        {
+          path: 'persuratan/tanda-tangan',
+          name: 'pending-signatures',
+          component: () => import('@/views/persuratan/PendingSignatureView.vue'),
+        },
+        {
+          path: 'persuratan/pengajuan',
+          name: 'letter-requests',
+          component: () => import('@/views/persuratan/LetterRequestView.vue'),
+        },
+        {
+          path: 'persuratan/pengajuan-masuk',
+          name: 'letter-requests-admin',
+          component: () => import('@/views/persuratan/LetterRequestView.vue'),
+          meta: { permission: 'surat-keluar.create' },
+        },
 
         // =========================================================
         // AGENDA KEGIATAN
