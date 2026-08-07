@@ -15,9 +15,10 @@
         .recipient-block { margin-top: 8px; font-size: 12pt; line-height: 1.15; padding: 0 40px; }
         .recipient-block p { margin: 0; }
         .letter-body { margin-top: 8px; text-align: justify; font-size: 12pt; line-height: 1.15; padding: 0 40px; }
-        .letter-body p { margin: 2px 0; }
+        .letter-body p { margin: 0 0 6pt 0; }
         .letter-body table { width: 100%; border-collapse: collapse; margin: 4px 0; }
         .letter-body table td, .letter-body table th { border: 1px solid #333; padding: 2px 5px; font-size: 11pt; line-height: 1.15; }
+        .letter-body table p { margin: 0; }
         .letter-body table[data-borderless="true"] td,
         .letter-body table[data-borderless="true"] th { border: none; }
         .letter-body ul { list-style-type: disc; padding-left: 20px; margin: 2px 0; }
