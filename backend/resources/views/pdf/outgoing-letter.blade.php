@@ -8,13 +8,13 @@
         body { font-family: 'Times New Roman', serif; font-size: 12pt; margin: 0; padding: 0; line-height: 1.15; }
         .letterhead { text-align: center; margin-bottom: 3px; }
         .letterhead img { width: 100%; }
-        .letter-info { margin-top: 8px; font-size: 12pt; line-height: 1.15; }
+        .letter-info { margin-top: 8px; font-size: 12pt; line-height: 1.15; padding: 0 40px; }
         .letter-info table { border: none; width: auto; }
         .letter-info td { padding: 0; vertical-align: top; border: none; line-height: 1.15; }
         .letter-info .label { width: 75px; }
-        .recipient-block { margin-top: 8px; font-size: 12pt; line-height: 1.15; padding-left: 40px; }
+        .recipient-block { margin-top: 8px; font-size: 12pt; line-height: 1.15; padding: 0 40px; }
         .recipient-block p { margin: 0; }
-        .letter-body { margin-top: 8px; text-align: justify; font-size: 12pt; line-height: 1.15; }
+        .letter-body { margin-top: 8px; text-align: justify; font-size: 12pt; line-height: 1.15; padding: 0 40px; }
         .letter-body p { margin: 2px 0; }
         .letter-body table { width: 100%; border-collapse: collapse; margin: 4px 0; }
         .letter-body table td, .letter-body table th { border: 1px solid #333; padding: 2px 5px; font-size: 11pt; line-height: 1.15; }
@@ -23,7 +23,7 @@
         .letter-body ul { list-style-type: disc; padding-left: 20px; margin: 2px 0; }
         .letter-body ol { list-style-type: decimal; padding-left: 20px; margin: 2px 0; }
         .letter-body li { margin: 0; }
-        .sign-wrapper { margin-top: 15px; width: 100%; }
+        .sign-wrapper { margin-top: 15px; width: 100%; padding: 0 40px; }
         .sign-area { float: right; width: 240px; text-align: left; }
         .sign-area p { margin: 0; font-size: 11pt; line-height: 1.2; }
         .sign-area .qr { margin: 3px 0; }
