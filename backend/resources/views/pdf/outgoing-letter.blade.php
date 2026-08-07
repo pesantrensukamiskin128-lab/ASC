@@ -32,7 +32,7 @@
         .verify-footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 6px 0 0; border-top: 1px solid #d1d5db; }
         .verify-footer table { width: 100%; border-collapse: collapse; }
         .verify-footer td { border: none; padding: 0; vertical-align: middle; }
-        .verify-text { font-size: 7.5px; color: #555; line-height: 1.3; padding-left: 6px; }
+        .verify-text { font-size: 10pt; color: #555; line-height: 1.3; padding-left: 6px; }
         .watermark { position: fixed; top: 40%; left: 10%; transform: rotate(-35deg); font-size: 80pt; color: rgba(200,200,200,0.25); font-weight: bold; z-index: -1; letter-spacing: 10px; }
     </style>
 </head>
@@ -77,7 +77,7 @@
             <p>{{ $signerPosition }}</p>
             @if($isFinal)
             <div class="qr">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=50x50&color=1e3a8a&data={{ urlencode($verifyUrl) }}" width="50" height="50" alt="QR">
+                <img src="{{ $qrSignature }}" width="50" height="50" alt="QR">
             </div>
             @else
             <br><br><br>
@@ -94,8 +94,8 @@
     <div class="verify-footer">
         <table>
             <tr>
-                <td style="width: 55px;">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=55x55&color=1e3a8a&data={{ urlencode($verifyUrl) }}" width="55" height="55" alt="QR Verifikasi">
+                <td style="width: 60px;">
+                    <img src="{{ $qrFooter }}" width="60" height="60" alt="QR Verifikasi">
                 </td>
                 <td>
                     <div class="verify-text">

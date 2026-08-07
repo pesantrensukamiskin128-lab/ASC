@@ -273,8 +273,10 @@ class OutgoingLetterController extends Controller
             $signerPosition = $pos?->position_name ?? '';
         }
 
-        // QR verification URL
+        // QR verification URL & generated QR images (base64 PNG with logo)
         $verifyUrl = rtrim(config('app.frontend_url'), '/') . '/verify/surat/' . $outgoingLetter->verification_token;
+        $qrSignature = $isFinal ? \App\Helpers\QrCodeHelper::generate($verifyUrl, 120) : '';
+        $qrFooter = $isFinal ? \App\Helpers\QrCodeHelper::generateWithLogo($verifyUrl, 160) : '';
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.outgoing-letter', [
             'letter'         => $outgoingLetter,
@@ -284,6 +286,8 @@ class OutgoingLetterController extends Controller
             'signerNidn'     => $signerNidn,
             'signerPosition' => $signerPosition,
             'verifyUrl'      => $verifyUrl,
+            'qrSignature'    => $qrSignature,
+            'qrFooter'       => $qrFooter,
             'isFinal'        => $isFinal,
         ])->setPaper('a4', 'portrait')
           ->setOption('isRemoteEnabled', true);
@@ -294,7 +298,6 @@ class OutgoingLetterController extends Controller
             return $pdf->download($filename);
         }
 
-        // Preview: stream inline (tampil di browser)
         return $pdf->stream($filename);
     }
 
