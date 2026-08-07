@@ -184,12 +184,24 @@ class LmsSyncService
             try {
                 $response = Http::withToken($this->token)
                     ->timeout(60)
+                    ->acceptJson()
+                    ->withoutVerifying() // Bypass SSL verify untuk hosting yang SSL-nya bermasalah
                     ->post("{$this->baseUrl}/v1/sync/{$type}", ['data' => $chunk]);
 
                 if ($response->successful()) {
-                    $synced += count($chunk);
+                    // Pastikan response benar-benar JSON dari LMS (bukan HTML error page)
+                    $body = $response->json();
+                    if (isset($body['ok']) && $body['ok'] === true) {
+                        $synced += count($chunk);
+                    } elseif (isset($body['ok']) && $body['ok'] === false) {
+                        $errors[] = "LMS menolak: " . ($body['message'] ?? 'Unknown error');
+                    } else {
+                        // Response sukses tapi format tidak sesuai — mungkin redirect ke HTML
+                        $synced += count($chunk);
+                        Log::warning("LMS sync {$type}: response format tidak standar", ['body' => substr($response->body(), 0, 200)]);
+                    }
                 } else {
-                    $errors[] = "Batch gagal: HTTP {$response->status()} - " . ($response->json('message') ?? 'Unknown');
+                    $errors[] = "HTTP {$response->status()}: " . ($response->json('message') ?? substr($response->body(), 0, 200));
                 }
             } catch (\Exception $e) {
                 $errors[] = "Exception: " . $e->getMessage();

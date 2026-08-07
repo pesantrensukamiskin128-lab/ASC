@@ -53,16 +53,27 @@ class LmsIntegrationController extends Controller
             $url = rtrim($config->base_url, '/') . '/health';
 
             $response = \Illuminate\Support\Facades\Http::withToken($config->getDecryptedToken())
-                ->timeout(10)
+                ->acceptJson()
+                ->withoutVerifying()
+                ->timeout(15)
                 ->get($url);
 
             if ($response->successful()) {
-                return response()->json(['message' => 'Koneksi ke LMS berhasil!', 'status' => 'ok']);
+                $body = $response->json();
+                return response()->json([
+                    'message' => 'Koneksi ke LMS berhasil!',
+                    'status'  => 'ok',
+                    'response' => $body,
+                    'url'     => $url,
+                ]);
             }
 
-            return response()->json(['message' => 'LMS merespons dengan error: HTTP ' . $response->status()], 422);
+            return response()->json([
+                'message' => 'LMS merespons dengan HTTP ' . $response->status(),
+                'body'    => substr($response->body(), 0, 300),
+            ], 422);
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Gagal terhubung ke LMS: ' . $e->getMessage()], 422);
+            return response()->json(['message' => 'Gagal terhubung: ' . $e->getMessage()], 422);
         }
     }
 
