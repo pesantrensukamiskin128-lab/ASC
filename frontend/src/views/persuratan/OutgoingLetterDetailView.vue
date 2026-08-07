@@ -70,6 +70,46 @@ const revisionAction = ref<'review' | 'sign'>('review')
 const showDistributeModal = ref(false)
 const internalRecipientIds = ref<number[]>([])
 const allUsers = ref<any[]>([])
+const distributeSearch = ref('')
+const distributeFilter = ref('all')
+
+const filteredDistributeUsers = computed(() => {
+  let users = allUsers.value
+
+  // Filter by role
+  if (distributeFilter.value === 'dosen') {
+    users = users.filter((u: any) => u.role_label?.includes('DOSEN') || u.role_label?.includes('Dosen'))
+  } else if (distributeFilter.value === 'mahasiswa') {
+    users = users.filter((u: any) => u.role_label?.includes('MAHASISWA') || u.role_label?.includes('Mahasiswa'))
+  } else if (distributeFilter.value === 'struktural') {
+    users = users.filter((u: any) => u.role_label?.includes('ADMIN') || u.role_label?.includes('KEPALA') || u.role_label?.includes('Struktural'))
+  }
+
+  // Filter by search
+  if (distributeSearch.value.trim()) {
+    const q = distributeSearch.value.toLowerCase()
+    users = users.filter((u: any) => u.name.toLowerCase().includes(q))
+  }
+
+  return users
+})
+
+const isAllFilteredSelected = computed(() => {
+  if (!filteredDistributeUsers.value.length) return false
+  return filteredDistributeUsers.value.every((u: any) => internalRecipientIds.value.includes(u.id))
+})
+
+function toggleSelectAll() {
+  const ids = filteredDistributeUsers.value.map((u: any) => u.id)
+  if (isAllFilteredSelected.value) {
+    // Deselect filtered
+    internalRecipientIds.value = internalRecipientIds.value.filter(id => !ids.includes(id))
+  } else {
+    // Select filtered (merge with existing)
+    const merged = new Set([...internalRecipientIds.value, ...ids])
+    internalRecipientIds.value = [...merged]
+  }
+}
 
 onMounted(async () => {
   try {
@@ -248,18 +288,42 @@ async function handleDistribute() {
 
       <!-- Distribute Modal -->
       <div v-if="showDistributeModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showDistributeModal = false">
-        <div class="bg-white rounded-xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
-          <h3 class="text-lg font-bold text-gray-900 mb-4">Distribusi Surat</h3>
-          <p class="text-sm text-gray-500 mb-3">Pilih penerima internal:</p>
-          <div class="space-y-2 max-h-60 overflow-y-auto border border-gray-200 rounded-lg p-3">
-            <label v-for="u in allUsers" :key="u.id" class="flex items-center gap-2 text-sm">
-              <input type="checkbox" :value="u.id" v-model="internalRecipientIds" class="rounded" />
-              {{ u.name }}
-            </label>
+        <div class="bg-white rounded-xl p-6 w-full max-w-md max-h-[80vh] flex flex-col">
+          <h3 class="text-lg font-bold text-gray-900 mb-3">Distribusi Surat</h3>
+
+          <!-- Search -->
+          <input v-model="distributeSearch" type="text" placeholder="Cari nama..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
+          <!-- Filter buttons -->
+          <div class="flex flex-wrap gap-2 mb-3">
+            <button type="button" :class="['px-2.5 py-1 rounded-full text-xs font-medium border', distributeFilter === 'all' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 text-gray-600 hover:bg-gray-100']" @click="distributeFilter = 'all'">Semua</button>
+            <button type="button" :class="['px-2.5 py-1 rounded-full text-xs font-medium border', distributeFilter === 'dosen' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 text-gray-600 hover:bg-gray-100']" @click="distributeFilter = 'dosen'">Dosen</button>
+            <button type="button" :class="['px-2.5 py-1 rounded-full text-xs font-medium border', distributeFilter === 'mahasiswa' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 text-gray-600 hover:bg-gray-100']" @click="distributeFilter = 'mahasiswa'">Mahasiswa</button>
+            <button type="button" :class="['px-2.5 py-1 rounded-full text-xs font-medium border', distributeFilter === 'struktural' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 text-gray-600 hover:bg-gray-100']" @click="distributeFilter = 'struktural'">Struktural</button>
           </div>
+
+          <!-- Select all -->
+          <div class="flex items-center gap-2 mb-2">
+            <input type="checkbox" id="selectAllRecipients" :checked="isAllFilteredSelected" @change="toggleSelectAll" class="rounded" />
+            <label for="selectAllRecipients" class="text-xs text-gray-600 font-medium">Pilih Semua ({{ filteredDistributeUsers.length }})</label>
+            <span class="text-xs text-gray-400 ml-auto">{{ internalRecipientIds.length }} dipilih</span>
+          </div>
+
+          <!-- User list -->
+          <div class="flex-1 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-1 min-h-[200px] max-h-[300px]">
+            <label v-for="u in filteredDistributeUsers" :key="u.id" class="flex items-center gap-2 text-sm p-1.5 rounded hover:bg-gray-50 cursor-pointer">
+              <input type="checkbox" :value="u.id" v-model="internalRecipientIds" class="rounded" />
+              <div class="flex-1 min-w-0">
+                <span class="text-gray-800 truncate block">{{ u.name }}</span>
+                <span v-if="u.role_label" class="text-[10px] text-gray-400">{{ u.role_label }}</span>
+              </div>
+            </label>
+            <div v-if="!filteredDistributeUsers.length" class="text-center text-gray-400 text-xs py-4">Tidak ada user yang cocok.</div>
+          </div>
+
           <div class="flex justify-end gap-2 mt-4">
             <button class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg" @click="showDistributeModal = false">Batal</button>
-            <button :disabled="actionLoading" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg" @click="handleDistribute">Kirim</button>
+            <button :disabled="actionLoading || !internalRecipientIds.length" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-lg" @click="handleDistribute">Kirim ({{ internalRecipientIds.length }})</button>
           </div>
         </div>
       </div>

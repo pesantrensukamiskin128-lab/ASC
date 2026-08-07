@@ -98,12 +98,34 @@ class UserController extends Controller
     /** Daftar user ringkas — untuk pilih penerima surat, disposisi, peserta agenda */
     public function list(Request $request): JsonResponse
     {
-        $users = User::where('is_active', true)
+        $users = User::with('roles')
+            ->where('is_active', true)
             ->when($request->search, fn($q) => $q->where('name', 'like', "%{$request->search}%"))
             ->select('id', 'name', 'email')
             ->orderBy('name')
-            ->limit(200)
-            ->get();
+            ->limit(500)
+            ->get()
+            ->map(function ($u) {
+                $role = $u->roles->first()?->name ?? '';
+                $label = match ($role) {
+                    'SUPER_ADMIN' => 'Admin / Struktural',
+                    'ADMIN_AKADEMIK' => 'Admin Akademik / Struktural',
+                    'ADMIN_UMUM' => 'Admin Umum / Struktural',
+                    'ADMIN_PMB' => 'Admin PMB / Struktural',
+                    'ADMIN_KEUANGAN' => 'Admin Keuangan / Struktural',
+                    'KEPALA_TU' => 'Kepala TU / Struktural',
+                    'DOSEN' => 'Dosen',
+                    'MAHASISWA' => 'Mahasiswa',
+                    'ALUMNI' => 'Alumni',
+                    default => $role,
+                };
+                return [
+                    'id'         => $u->id,
+                    'name'       => $u->name,
+                    'email'      => $u->email,
+                    'role_label' => $label,
+                ];
+            });
 
         return response()->json($users);
     }
