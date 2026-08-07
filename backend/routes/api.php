@@ -907,6 +907,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('letter-requests')->group(function () {
         Route::get('/', [\App\Http\Controllers\Api\LetterRequestController::class, 'index']);
         Route::post('/', [\App\Http\Controllers\Api\LetterRequestController::class, 'store']);
+        Route::put('{letterRequest}', [\App\Http\Controllers\Api\LetterRequestController::class, 'update']);
+        Route::delete('{letterRequest}', [\App\Http\Controllers\Api\LetterRequestController::class, 'destroy']);
         Route::post('{letterRequest}/process', [\App\Http\Controllers\Api\LetterRequestController::class, 'process']);
     });
 

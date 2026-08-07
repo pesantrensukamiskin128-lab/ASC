@@ -73,4 +73,42 @@ class LetterRequestController extends Controller
 
         return response()->json(['message' => 'Pengajuan berhasil diproses.', 'data' => $letterRequest->fresh()]);
     }
+
+    /** Edit pengajuan (hanya pemilik, status DIAJUKAN) */
+    public function update(Request $request, LetterRequest $letterRequest): JsonResponse
+    {
+        $user = auth()->user();
+        if ($letterRequest->requested_by !== $user->id && !$user->hasRole('SUPER_ADMIN')) {
+            return response()->json(['message' => 'Tidak memiliki akses.'], 403);
+        }
+        if ($letterRequest->status !== 'DIAJUKAN') {
+            return response()->json(['message' => 'Hanya pengajuan berstatus DIAJUKAN yang bisa diedit.'], 422);
+        }
+
+        $validated = $request->validate([
+            'letter_type_id' => 'nullable|exists:letter_types,id',
+            'purpose'        => 'required|string|max:500',
+            'description'    => 'nullable|string',
+        ]);
+
+        $letterRequest->update($validated);
+        return response()->json(['message' => 'Pengajuan berhasil diupdate.', 'data' => $letterRequest->fresh()]);
+    }
+
+    /** Hapus pengajuan (pemilik jika DIAJUKAN, admin bisa hapus semua) */
+    public function destroy(LetterRequest $letterRequest): JsonResponse
+    {
+        $user = auth()->user();
+        $isAdmin = $user->hasRole('SUPER_ADMIN') || $user->hasRole('ADMIN_UMUM') || $user->hasRole('ADMIN_AKADEMIK');
+
+        if (!$isAdmin && $letterRequest->requested_by !== $user->id) {
+            return response()->json(['message' => 'Tidak memiliki akses.'], 403);
+        }
+        if (!$isAdmin && $letterRequest->status !== 'DIAJUKAN') {
+            return response()->json(['message' => 'Hanya pengajuan berstatus DIAJUKAN yang bisa dihapus.'], 422);
+        }
+
+        $letterRequest->delete();
+        return response()->json(['message' => 'Pengajuan berhasil dihapus.']);
+    }
 }

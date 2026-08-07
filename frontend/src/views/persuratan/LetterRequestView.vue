@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { PlusIcon } from '@heroicons/vue/24/outline'
+import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from 'vue-toastification'
 import BaseModal from '@/components/ui/BaseModal.vue'
@@ -14,6 +14,7 @@ const items = ref<any[]>([])
 const loading = ref(true)
 const modalOpen = ref(false)
 const saving = ref(false)
+const editingId = ref<number | null>(null)
 const letterTypes = ref<any[]>([])
 
 const form = reactive({ letter_type_id: '', purpose: '', description: '' })
@@ -37,7 +38,14 @@ onMounted(async () => {
 })
 
 function openCreate() {
+  editingId.value = null
   Object.assign(form, { letter_type_id: '', purpose: '', description: '' })
+  modalOpen.value = true
+}
+
+function openEdit(item: any) {
+  editingId.value = item.id
+  Object.assign(form, { letter_type_id: item.letter_type_id ?? '', purpose: item.purpose, description: item.description ?? '' })
   modalOpen.value = true
 }
 
@@ -47,12 +55,32 @@ async function handleSubmit() {
   try {
     const payload = { ...form }
     if (!payload.letter_type_id) delete (payload as any).letter_type_id
-    const { data } = await api.post('/letter-requests', payload)
-    toast.success(data.message)
+
+    if (editingId.value) {
+      const { data } = await api.put(`/letter-requests/${editingId.value}`, payload)
+      toast.success(data.message)
+    } else {
+      const { data } = await api.post('/letter-requests', payload)
+      toast.success(data.message)
+    }
     modalOpen.value = false
-    items.value.unshift(data.data)
+    await reload()
   } catch (e: any) { toast.error(e?.response?.data?.message ?? 'Gagal.') }
   finally { saving.value = false }
+}
+
+async function handleDelete(item: any) {
+  if (!confirm(`Hapus pengajuan "${item.purpose}"?`)) return
+  try {
+    await api.delete(`/letter-requests/${item.id}`)
+    toast.success('Pengajuan berhasil dihapus.')
+    await reload()
+  } catch (e: any) { toast.error(e?.response?.data?.message ?? 'Gagal menghapus.') }
+}
+
+async function reload() {
+  const res = await api.get('/letter-requests')
+  items.value = res.data.data ?? res.data
 }
 
 async function handleProcess(id: number, status: string) {
@@ -98,9 +126,19 @@ async function handleProcess(id: number, status: string) {
           <div v-if="isAdmin && item.status === 'DIAJUKAN'" class="flex items-center gap-1 shrink-0">
             <button class="px-2 py-1 text-[10px] font-medium bg-green-100 text-green-700 rounded hover:bg-green-200" @click="handleProcess(item.id, 'DIPROSES')">Proses</button>
             <button class="px-2 py-1 text-[10px] font-medium bg-red-100 text-red-700 rounded hover:bg-red-200" @click="handleProcess(item.id, 'DITOLAK')">Tolak</button>
+            <button class="p-1 text-red-400 hover:text-red-600" @click="handleDelete(item)" title="Hapus"><TrashIcon class="w-3.5 h-3.5" /></button>
           </div>
-          <div v-if="isAdmin && item.status === 'DIPROSES'" class="shrink-0">
+          <div v-if="isAdmin && item.status === 'DIPROSES'" class="flex items-center gap-1 shrink-0">
             <button class="px-2 py-1 text-[10px] font-medium bg-green-100 text-green-700 rounded hover:bg-green-200" @click="handleProcess(item.id, 'SELESAI')">Selesai</button>
+            <button class="p-1 text-red-400 hover:text-red-600" @click="handleDelete(item)" title="Hapus"><TrashIcon class="w-3.5 h-3.5" /></button>
+          </div>
+          <div v-if="isAdmin && ['SELESAI','DITOLAK'].includes(item.status)" class="shrink-0">
+            <button class="p-1 text-red-400 hover:text-red-600" @click="handleDelete(item)" title="Hapus"><TrashIcon class="w-3.5 h-3.5" /></button>
+          </div>
+          <!-- User actions (dosen/mahasiswa) -->
+          <div v-if="!isAdmin && item.status === 'DIAJUKAN'" class="flex items-center gap-1 shrink-0">
+            <button class="p-1 text-blue-600 hover:text-blue-800" @click="openEdit(item)" title="Edit"><PencilIcon class="w-3.5 h-3.5" /></button>
+            <button class="p-1 text-red-400 hover:text-red-600" @click="handleDelete(item)" title="Hapus"><TrashIcon class="w-3.5 h-3.5" /></button>
           </div>
         </div>
       </div>

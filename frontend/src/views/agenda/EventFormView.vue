@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import api from '@/services/api'
 
 const router = useRouter()
+const route = useRoute()
 const toast = useToast()
 const saving = ref(false)
 const allUsers = ref<any[]>([])
+
+const editId = route.params.id as string | undefined
+const isEdit = !!editId
 
 const form = reactive({
   title: '',
@@ -29,17 +33,33 @@ const types = ['Luring', 'Daring', 'Hibrid']
 onMounted(async () => {
   const { data } = await api.get('/user-list')
   allUsers.value = data
+
+  if (isEdit) {
+    const { data: ev } = await api.get(`/events/${editId}`)
+    Object.assign(form, {
+      title: ev.title, organizer: ev.organizer ?? '', category: ev.category,
+      type: ev.type, location: ev.location ?? '', meeting_link: ev.meeting_link ?? '',
+      event_date: ev.event_date, start_time: ev.start_time?.slice(0,5) ?? '08:00',
+      end_time: ev.end_time?.slice(0,5) ?? '10:00', description: ev.description ?? '',
+      invitee_ids: ev.invitees?.map((u: any) => u.id) ?? [],
+    })
+  }
 })
 
 async function handleSave() {
   if (!form.title.trim()) { toast.error('Nama agenda wajib diisi.'); return }
   saving.value = true
   try {
-    await api.post('/events', form)
-    toast.success('Agenda berhasil dibuat.')
+    if (isEdit) {
+      await api.put(`/events/${editId}`, form)
+      toast.success('Agenda berhasil diupdate.')
+    } else {
+      await api.post('/events', form)
+      toast.success('Agenda berhasil dibuat.')
+    }
     router.push('/agenda')
   } catch (e: any) {
-    toast.error(e?.response?.data?.message ?? 'Gagal membuat agenda.')
+    toast.error(e?.response?.data?.message ?? 'Gagal menyimpan agenda.')
   } finally { saving.value = false }
 }
 
@@ -55,7 +75,7 @@ function toggleAll() {
 <template>
   <div class="space-y-5 max-w-3xl">
     <div>
-      <h1 class="text-xl font-bold text-gray-900">Buat Agenda Kegiatan</h1>
+      <h1 class="text-xl font-bold text-gray-900">{{ isEdit ? 'Edit Agenda' : 'Buat Agenda Kegiatan' }}</h1>
       <p class="text-sm text-gray-500 mt-0.5">Isi informasi kegiatan dan undang peserta</p>
     </div>
 
@@ -142,7 +162,7 @@ function toggleAll() {
       <div class="flex items-center gap-3">
         <button type="button" class="px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg border border-gray-300" @click="router.back()">Batal</button>
         <button type="submit" :disabled="saving" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-lg">
-          {{ saving ? 'Menyimpan...' : 'Buat Agenda' }}
+          {{ saving ? 'Menyimpan...' : (isEdit ? 'Simpan Perubahan' : 'Buat Agenda') }}
         </button>
       </div>
     </form>

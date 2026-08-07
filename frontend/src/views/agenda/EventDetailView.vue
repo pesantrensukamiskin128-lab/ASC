@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from 'vue-toastification'
 import { QrCodeIcon, UsersIcon, CheckCircleIcon } from '@heroicons/vue/24/outline'
 import api from '@/services/api'
 
 const route = useRoute()
+const router = useRouter()
 const auth = useAuthStore()
 const toast = useToast()
 
@@ -40,6 +41,15 @@ async function toggleOpen() {
   } catch {}
 }
 
+async function handleDelete() {
+  if (!confirm(`Hapus agenda "${event.value.title}"? Data presensi juga akan dihapus.`)) return
+  try {
+    await api.delete(`/events/${event.value.id}`)
+    toast.success('Agenda berhasil dihapus.')
+    router.push('/agenda')
+  } catch (e: any) { toast.error(e?.response?.data?.message ?? 'Gagal menghapus.') }
+}
+
 function formatDate(d: string) { return new Date(d).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) }
 </script>
 
@@ -52,9 +62,13 @@ function formatDate(d: string) { return new Date(d).toLocaleDateString('id-ID', 
           <h1 class="text-xl font-bold text-gray-900">{{ event.title }}</h1>
           <p class="text-sm text-gray-500 mt-0.5">{{ event.organizer ?? '' }} · {{ event.category }}</p>
         </div>
-        <button v-if="canManage" :class="['px-3 py-1.5 text-xs font-medium rounded-lg border', event.is_open ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50']" @click="toggleOpen">
-          {{ event.is_open ? 'Tutup Presensi' : 'Buka Presensi' }}
-        </button>
+        <div v-if="canManage" class="flex items-center gap-2">
+          <button :class="['px-3 py-1.5 text-xs font-medium rounded-lg border', event.is_open ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50']" @click="toggleOpen">
+            {{ event.is_open ? 'Tutup Presensi' : 'Buka Presensi' }}
+          </button>
+          <button class="px-3 py-1.5 text-xs font-medium rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50" @click="router.push(`/agenda/${event.id}/edit`)">Edit</button>
+          <button class="px-3 py-1.5 text-xs font-medium rounded-lg border border-red-200 text-red-600 hover:bg-red-50" @click="handleDelete">Hapus</button>
+        </div>
       </div>
 
       <!-- Info -->

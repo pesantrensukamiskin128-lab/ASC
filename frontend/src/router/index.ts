@@ -784,6 +784,12 @@ const router = createRouter({
           component: () => import('@/views/agenda/EventDetailView.vue'),
           meta: { permission: 'agenda.view' },
         },
+        {
+          path: 'agenda/:id/edit',
+          name: 'event-edit',
+          component: () => import('@/views/agenda/EventFormView.vue'),
+          meta: { permission: 'agenda.edit' },
+        },
 
         { path: 'forbidden', name: 'forbidden', component: () => import('@/views/ForbiddenView.vue') },
       ],

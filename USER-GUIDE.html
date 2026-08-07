@@ -84,6 +84,21 @@
   /* Print button */
   .print-btn { position: fixed; bottom: 24px; right: 24px; background: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 50px; cursor: pointer; font-size: 12pt; font-weight: 600; box-shadow: 0 4px 12px rgba(37,99,235,0.4); z-index: 100; }
   .print-btn:hover { background: #1d4ed8; }
+
+  /* Flowchart */
+  .flowchart { display: flex; flex-direction: column; align-items: center; gap: 0; margin: 16px 0 24px; font-size: 9.5pt; }
+  .flow-node { padding: 8px 16px; border-radius: 6px; text-align: center; min-width: 180px; max-width: 280px; font-weight: 500; }
+  .flow-start { background: #1e3a8a; color: white; border-radius: 20px; }
+  .flow-process { background: #eff6ff; border: 1.5px solid #2563eb; color: #1e3a8a; }
+  .flow-decision { background: #fefce8; border: 1.5px solid #ca8a04; color: #854d0e; transform: rotate(0deg); }
+  .flow-end { background: #dcfce7; border: 1.5px solid #16a34a; color: #166534; border-radius: 20px; }
+  .flow-error { background: #fee2e2; border: 1.5px solid #dc2626; color: #991b1b; border-radius: 6px; }
+  .flow-arrow { display: flex; flex-direction: column; align-items: center; color: #6b7280; font-size: 8pt; }
+  .flow-arrow::before { content: '↓'; font-size: 14pt; line-height: 1; }
+  .flow-arrow-label { font-size: 8pt; color: #9ca3af; margin-top: -2px; }
+  .flow-branch { display: flex; gap: 12px; align-items: flex-start; justify-content: center; width: 100%; margin: 4px 0; }
+  .flow-branch-item { display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .flow-branch-label { font-size: 8pt; color: #6b7280; margin-bottom: 2px; }
 </style>
 </head>
 <body>
@@ -126,6 +141,10 @@
     <li><a href="#mahasiswa-guide">Panduan Khusus Mahasiswa</a></li>
     <li><a href="#dosen-guide">Panduan Khusus Dosen</a></li>
     <li><a href="#faq">FAQ & Pemecahan Masalah</a></li>
+    <li><a href="#persuratan">Modul Persuratan</a></li>
+    <li><a href="#agenda-kegiatan">Modul Agenda & Presensi Kegiatan</a></li>
+    <li><a href="#integrasi-lms">Integrasi LMS</a></li>
+    <li><a href="#push-notif">Push Notification (PWA)</a></li>
   </ol>
 </div>
 
@@ -308,6 +327,21 @@
 </table>
 
 <h3>8.2 Alur PMB Calon Mahasiswa</h3>
+
+<div class="flowchart">
+  <div class="flow-node flow-start">Calon mahasiswa registrasi online</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-node flow-process">Isi formulir & upload dokumen</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-node flow-process">Konfirmasi pembayaran</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-node flow-decision">Admin verifikasi berkas</div>
+  <div class="flow-arrow"><div class="flow-arrow-label">Lengkap</div></div>
+  <div class="flow-node flow-process">Mengikuti seleksi</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-node flow-end">Pengumuman kelulusan</div>
+</div>
+
 <div class="steps">
   <div class="step"><div class="step-num">1</div><div class="step-content"><h4>Registrasi Online</h4><p>Calon mahasiswa mengakses halaman PMB publik dan membuat akun pendaftaran.</p></div></div>
   <div class="step"><div class="step-num">2</div><div class="step-content"><h4>Isi Formulir</h4><p>Mengisi data pribadi, pilihan prodi, data keluarga, dan riwayat pendidikan.</p></div></div>
@@ -334,6 +368,22 @@
 <h3>9.2 RPKPS / RPS Digital</h3>
 <p>Menu: <em>Akademik → RPKPS / RPS</em></p>
 <p>Rencana Pembelajaran Semester digital dengan alur persetujuan:</p>
+
+<div class="flowchart">
+  <div class="flow-node flow-start">Dosen buat RPS</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-node flow-process">Status: DRAFT</div>
+  <div class="flow-arrow"><div class="flow-arrow-label">Ajukan</div></div>
+  <div class="flow-node flow-process">Status: DIAJUKAN</div>
+  <div class="flow-arrow"><div class="flow-arrow-label">Kaprodi review</div></div>
+  <div class="flow-node flow-decision">Kaprodi keputusan</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-branch">
+    <div class="flow-branch-item"><div class="flow-branch-label">Setuju</div><div class="flow-node flow-end">DISETUJUI → DIKUNCI + QR</div></div>
+    <div class="flow-branch-item"><div class="flow-branch-label">Revisi</div><div class="flow-node flow-error">Kembali ke DRAFT</div></div>
+  </div>
+</div>
+
 <ul>
   <li>Dosen membuat RPS → status <span class="badge badge-gray">DRAFT</span></li>
   <li>Diajukan ke Kaprodi → status <span class="badge badge-blue">DIAJUKAN</span></li>
@@ -348,6 +398,22 @@
 
 <h3>9.4 KRS &amp; Perwalian</h3>
 <p>Menu: <em>Akademik → KRS &amp; Perwalian</em> (admin/dosen) atau <em>Akademik → KRS Saya</em> (mahasiswa)</p>
+
+<div class="flowchart">
+  <div class="flow-node flow-start">Mahasiswa mengisi KRS</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-node flow-process">Ajukan KRS</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-node flow-decision">Dosen Wali review</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-branch">
+    <div class="flow-branch-item"><div class="flow-branch-label">Setuju</div><div class="flow-node flow-process">Kaprodi TTD</div></div>
+    <div class="flow-branch-item"><div class="flow-branch-label">Tolak</div><div class="flow-node flow-error">Kembali ke Mahasiswa</div></div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-node flow-end">KRS Disetujui + PDF + QR</div>
+</div>
+
 <ul>
   <li>Mahasiswa mengisi KRS pada periode yang ditentukan</li>
   <li>Dosen Wali menyetujui atau menolak KRS mahasiswa bimbingannya</li>
@@ -444,6 +510,23 @@
 <p>Mengelola seluruh alur tugas akhir dari pengajuan judul hingga sidang.</p>
 
 <h3>13.1 Alur Skripsi</h3>
+
+<div class="flowchart">
+  <div class="flow-node flow-start">Mahasiswa ajukan judul</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-node flow-decision">Kaprodi review</div>
+  <div class="flow-arrow"><div class="flow-arrow-label">Setuju + tunjuk pembimbing</div></div>
+  <div class="flow-node flow-process">Bimbingan berkala</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-node flow-process">Seminar Proposal</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-node flow-process">Sidang Skripsi</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-node flow-process">Revisi & Upload Final</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-node flow-end">Skripsi Selesai → Repository</div>
+</div>
+
 <div class="steps">
   <div class="step"><div class="step-num">1</div><div class="step-content"><h4>Pengajuan Judul</h4><p>Mahasiswa mengajukan judul skripsi beserta deskripsi singkat.</p></div></div>
   <div class="step"><div class="step-num">2</div><div class="step-content"><h4>Persetujuan Kaprodi</h4><p>Kaprodi meninjau dan menyetujui judul serta menunjuk dosen pembimbing.</p></div></div>
@@ -506,6 +589,19 @@
 <h3>15.2 Cuti Akademik</h3>
 <p>Menu: <em>Akademik → Cuti Akademik</em></p>
 <p>Pengajuan cuti akademik dengan alur persetujuan bertingkat:</p>
+
+<div class="flowchart">
+  <div class="flow-node flow-start">Mahasiswa ajukan cuti</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-node flow-decision">Dosen Wali review</div>
+  <div class="flow-arrow"><div class="flow-arrow-label">Setuju</div></div>
+  <div class="flow-node flow-decision">Kaprodi review</div>
+  <div class="flow-arrow"><div class="flow-arrow-label">Setuju</div></div>
+  <div class="flow-node flow-process">Admin Akademik terbitkan SK</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-node flow-end">Cuti Aktif</div>
+</div>
+
 <ol>
   <li>Mahasiswa mengajukan cuti dengan alasan dan bukti pendukung</li>
   <li>Dosen Wali menyetujui/menolak</li>
@@ -674,9 +770,225 @@
   <p><strong>📞 Butuh Bantuan?</strong> Hubungi tim IT atau administrator sistem melalui email atau langsung ke kantor bagian akademik kampus. Sertakan screenshot error dan langkah-langkah yang dilakukan sebelum masalah terjadi.</p>
 </div>
 
+<hr>
+
+<!-- BAB 21: PERSURATAN -->
+<h1 id="persuratan">21. Modul Persuratan</h1>
+<p>Modul persuratan digital terintegrasi dengan alur tanda tangan elektronik berjenjang dan QR code verifikasi.</p>
+
+<h3>21.1 Menu Persuratan per Role</h3>
+<table>
+  <tr><th>Sub Menu</th><th>Admin Umum</th><th>Struktural</th><th>Dosen</th><th>Mahasiswa</th></tr>
+  <tr><td>Surat Keluar (buat/kirim)</td><td>✅</td><td>—</td><td>—</td><td>—</td></tr>
+  <tr><td>Surat Masuk (Eksternal)</td><td>✅</td><td>—</td><td>—</td><td>—</td></tr>
+  <tr><td>Template Surat</td><td>✅</td><td>—</td><td>—</td><td>—</td></tr>
+  <tr><td>Tanda Tangan Surat</td><td>—</td><td>✅</td><td>—</td><td>—</td></tr>
+  <tr><td>Surat Masuk (dari Admin)</td><td>—</td><td>✅</td><td>✅</td><td>✅</td></tr>
+  <tr><td>Disposisi</td><td>✅</td><td>✅</td><td>✅</td><td>—</td></tr>
+  <tr><td>Pengajuan Surat</td><td>✅ (kelola)</td><td>✅</td><td>✅</td><td>✅</td></tr>
+</table>
+
+<h3>21.2 Alur Surat Keluar</h3>
+
+<div class="flowchart">
+  <div class="flow-node flow-start">Admin buat draft surat</div>
+  <div class="flow-arrow"><div class="flow-arrow-label">Kirim</div></div>
+  <div class="flow-node flow-decision">Ada pemeriksa?</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-branch">
+    <div class="flow-branch-item">
+      <div class="flow-branch-label">Ya</div>
+      <div class="flow-node flow-process">Pemeriksa cek</div>
+    </div>
+    <div class="flow-branch-item">
+      <div class="flow-branch-label">Tidak</div>
+      <div class="flow-node flow-process">Langsung ke TTD</div>
+    </div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-node flow-decision">Penandatangan TTD</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-branch">
+    <div class="flow-branch-item">
+      <div class="flow-branch-label">TTD ✓</div>
+      <div class="flow-node flow-process">Nomor surat + QR</div>
+    </div>
+    <div class="flow-branch-item">
+      <div class="flow-branch-label">Revisi</div>
+      <div class="flow-node flow-error">Kembali ke Admin</div>
+    </div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-node flow-process">Admin distribusikan</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-node flow-end">TERKIRIM → PDF + Notifikasi</div>
+</div>
+
+<div class="steps">
+  <div class="step"><div class="step-num">1</div><div class="step-content"><h4>Admin buat draft surat</h4><p>Isi form: jenis surat, perihal, tujuan, isi surat (rich text editor dengan tabel, list, gambar), pilih penandatangan dan pemeriksa (opsional). Upload dokumen pendukung jika ada.</p></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><h4>Kirim ke Pemeriksa (opsional)</h4><p>Jika ada pemeriksa (Kepala TU/pejabat lain), surat masuk ke antrian pemeriksaan. Pemeriksa mendapat notifikasi.</p></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content"><h4>Pemeriksa memeriksa</h4><p>Preview PDF → periksa & teruskan ke penandatangan, atau kembalikan ke admin dengan catatan revisi.</p></div></div>
+  <div class="step"><div class="step-num">4</div><div class="step-content"><h4>Penandatangan menandatangani</h4><p>Preview PDF → tanda tangan elektronik → nomor surat otomatis tergenerate → QR code biru dengan logo institusi aktif.</p></div></div>
+  <div class="step"><div class="step-num">5</div><div class="step-content"><h4>Admin distribusikan surat</h4><p>Pilih penerima internal (filter: semua/dosen/mahasiswa/struktural/per prodi, search nama) dan/atau tulis penerima eksternal. Klik kirim.</p></div></div>
+  <div class="step"><div class="step-num">6</div><div class="step-content"><h4>Surat terkirim</h4><p>Penerima internal mendapat push notification + notifikasi in-app. PDF bisa didownload dengan kop surat, QR code, dan footer verifikasi elektronik.</p></div></div>
+</div>
+
+<h3>21.3 Format Nomor Surat</h3>
+<p>Format: <code>001/A.1/STAI-YAB/VIII/2026</code> (urutan/kode/institusi/bulan/tahun)</p>
+
+<h3>21.4 Jenis Surat</h3>
+<table>
+  <tr><th>Kode</th><th>Nama</th></tr>
+  <tr><td>A.1</td><td>Surat Rutin Internal</td></tr>
+  <tr><td>A.2</td><td>Surat Keterangan</td></tr>
+  <tr><td>A.3</td><td>Surat Rekomendasi</td></tr>
+  <tr><td>A.4</td><td>Surat Tugas</td></tr>
+  <tr><td>A.5</td><td>Surat Peringatan</td></tr>
+  <tr><td>A.6</td><td>Surat Edaran</td></tr>
+  <tr><td>A.7</td><td>Surat Pengumuman</td></tr>
+  <tr><td>SK</td><td>Surat Keputusan</td></tr>
+  <tr><td>B.1</td><td>Surat Rutin Eksternal</td></tr>
+  <tr><td>B.2–B.5</td><td>Surat Eksternal (Keterangan, Rekomendasi, Tugas, Pengumuman)</td></tr>
+</table>
+
+<h3>21.5 Template Surat</h3>
+<p>Admin bisa menyimpan template surat yang sering dipakai (nama, jenis, perihal, isi, lampiran). Saat buat surat baru, klik "Gunakan Template" → form terisi otomatis.</p>
+
+<h3>21.6 Pengajuan Surat (Dosen & Mahasiswa)</h3>
+<p>Dosen dan mahasiswa mengajukan pembuatan surat ke bagian administrasi. Admin menerima notifikasi → proses/tolak → pengaju mendapat update status.</p>
+
+<h3>21.7 Disposisi Surat Masuk Eksternal</h3>
+
+<div class="flowchart">
+  <div class="flow-node flow-start">Admin upload surat eksternal</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-node flow-process">Pemberi disposisi buat instruksi</div>
+  <div class="flow-arrow"><div class="flow-arrow-label">Pilih penerima</div></div>
+  <div class="flow-node flow-process">Penerima terima notifikasi</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-node flow-process">Baca & Jawab tindak lanjut</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-node flow-end">Pembuat disposisi terima jawaban</div>
+</div>
+
+<p>Admin upload surat dari pihak luar → pemberi disposisi (pejabat struktural) buat instruksi → penerima disposisi terima notifikasi → baca & jawab tindak lanjut → pemberi disposisi terima notifikasi jawaban.</p>
+
+<h3>21.8 Verifikasi Surat Digital</h3>
+<p>Setiap surat yang ditandatangani memiliki QR code biru dengan logo institusi. Scan QR atau klik link di PDF → halaman verifikasi menampilkan nomor surat, perihal, tanggal, penandatangan, dan status sah.</p>
+
+<!-- BAB 22: AGENDA & PRESENSI -->
+<h1 id="agenda-kegiatan">22. Modul Agenda & Presensi Kegiatan</h1>
+<p>Mengelola kegiatan kampus (rapat, seminar, workshop, dll) dengan sistem presensi digital via QR code.</p>
+
+<h3>22.1 Membuat Agenda</h3>
+<p>Menu: <em>Agenda Kegiatan → Buat Agenda</em> (Admin Umum / Super Admin)</p>
+<ul>
+  <li>Isi: nama, penyelenggara, kategori (Rapat/Seminar/Workshop/Pelatihan/Wisuda/Dies Natalis/Lainnya), tipe (Luring/Daring/Hibrid)</li>
+  <li>Tanggal, waktu mulai/selesai, tempat, link meeting (untuk daring/hibrid)</li>
+  <li>Pilih peserta diundang (opsional — bisa pilih semua)</li>
+  <li>QR code presensi otomatis digenerate</li>
+</ul>
+
+<h3>22.2 Presensi</h3>
+
+<div class="flowchart">
+  <div class="flow-node flow-start">Peserta scan QR Code</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-node flow-decision">Sudah login?</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-branch">
+    <div class="flow-branch-item">
+      <div class="flow-branch-label">Ya (User)</div>
+      <div class="flow-node flow-process">Konfirmasi hadir (1 klik)</div>
+    </div>
+    <div class="flow-branch-item">
+      <div class="flow-branch-label">Tidak (Tamu)</div>
+      <div class="flow-node flow-process">Isi form nama, HP, instansi</div>
+    </div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-node flow-end">Kehadiran tercatat ✓</div>
+</div>
+
+<table>
+  <tr><th>Metode</th><th>Siapa</th><th>Cara</th></tr>
+  <tr><td>Via Aplikasi</td><td>User login (dosen/mahasiswa/staff)</td><td>Scan QR → konfirmasi hadir (1 klik)</td></tr>
+  <tr><td>Via Form Publik</td><td>Tamu tanpa akun</td><td>Scan QR → isi nama, HP, instansi, jabatan → kirim</td></tr>
+</table>
+
+<h3>22.3 Kelola Presensi</h3>
+<ul>
+  <li>Admin bisa buka/tutup presensi (toggle) untuk mengontrol waktu</li>
+  <li>Halaman detail agenda menampilkan QR code, daftar hadir, dan statistik</li>
+  <li>Peserta diundang ditandai apakah sudah hadir atau belum</li>
+</ul>
+
+<!-- BAB 23: INTEGRASI LMS -->
+<h1 id="integrasi-lms">23. Integrasi LMS</h1>
+<p>ASC menyinkronkan data akademik ke Learning Management System (LMS) yang terpisah melalui REST API.</p>
+
+<h3>23.1 Konfigurasi</h3>
+<p>Menu: <em>Pengaturan → Integrasi LMS</em> (SUPER_ADMIN / ADMIN_AKADEMIK)</p>
+<ol>
+  <li>Isi Base URL API LMS (contoh: <code>https://lms.stai-aljawami.ac.id/api</code>)</li>
+  <li>Isi API Token (dari menu Integrasi API di LMS, scope: <code>sync</code>)</li>
+  <li>Klik <strong>Simpan</strong> → <strong>Test Koneksi</strong></li>
+</ol>
+
+<h3>23.2 Data yang Disinkronkan</h3>
+<table>
+  <tr><th>Tipe</th><th>Data</th></tr>
+  <tr><td>Users</td><td>Mahasiswa aktif + Dosen aktif → akun LMS</td></tr>
+  <tr><td>Courses</td><td>Mata kuliah aktif → course catalog LMS</td></tr>
+  <tr><td>Classes</td><td>Kelas semester aktif → kelas virtual LMS</td></tr>
+  <tr><td>Enrollments</td><td>KRS approved → enrollment mahasiswa</td></tr>
+</table>
+
+<h3>23.3 Menjalankan Sinkronisasi</h3>
+
+<div class="flowchart">
+  <div class="flow-node flow-start">Admin klik Sync</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-node flow-process">ASC ambil data (users, MK, kelas, KRS)</div>
+  <div class="flow-arrow"><div class="flow-arrow-label">POST ke LMS API</div></div>
+  <div class="flow-node flow-decision">LMS proses data</div>
+  <div class="flow-arrow"></div>
+  <div class="flow-branch">
+    <div class="flow-branch-item"><div class="flow-branch-label">Berhasil</div><div class="flow-node flow-end">Data tersinkronisasi ✓</div></div>
+    <div class="flow-branch-item"><div class="flow-branch-label">Gagal</div><div class="flow-node flow-error">Error dicatat di log</div></div>
+  </div>
+</div>
+
+<p>Klik <strong>Sync Semua</strong> atau sync per tipe. Hasil ditampilkan real-time. Riwayat tersimpan di tabel log.</p>
+
+<!-- BAB 24: PUSH NOTIFICATION -->
+<h1 id="push-notif">24. Push Notification (PWA)</h1>
+<p>Notifikasi muncul di smartphone meski aplikasi tidak sedang dibuka.</p>
+
+<h3>24.1 Mengaktifkan</h3>
+<p>Saat login pertama kali, browser menampilkan permintaan izin notifikasi. Klik <strong>Izinkan</strong>. Setelah itu, semua notifikasi akan muncul sebagai push notification di perangkat.</p>
+
+<h3>24.2 Proses yang Memicu Notifikasi</h3>
+<table>
+  <tr><th>Proses</th><th>Penerima</th></tr>
+  <tr><td>Surat dikirim ke pemeriksa/penandatangan</td><td>Pemeriksa / Penandatangan</td></tr>
+  <tr><td>Surat direvisi</td><td>Admin pembuat</td></tr>
+  <tr><td>Surat ditandatangani</td><td>Admin pembuat</td></tr>
+  <tr><td>Surat didistribusikan</td><td>Setiap penerima internal</td></tr>
+  <tr><td>Disposisi baru</td><td>Penerima disposisi</td></tr>
+  <tr><td>Disposisi dijawab</td><td>Pembuat disposisi</td></tr>
+  <tr><td>Pengajuan surat baru</td><td>Admin Umum</td></tr>
+  <tr><td>Pengajuan diproses/ditolak</td><td>Pengaju</td></tr>
+</table>
+
+<h3>24.3 Menonaktifkan</h3>
+<p>Ubah pengaturan notifikasi di browser: Settings → Site Settings → Notifications → cari URL ASC → Block.</p>
+
+<hr>
+
 <div style="text-align: center; margin-top: 40px; padding: 20px; color: #9ca3af; font-size: 10pt;">
   <p>— Akhir Dokumen —</p>
-  <p style="margin-top: 8px;">Al-Jawami Smart Campus (ASC) v1.0 · Panduan Pengguna · Agustus 2026</p>
+  <p style="margin-top: 8px;">Al-Jawami Smart Campus (ASC) v1.1 · Panduan Pengguna · Agustus 2026</p>
   <p>STAI YAPATA AL-JAWAMI BANDUNG</p>
 </div>
 
