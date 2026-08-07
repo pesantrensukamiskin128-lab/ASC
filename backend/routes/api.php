@@ -852,6 +852,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('{outgoingLetter}/distribute', [OutgoingLetterController::class, 'distribute']);
         Route::post('{outgoingLetter}/documents', [OutgoingLetterController::class, 'uploadDocuments']);
         Route::delete('{outgoingLetter}/documents', [OutgoingLetterController::class, 'removeDocument']);
+        Route::get('{outgoingLetter}/pdf', [OutgoingLetterController::class, 'downloadPdf']);
+    });
+
+    // Template Surat
+    Route::prefix('letter-templates')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\LetterTemplateController::class, 'index']);
+        Route::post('/', [\App\Http\Controllers\Api\LetterTemplateController::class, 'store']);
+        Route::get('{letterTemplate}', [\App\Http\Controllers\Api\LetterTemplateController::class, 'show']);
+        Route::put('{letterTemplate}', [\App\Http\Controllers\Api\LetterTemplateController::class, 'update']);
+        Route::delete('{letterTemplate}', [\App\Http\Controllers\Api\LetterTemplateController::class, 'destroy']);
     });
 
     // Surat Masuk

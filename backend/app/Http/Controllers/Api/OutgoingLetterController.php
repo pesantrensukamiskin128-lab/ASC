@@ -233,6 +233,52 @@ class OutgoingLetterController extends Controller
         }
     }
 
+    /** Download PDF surat keluar */
+    public function downloadPdf(OutgoingLetter $outgoingLetter): \Illuminate\Http\Response
+    {
+        if (!in_array($outgoingLetter->status, ['DITANDATANGANI', 'TERKIRIM'])) {
+            abort(422, 'Surat belum ditandatangani.');
+        }
+
+        $institution = \App\Models\Institution::first();
+        $letterheadUrl = null;
+        if ($institution?->letterhead_path) {
+            $letterheadUrl = storage_path('app/public/' . $institution->letterhead_path);
+        }
+
+        // Signer info
+        $signer = $outgoingLetter->signer;
+        $signerLecturer = $signer?->lecturer;
+        $signerName = $signerLecturer?->display_name ?? $signer?->name ?? '-';
+        $signerNidn = $signerLecturer?->nidn ?? '';
+
+        // Jabatan penandatangan
+        $signerPosition = '';
+        if ($signerLecturer) {
+            $pos = \App\Models\LecturerPosition::where('lecturer_id', $signerLecturer->id)
+                ->where('is_active', true)
+                ->first();
+            $signerPosition = $pos?->position_name ?? '';
+        }
+
+        // QR verification URL
+        $verifyUrl = rtrim(config('app.frontend_url'), '/') . '/verify/surat/' . $outgoingLetter->verification_token;
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.outgoing-letter', [
+            'letter'         => $outgoingLetter,
+            'institution'    => $institution,
+            'letterheadUrl'  => $letterheadUrl,
+            'signerName'     => $signerName,
+            'signerNidn'     => $signerNidn,
+            'signerPosition' => $signerPosition,
+            'verifyUrl'      => $verifyUrl,
+        ])->setPaper('a4', 'portrait')
+          ->setOption('isRemoteEnabled', true);
+
+        $filename = ($outgoingLetter->letter_number ? str_replace('/', '-', $outgoingLetter->letter_number) : 'surat') . '.pdf';
+        return $pdf->download($filename);
+    }
+
     public function destroy(OutgoingLetter $outgoingLetter): JsonResponse
     {
         if (!in_array($outgoingLetter->status, ['DRAFT', 'REVISI_PEMERIKSA', 'REVISI_PENANDATANGAN'])) {
