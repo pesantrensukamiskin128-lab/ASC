@@ -33,6 +33,13 @@
     </style>
 </head>
 <body>
+    {{-- Watermark DRAFT jika belum final --}}
+    @if(!$isFinal)
+    <div style="position: fixed; top: 40%; left: 10%; transform: rotate(-35deg); font-size: 80pt; color: rgba(200,200,200,0.3); font-weight: bold; z-index: -1; letter-spacing: 10px;">
+        DRAFT
+    </div>
+    @endif
+
     {{-- Kop Surat --}}
     @if($letterheadUrl && file_exists($letterheadUrl))
         <div class="letterhead">
@@ -65,9 +72,13 @@
         <div class="sign-area">
             <p>{{ $letter->city ?? 'Bandung' }}, {{ $letter->letter_date?->translatedFormat('d F Y') }}</p>
             <p>{{ $signerPosition }}</p>
+            @if($isFinal)
             <div class="qr">
                 <img src="https://api.qrserver.com/v1/create-qr-code/?size=50x50&data={{ urlencode($verifyUrl) }}" width="50" height="50" alt="QR">
             </div>
+            @else
+            <br><br>
+            @endif
             <p class="name">{{ $signerName }}</p>
             @if($signerNidn)
                 <p class="nidn">NIDN: {{ $signerNidn }}</p>
@@ -75,7 +86,8 @@
         </div>
     </div>
 
-    {{-- Footer Verifikasi --}}
+    {{-- Footer Verifikasi (hanya di surat final) --}}
+    @if($isFinal)
     <div class="verify-footer">
         <table>
             <tr>
@@ -90,5 +102,6 @@
             </tr>
         </table>
     </div>
+    @endif
 </body>
 </html>

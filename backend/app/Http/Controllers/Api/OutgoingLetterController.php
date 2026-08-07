@@ -240,6 +240,18 @@ class OutgoingLetterController extends Controller
             abort(422, 'Surat belum ditandatangani.');
         }
 
+        return $this->generatePdf($outgoingLetter, true);
+    }
+
+    /** Preview PDF surat (semua status bisa preview) */
+    public function previewPdf(OutgoingLetter $outgoingLetter): \Illuminate\Http\Response
+    {
+        return $this->generatePdf($outgoingLetter, false);
+    }
+
+    /** Generate PDF — shared logic */
+    private function generatePdf(OutgoingLetter $outgoingLetter, bool $isFinal): \Illuminate\Http\Response
+    {
         $institution = \App\Models\Institution::first();
         $letterheadUrl = null;
         if ($institution?->letterhead_path) {
@@ -272,11 +284,18 @@ class OutgoingLetterController extends Controller
             'signerNidn'     => $signerNidn,
             'signerPosition' => $signerPosition,
             'verifyUrl'      => $verifyUrl,
+            'isFinal'        => $isFinal,
         ])->setPaper('a4', 'portrait')
           ->setOption('isRemoteEnabled', true);
 
-        $filename = ($outgoingLetter->letter_number ? str_replace('/', '-', $outgoingLetter->letter_number) : 'surat') . '.pdf';
-        return $pdf->download($filename);
+        $filename = ($outgoingLetter->letter_number ? str_replace('/', '-', $outgoingLetter->letter_number) : 'surat-preview') . '.pdf';
+
+        if ($isFinal) {
+            return $pdf->download($filename);
+        }
+
+        // Preview: stream inline (tampil di browser)
+        return $pdf->stream($filename);
     }
 
     public function destroy(OutgoingLetter $outgoingLetter): JsonResponse

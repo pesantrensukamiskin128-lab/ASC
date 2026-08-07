@@ -853,6 +853,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('{outgoingLetter}/documents', [OutgoingLetterController::class, 'uploadDocuments']);
         Route::delete('{outgoingLetter}/documents', [OutgoingLetterController::class, 'removeDocument']);
         Route::get('{outgoingLetter}/pdf', [OutgoingLetterController::class, 'downloadPdf']);
+        Route::get('{outgoingLetter}/preview-pdf', [OutgoingLetterController::class, 'previewPdf']);
     });
 
     // Template Surat

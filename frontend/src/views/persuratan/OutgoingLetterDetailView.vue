@@ -158,6 +158,11 @@ async function handleDistribute() {
 
       <!-- Action Buttons -->
       <div class="flex flex-wrap gap-3">
+        <a :href="`${apiBaseUrl}/outgoing-letters/${letter.id}/preview-pdf`"
+          target="_blank"
+          class="px-4 py-2.5 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg inline-flex items-center gap-2">
+          👁 Preview PDF
+        </a>
         <a v-if="['DITANDATANGANI','TERKIRIM'].includes(letter.status)"
           :href="`${apiBaseUrl}/outgoing-letters/${letter.id}/pdf`"
           target="_blank"
