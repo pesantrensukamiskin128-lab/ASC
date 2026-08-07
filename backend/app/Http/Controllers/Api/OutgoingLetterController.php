@@ -233,6 +233,14 @@ class OutgoingLetterController extends Controller
         }
     }
 
+    /** Preview PDF surat (semua status bisa preview) */
+    public function previewPdf(OutgoingLetter $outgoingLetter): \Illuminate\Http\Response
+    {
+        // Jika sudah ditandatangani, tampilkan sebagai final (dengan QR)
+        $isFinal = in_array($outgoingLetter->status, ['DITANDATANGANI', 'TERKIRIM']);
+        return $this->generatePdf($outgoingLetter, $isFinal, true);
+    }
+
     /** Download PDF surat keluar */
     public function downloadPdf(OutgoingLetter $outgoingLetter): \Illuminate\Http\Response
     {
@@ -240,17 +248,11 @@ class OutgoingLetterController extends Controller
             abort(422, 'Surat belum ditandatangani.');
         }
 
-        return $this->generatePdf($outgoingLetter, true);
-    }
-
-    /** Preview PDF surat (semua status bisa preview) */
-    public function previewPdf(OutgoingLetter $outgoingLetter): \Illuminate\Http\Response
-    {
-        return $this->generatePdf($outgoingLetter, false);
+        return $this->generatePdf($outgoingLetter, true, false);
     }
 
     /** Generate PDF — shared logic */
-    private function generatePdf(OutgoingLetter $outgoingLetter, bool $isFinal): \Illuminate\Http\Response
+    private function generatePdf(OutgoingLetter $outgoingLetter, bool $isFinal, bool $streamOnly = false): \Illuminate\Http\Response
     {
         $institution = \App\Models\Institution::first();
         $letterheadUrl = null;
@@ -294,11 +296,11 @@ class OutgoingLetterController extends Controller
 
         $filename = ($outgoingLetter->letter_number ? str_replace('/', '-', $outgoingLetter->letter_number) : 'surat-preview') . '.pdf';
 
-        if ($isFinal) {
-            return $pdf->download($filename);
+        if ($streamOnly) {
+            return $pdf->stream($filename);
         }
 
-        return $pdf->stream($filename);
+        return $pdf->download($filename);
     }
 
     public function destroy(OutgoingLetter $outgoingLetter): JsonResponse

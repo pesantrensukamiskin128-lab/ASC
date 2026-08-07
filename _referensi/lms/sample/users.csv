@@ -1,0 +1,4 @@
+username,full_name,role,email,password,identity_number,program_code,phone,external_id
+2026110001,Nama Mahasiswa,mahasiswa,mahasiswa@example.ac.id,KataSandi!2026,2026110001,PAI,081234567890,SIAKAD-2026110001
+demo.dosen,Nama Dosen,dosen,dosen@example.ac.id,KataSandi!2026,2101018001,PAI,081234567891,SIAKAD-DOSEN-001
+

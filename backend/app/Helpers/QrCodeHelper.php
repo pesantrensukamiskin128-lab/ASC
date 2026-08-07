@@ -8,53 +8,54 @@ use App\Models\Institution;
 class QrCodeHelper
 {
     /**
-     * Generate QR code sebagai base64 PNG data URI dengan logo institusi di tengah.
-     * Warna QR: biru (#1e3a8a) sesuai branding ASC.
-     *
-     * @param string $data URL atau teks untuk QR
-     * @param int $size Ukuran QR dalam pixel
-     * @return string Data URI (data:image/png;base64,...)
+     * Generate QR code dengan logo di tengah sebagai SVG data URI.
+     * Warna: biru (#1e3a8a).
      */
     public static function generateWithLogo(string $data, int $size = 200): string
     {
-        $logoPath = self::getLogoPath();
+        try {
+            $logoPath = self::getLogoPath();
 
-        $qr = QrCode::format('png')
-            ->size($size)
-            ->color(30, 58, 138) // #1e3a8a (biru)
-            ->backgroundColor(255, 255, 255)
-            ->errorCorrection('H') // High error correction untuk support logo
-            ->margin(1);
+            $qr = QrCode::size($size)
+                ->color(30, 58, 138)
+                ->backgroundColor(255, 255, 255)
+                ->errorCorrection('H')
+                ->margin(1);
 
-        if ($logoPath && file_exists($logoPath)) {
-            // Merge logo di tengah QR — ukuran logo 20% dari QR
-            $qr = $qr->merge($logoPath, 0.2, true);
+            if ($logoPath && file_exists($logoPath)) {
+                $svg = $qr->merge($logoPath, 0.2, true)->generate($data);
+            } else {
+                $svg = $qr->generate($data);
+            }
+
+            return 'data:image/svg+xml;base64,' . base64_encode($svg);
+        } catch (\Exception $e) {
+            // Fallback: SVG tanpa logo
+            return self::generate($data, $size);
         }
-
-        $pngData = $qr->generate($data);
-
-        return 'data:image/png;base64,' . base64_encode($pngData);
     }
 
     /**
-     * Generate QR code tanpa logo (untuk tanda tangan — harus kecil & scannable).
+     * Generate QR code tanpa logo sebagai SVG data URI.
      */
     public static function generate(string $data, int $size = 150): string
     {
-        $pngData = QrCode::format('png')
-            ->size($size)
-            ->color(30, 58, 138)
-            ->backgroundColor(255, 255, 255)
-            ->errorCorrection('M')
-            ->margin(1)
-            ->generate($data);
+        try {
+            $svg = QrCode::size($size)
+                ->color(30, 58, 138)
+                ->backgroundColor(255, 255, 255)
+                ->errorCorrection('M')
+                ->margin(1)
+                ->generate($data);
 
-        return 'data:image/png;base64,' . base64_encode($pngData);
+            return 'data:image/svg+xml;base64,' . base64_encode($svg);
+        } catch (\Exception $e) {
+            // Ultimate fallback: use external API
+            $color = '1e3a8a';
+            return "https://api.qrserver.com/v1/create-qr-code/?size={$size}x{$size}&color={$color}&data=" . urlencode($data);
+        }
     }
 
-    /**
-     * Ambil path logo institusi dari storage.
-     */
     private static function getLogoPath(): ?string
     {
         $institution = Institution::first();
