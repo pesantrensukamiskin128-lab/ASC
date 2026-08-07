@@ -52,10 +52,10 @@ class QrCodeHelper
             imagefill($resizedLogo, 0, 0, $transparent);
             imagecopyresampled($resizedLogo, $logoImage, 0, 0, 0, 0, $newW, $newH, $logoW, $logoH);
 
-            // Background putih bulat di tengah QR
+            // Background putih bulat di tengah QR (dengan border putih tebal)
             $cx = (int)(imagesx($qrImage) / 2);
             $cy = (int)(imagesy($qrImage) / 2);
-            $padding = 5;
+            $padding = 8;
             $bgSize = max($newW, $newH) + ($padding * 2);
             $white = imagecolorallocate($qrImage, 255, 255, 255);
             imagefilledellipse($qrImage, $cx, $cy, $bgSize, $bgSize, $white);

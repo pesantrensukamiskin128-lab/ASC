@@ -78,7 +78,7 @@
             <p>{{ $signerPosition }}</p>
             @if($isFinal)
             <div class="qr">
-                <img src="{{ $qrSignature }}" width="50" height="50" alt="QR">
+                <a href="{{ $verifyUrl }}"><img src="{{ $qrSignature }}" width="50" height="50" alt="QR"></a>
             </div>
             @else
             <br><br><br>
@@ -96,7 +96,7 @@
         <table>
             <tr>
                 <td style="width: 60px;">
-                    <img src="{{ $qrFooter }}" width="60" height="60" alt="QR Verifikasi">
+                    <a href="{{ $verifyUrl }}"><img src="{{ $qrFooter }}" width="60" height="60" alt="QR Verifikasi"></a>
                 </td>
                 <td>
                     <div class="verify-text">
