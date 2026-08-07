@@ -61,7 +61,7 @@
     {{-- Tujuan --}}
     <div class="recipient-block">
         <p>Kepada Yang Terhormat,</p>
-        <p>{!! nl2br(e($letter->recipient)) !!}</p>
+        <p><strong>{!! nl2br(e($letter->recipient)) !!}</strong></p>
         <p>di-</p>
         <p style="padding-left: 20px;">Tempat</p>
     </div>
