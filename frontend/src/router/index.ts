@@ -775,7 +775,7 @@ const router = createRouter({
         {
           path: 'agenda/buat',
           name: 'event-create',
-          component: () => import('@/views/agenda/EventListView.vue'),
+          component: () => import('@/views/agenda/EventFormView.vue'),
           meta: { permission: 'agenda.create' },
         },
         {
