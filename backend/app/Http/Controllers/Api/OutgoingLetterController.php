@@ -13,26 +13,30 @@ class OutgoingLetterController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $user = auth()->user();
-        $query = OutgoingLetter::with(['letterType', 'creator', 'reviewer', 'signer']);
+        try {
+            $user = auth()->user();
+            $query = OutgoingLetter::with(['letterType', 'creator', 'reviewer', 'signer']);
 
-        // Admin Umum & Super Admin lihat semua
-        if (!$user->hasRole('SUPER_ADMIN') && !$user->hasRole('ADMIN_UMUM')) {
-            // Penandatangan/pemeriksa hanya lihat surat yang ditugaskan ke mereka
-            $query->where(function ($q) use ($user) {
-                $q->where('reviewer_id', $user->id)
-                  ->orWhere('signer_id', $user->id)
-                  ->orWhereHas('internalRecipients', fn($r) => $r->where('user_id', $user->id));
-            });
+            // Admin Umum & Super Admin lihat semua
+            if (!$user->hasRole('SUPER_ADMIN') && !$user->hasRole('ADMIN_UMUM')) {
+                $query->where(function ($q) use ($user) {
+                    $q->where('reviewer_id', $user->id)
+                      ->orWhere('signer_id', $user->id)
+                      ->orWhereHas('internalRecipients', fn($r) => $r->where('user_id', $user->id));
+                });
+            }
+
+            $data = $query
+                ->when($request->status, fn($q) => $q->where('status', $request->status))
+                ->when($request->search, fn($q) => $q->where('subject', 'like', "%{$request->search}%"))
+                ->orderByDesc('created_at')
+                ->paginate($request->per_page ?? 15);
+
+            return response()->json($data);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('OutgoingLetter index error: ' . $e->getMessage());
+            return response()->json(['message' => 'Gagal memuat data: ' . $e->getMessage()], 500);
         }
-
-        $data = $query
-            ->when($request->status, fn($q) => $q->where('status', $request->status))
-            ->when($request->search, fn($q) => $q->where('subject', 'like', "%{$request->search}%"))
-            ->orderByDesc('created_at')
-            ->paginate($request->per_page ?? 15);
-
-        return response()->json($data);
     }
 
     public function store(Request $request): JsonResponse
@@ -51,12 +55,17 @@ class OutgoingLetterController extends Controller
             'external_recipients' => 'nullable|string',
         ]);
 
-        $validated['created_by'] = auth()->id();
-        $validated['status'] = 'DRAFT';
+        try {
+            $validated['created_by'] = auth()->id();
+            $validated['status'] = 'DRAFT';
 
-        $letter = OutgoingLetter::create($validated);
+            $letter = OutgoingLetter::create($validated);
 
-        return response()->json(['message' => 'Surat berhasil dibuat.', 'data' => $letter->load(['letterType', 'reviewer', 'signer'])], 201);
+            return response()->json(['message' => 'Surat berhasil dibuat.', 'data' => $letter->load(['letterType', 'reviewer', 'signer'])], 201);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('OutgoingLetter store error: ' . $e->getMessage());
+            return response()->json(['message' => 'Gagal membuat surat: ' . $e->getMessage()], 500);
+        }
     }
 
     public function show(OutgoingLetter $outgoingLetter): JsonResponse
@@ -192,26 +201,34 @@ class OutgoingLetterController extends Controller
     /** Daftar jenis surat */
     public function letterTypes(): JsonResponse
     {
-        return response()->json(LetterType::where('is_active', true)->get());
+        try {
+            return response()->json(LetterType::where('is_active', true)->get());
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Tabel letter_types belum tersedia: ' . $e->getMessage()], 500);
+        }
     }
 
     /** Daftar user yang bisa jadi penandatangan (punya jabatan struktural) */
     public function signers(): JsonResponse
     {
-        $signers = \App\Models\LecturerPosition::where('is_active', true)
-            ->whereIn('position_code', ['KETUA','REKTOR','WK1','WR1','WK2','WR2','WK3','WR3','DEKAN','WADEK1','KAPRODI'])
-            ->with('lecturer.user')
-            ->get()
-            ->map(fn($p) => [
-                'user_id'       => $p->lecturer?->user?->id,
-                'name'          => $p->lecturer?->display_name,
-                'position_name' => $p->position_name,
-                'position_code' => $p->position_code,
-            ])
-            ->filter(fn($s) => $s['user_id'] !== null)
-            ->values();
+        try {
+            $signers = \App\Models\LecturerPosition::where('is_active', true)
+                ->whereIn('position_code', ['KETUA','REKTOR','WK1','WR1','WK2','WR2','WK3','WR3','DEKAN','WADEK1','KAPRODI'])
+                ->with('lecturer.user')
+                ->get()
+                ->map(fn($p) => [
+                    'user_id'       => $p->lecturer?->user?->id,
+                    'name'          => $p->lecturer?->display_name,
+                    'position_name' => $p->position_name,
+                    'position_code' => $p->position_code,
+                ])
+                ->filter(fn($s) => $s['user_id'] !== null)
+                ->values();
 
-        return response()->json($signers);
+            return response()->json($signers);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
+        }
     }
 
     public function destroy(OutgoingLetter $outgoingLetter): JsonResponse
