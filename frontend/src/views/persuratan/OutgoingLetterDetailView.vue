@@ -76,13 +76,13 @@ const distributeFilter = ref('all')
 const filteredDistributeUsers = computed(() => {
   let users = allUsers.value
 
-  // Filter by role
+  // Filter by role/position
   if (distributeFilter.value === 'dosen') {
-    users = users.filter((u: any) => u.role_label?.includes('DOSEN') || u.role_label?.includes('Dosen'))
+    users = users.filter((u: any) => u.role === 'DOSEN' && !u.has_position)
   } else if (distributeFilter.value === 'mahasiswa') {
-    users = users.filter((u: any) => u.role_label?.includes('MAHASISWA') || u.role_label?.includes('Mahasiswa'))
+    users = users.filter((u: any) => u.role === 'MAHASISWA')
   } else if (distributeFilter.value === 'struktural') {
-    users = users.filter((u: any) => u.role_label?.includes('ADMIN') || u.role_label?.includes('KEPALA') || u.role_label?.includes('Struktural'))
+    users = users.filter((u: any) => u.has_position)
   }
 
   // Filter by search

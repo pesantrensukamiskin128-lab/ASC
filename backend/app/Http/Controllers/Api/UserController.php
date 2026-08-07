@@ -108,22 +108,39 @@ class UserController extends Controller
             ->map(function ($u) {
                 $role = $u->roles->first()?->name ?? '';
                 $label = match ($role) {
-                    'SUPER_ADMIN' => 'Admin / Struktural',
-                    'ADMIN_AKADEMIK' => 'Admin Akademik / Struktural',
-                    'ADMIN_UMUM' => 'Admin Umum / Struktural',
-                    'ADMIN_PMB' => 'Admin PMB / Struktural',
-                    'ADMIN_KEUANGAN' => 'Admin Keuangan / Struktural',
-                    'KEPALA_TU' => 'Kepala TU / Struktural',
+                    'SUPER_ADMIN' => 'Admin',
+                    'ADMIN_AKADEMIK' => 'Admin Akademik',
+                    'ADMIN_UMUM' => 'Admin Umum',
+                    'ADMIN_PMB' => 'Admin PMB',
+                    'ADMIN_KEUANGAN' => 'Admin Keuangan',
+                    'KEPALA_TU' => 'Kepala TU',
                     'DOSEN' => 'Dosen',
                     'MAHASISWA' => 'Mahasiswa',
                     'ALUMNI' => 'Alumni',
                     default => $role,
                 };
+
+                // Cek apakah user punya jabatan struktural (via lecturer)
+                $hasPosition = false;
+                $positionName = '';
+                $lecturer = \App\Models\Lecturer::where('user_id', $u->id)->first();
+                if ($lecturer) {
+                    $pos = \App\Models\LecturerPosition::where('lecturer_id', $lecturer->id)
+                        ->where('is_active', true)->first();
+                    if ($pos) {
+                        $hasPosition = true;
+                        $positionName = $pos->position_name;
+                        $label = $positionName;
+                    }
+                }
+
                 return [
-                    'id'         => $u->id,
-                    'name'       => $u->name,
-                    'email'      => $u->email,
-                    'role_label' => $label,
+                    'id'           => $u->id,
+                    'name'         => $u->name,
+                    'email'        => $u->email,
+                    'role_label'   => $label,
+                    'role'         => $role,
+                    'has_position' => $hasPosition,
                 ];
             });
 
