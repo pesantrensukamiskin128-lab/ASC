@@ -7,12 +7,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Disable FK check agar truncate berhasil
+        // Disable FK check dan hapus data lama
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         DB::table('letter_types')->truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        // Insert kode baru
+        // Insert kode jenis surat baru
         $types = [
             ['code' => 'A.1', 'name' => 'Surat Rutin Internal'],
             ['code' => 'A.2', 'name' => 'Surat Keterangan'],
@@ -38,25 +38,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        DB::table('letter_types')->truncate();
-
-        $types = [
-            ['code' => 'A',  'name' => 'Surat Rutin Internal'],
-            ['code' => 'B',  'name' => 'Surat Rutin Eksternal'],
-            ['code' => 'C',  'name' => 'Surat Keterangan'],
-            ['code' => 'D',  'name' => 'Surat Rekomendasi'],
-            ['code' => 'E',  'name' => 'Surat Tugas'],
-            ['code' => 'F',  'name' => 'Surat Mandat'],
-            ['code' => 'G',  'name' => 'Surat Peringatan'],
-            ['code' => 'H',  'name' => 'Surat Edaran'],
-            ['code' => 'I',  'name' => 'Surat Pengumuman'],
-            ['code' => 'SK', 'name' => 'Surat Keputusan'],
-        ];
-
-        foreach ($types as $t) {
-            DB::table('letter_types')->insert(
-                array_merge($t, ['is_active' => true, 'created_at' => now(), 'updated_at' => now()])
-            );
-        }
+        // no-op
     }
 };
