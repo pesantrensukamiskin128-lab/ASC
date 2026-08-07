@@ -8,11 +8,11 @@
         body { font-family: 'Times New Roman', serif; font-size: 12pt; margin: 0; padding: 0; line-height: 1.15; }
         .letterhead { text-align: center; margin-bottom: 3px; }
         .letterhead img { width: 100%; }
-        .letter-info { margin-top: 8px; font-size: 12pt; line-height: 1.15; padding: 0 40px; }
+        .letter-info { margin-top: 8px; font-size: 12pt; line-height: 1.15; padding: 0 40px; margin-bottom: 16px; }
         .letter-info table { border: none; width: auto; }
         .letter-info td { padding: 0; vertical-align: top; border: none; line-height: 1.15; }
         .letter-info .label { width: 75px; }
-        .recipient-block { margin-top: 8px; font-size: 12pt; line-height: 1.15; padding: 0 40px; margin-bottom: 10px; }
+        .recipient-block { margin-top: 8px; font-size: 12pt; line-height: 1.15; padding: 0 40px; margin-bottom: 20px; }
         .recipient-block p { margin: 0; }
         .letter-body { margin-top: 8px; text-align: justify; font-size: 12pt; line-height: 1.15; padding: 0 40px; }
         .letter-body p { margin: 0 0 6pt 0; }
