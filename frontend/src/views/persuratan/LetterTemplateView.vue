@@ -139,6 +139,10 @@ function copyToClipboard(item: any) {
         <label class="block text-sm font-medium text-gray-700 mb-1">Isi Surat <span class="text-red-500">*</span></label>
         <RichTextEditor v-model="form.body" min-height="200px" />
       </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Isi Lampiran (opsional)</label>
+        <RichTextEditor v-model="form.appendix_body" min-height="120px" placeholder="Isi lampiran jika ada..." />
+      </div>
       <div class="flex items-center gap-2">
         <input v-model="form.is_shared" type="checkbox" id="tpl_shared" class="rounded" />
         <label for="tpl_shared" class="text-sm text-gray-700">Template ini bisa digunakan semua user</label>

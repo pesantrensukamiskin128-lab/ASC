@@ -55,24 +55,12 @@ async function uploadPendingDocs(letterId: number | string) {
   pendingFiles.value = []
 }
 
-function applyTemplate(tpl: any) {
-  if (form.body && !confirm('Isi surat saat ini akan ditimpa oleh template. Lanjutkan?')) return
-  if (tpl.letter_type_id) form.letter_type_id = tpl.letter_type_id
-  if (tpl.subject) form.subject = tpl.subject
-  if (tpl.recipient) form.recipient = tpl.recipient
-  if (tpl.attachment_note) form.attachment_note = tpl.attachment_note
-  if (tpl.city) form.city = tpl.city
-  form.body = tpl.body
-  if (tpl.appendix_body) form.appendix_body = tpl.appendix_body
-  showTemplateModal.value = false
-  toast.success(`Template "${tpl.name}" diterapkan.`)
-}
-
 const letterTypes = ref<any[]>([])
 const signers = ref<any[]>([])
 const allUsers = ref<any[]>([])
 const templates = ref<any[]>([])
 const showTemplateModal = ref(false)
+
 const form = reactive({
   letter_type_id: '',
   subject: '',
@@ -86,6 +74,19 @@ const form = reactive({
   signer_id: '',
   external_recipients: '',
 })
+
+function applyTemplate(tpl: any) {
+  if (form.body && !confirm('Isi surat saat ini akan ditimpa oleh template. Lanjutkan?')) return
+  if (tpl.letter_type_id) form.letter_type_id = tpl.letter_type_id
+  if (tpl.subject) form.subject = tpl.subject
+  if (tpl.recipient) form.recipient = tpl.recipient
+  if (tpl.attachment_note) form.attachment_note = tpl.attachment_note
+  if (tpl.city) form.city = tpl.city
+  form.body = tpl.body
+  if (tpl.appendix_body) form.appendix_body = tpl.appendix_body
+  showTemplateModal.value = false
+  toast.success(`Template "${tpl.name}" diterapkan.`)
+}
 
 onMounted(async () => {
   const [typesRes, signersRes, usersRes, tplRes] = await Promise.all([
