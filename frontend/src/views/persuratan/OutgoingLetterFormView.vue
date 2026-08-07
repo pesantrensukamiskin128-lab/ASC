@@ -14,6 +14,47 @@ const isEdit = !!editId
 const saving = ref(false)
 const sending = ref(false)
 
+// Dokumen pendukung
+const uploadedDocs = ref<any[]>([])
+const pendingFiles = ref<File[]>([])
+
+function onDocFilesSelected(e: Event) {
+  const files = (e.target as HTMLInputElement).files
+  if (!files) return
+  pendingFiles.value.push(...Array.from(files))
+  // Tambah ke list preview
+  for (const f of files) {
+    uploadedDocs.value.push({ name: f.getClientOriginalName ?? f.name, size: f.size, pending: true })
+  }
+  (e.target as HTMLInputElement).value = ''
+}
+
+function removeDoc(idx: number) {
+  const doc = uploadedDocs.value[idx]
+  if (doc.pending) {
+    // Hapus dari pending files
+    const pendingIdx = pendingFiles.value.findIndex(f => f.name === doc.name && f.size === doc.size)
+    if (pendingIdx >= 0) pendingFiles.value.splice(pendingIdx, 1)
+  }
+  uploadedDocs.value.splice(idx, 1)
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return bytes + ' B'
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+}
+
+async function uploadPendingDocs(letterId: number | string) {
+  if (!pendingFiles.value.length) return
+  const fd = new FormData()
+  pendingFiles.value.forEach(f => fd.append('documents[]', f))
+  await api.post(`/outgoing-letters/${letterId}/documents`, fd, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  pendingFiles.value = []
+}
+
 const letterTypes = ref<any[]>([])
 const signers = ref<any[]>([])
 const allUsers = ref<any[]>([])
@@ -57,6 +98,10 @@ onMounted(async () => {
       signer_id: data.signer_id,
       external_recipients: data.external_recipients ?? '',
     })
+    // Load existing documents
+    if (data.supporting_documents?.length) {
+      uploadedDocs.value = data.supporting_documents.map((d: any) => ({ ...d, pending: false }))
+    }
   }
 })
 
@@ -83,6 +128,9 @@ async function handleSave(andSend = false) {
       letter = data.data
       toast.success('Surat berhasil dibuat.')
     }
+
+    // Upload dokumen pendukung jika ada
+    await uploadPendingDocs(letter.id)
 
     if (andSend) {
       sending.value = true
@@ -185,6 +233,33 @@ async function handleSave(andSend = false) {
         <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wide">Penerima Eksternal (opsional)</h2>
         <div>
           <textarea v-model="form.external_recipients" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Nama penerima eksternal (bisa multi-baris)" />
+        </div>
+      </div>
+
+      <!-- Dokumen Pendukung -->
+      <div class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+        <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wide">Dokumen Pendukung (opsional)</h2>
+        <p class="text-xs text-gray-400">Upload file pendukung surat: PDF, Word, Excel, atau gambar (maks. 10MB per file)</p>
+
+        <!-- List uploaded docs -->
+        <div v-if="uploadedDocs.length" class="space-y-2">
+          <div v-for="(doc, idx) in uploadedDocs" :key="idx" class="flex items-center gap-3 p-2.5 bg-gray-50 rounded-lg border border-gray-200">
+            <span class="text-lg">📎</span>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-gray-800 truncate">{{ doc.name }}</p>
+              <p class="text-[10px] text-gray-400">{{ formatFileSize(doc.size) }}</p>
+            </div>
+            <button type="button" class="text-red-400 hover:text-red-600 text-xs" @click="removeDoc(idx)">✕</button>
+          </div>
+        </div>
+
+        <!-- Upload area -->
+        <div class="flex items-center gap-3">
+          <label class="flex items-center gap-2 px-4 py-2 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-colors">
+            <span class="text-sm text-gray-600">+ Pilih File</span>
+            <input type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" class="hidden" @change="onDocFilesSelected" />
+          </label>
+          <span v-if="pendingFiles.length" class="text-xs text-blue-600">{{ pendingFiles.length }} file siap diupload</span>
         </div>
       </div>
 

@@ -14,13 +14,15 @@ class OutgoingLetter extends Model
         'attachment_note', 'city', 'letter_date', 'body', 'appendix_body',
         'reviewer_id', 'signer_id', 'status', 'reviewed_at', 'signed_at',
         'sent_at', 'revision_note', 'verification_token', 'external_recipients',
+        'supporting_documents',
     ];
 
     protected $casts = [
-        'letter_date'  => 'date',
-        'reviewed_at'  => 'datetime',
-        'signed_at'    => 'datetime',
-        'sent_at'      => 'datetime',
+        'letter_date'          => 'date',
+        'reviewed_at'          => 'datetime',
+        'signed_at'            => 'datetime',
+        'sent_at'              => 'datetime',
+        'supporting_documents' => 'array',
     ];
 
     protected static function booted(): void

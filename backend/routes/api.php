@@ -850,6 +850,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('{outgoingLetter}/review', [OutgoingLetterController::class, 'review']);
         Route::post('{outgoingLetter}/sign', [OutgoingLetterController::class, 'sign']);
         Route::post('{outgoingLetter}/distribute', [OutgoingLetterController::class, 'distribute']);
+        Route::post('{outgoingLetter}/documents', [OutgoingLetterController::class, 'uploadDocuments']);
+        Route::delete('{outgoingLetter}/documents', [OutgoingLetterController::class, 'removeDocument']);
     });
 
     // Surat Masuk

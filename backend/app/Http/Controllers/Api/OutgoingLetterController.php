@@ -241,4 +241,48 @@ class OutgoingLetterController extends Controller
         $outgoingLetter->delete();
         return response()->json(['message' => 'Surat berhasil dihapus.']);
     }
+
+    /** Upload dokumen pendukung */
+    public function uploadDocuments(Request $request, OutgoingLetter $outgoingLetter): JsonResponse
+    {
+        $request->validate([
+            'documents'   => 'required|array|min:1',
+            'documents.*' => 'file|mimes:pdf,doc,docx,jpg,jpeg,png,xls,xlsx|max:10240',
+        ]);
+
+        $existing = $outgoingLetter->supporting_documents ?? [];
+
+        foreach ($request->file('documents') as $file) {
+            $path = $file->store('outgoing-letters/documents', 'public');
+            $existing[] = [
+                'path'     => $path,
+                'name'     => $file->getClientOriginalName(),
+                'size'     => $file->getSize(),
+                'uploaded_at' => now()->toISOString(),
+            ];
+        }
+
+        $outgoingLetter->update(['supporting_documents' => $existing]);
+
+        return response()->json([
+            'message' => 'Dokumen pendukung berhasil diupload.',
+            'data'    => $outgoingLetter->fresh(),
+        ]);
+    }
+
+    /** Hapus satu dokumen pendukung */
+    public function removeDocument(Request $request, OutgoingLetter $outgoingLetter): JsonResponse
+    {
+        $request->validate(['path' => 'required|string']);
+
+        $docs = $outgoingLetter->supporting_documents ?? [];
+        $docs = array_values(array_filter($docs, fn($d) => $d['path'] !== $request->path));
+
+        // Hapus file dari storage
+        \Illuminate\Support\Facades\Storage::disk('public')->delete($request->path);
+
+        $outgoingLetter->update(['supporting_documents' => $docs]);
+
+        return response()->json(['message' => 'Dokumen berhasil dihapus.', 'data' => $outgoingLetter->fresh()]);
+    }
 }
