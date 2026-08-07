@@ -14,10 +14,7 @@ class OutgoingLetterController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $user = $request->user();
-            if (!$user) {
-                return response()->json(['message' => 'Unauthorized'], 401);
-            }
+            $user = $request->user() ?? auth()->user();
 
             $query = OutgoingLetter::with(['letterType', 'creator', 'reviewer', 'signer']);
 
@@ -60,11 +57,7 @@ class OutgoingLetterController extends Controller
         ]);
 
         try {
-            $user = $request->user();
-            if (!$user) {
-                return response()->json(['message' => 'Sesi login tidak valid. Silakan login ulang.'], 401);
-            }
-
+            $user = $request->user() ?? auth()->user();
             $validated['created_by'] = $user->id;
             $validated['status'] = 'DRAFT';
 

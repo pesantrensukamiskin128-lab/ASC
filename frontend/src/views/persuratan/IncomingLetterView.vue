@@ -29,7 +29,7 @@ const fileInput = ref<File | null>(null)
 
 onMounted(async () => {
   load()
-  const { data } = await api.get('/users/list')
+  const { data } = await api.get('/user-list')
   allUsers.value = data
 })
 

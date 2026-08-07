@@ -27,7 +27,7 @@ onMounted(async () => {
     const { data } = await api.get(`/outgoing-letters/${route.params.id}`)
     letter.value = data
     if (data.status === 'DITANDATANGANI') {
-      const { data: users } = await api.get('/users/list')
+      const { data: users } = await api.get('/user-list')
       allUsers.value = users
     }
   } catch { toast.error('Gagal memuat data surat.') }

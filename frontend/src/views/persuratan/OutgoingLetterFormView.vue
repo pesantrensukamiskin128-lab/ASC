@@ -35,7 +35,7 @@ onMounted(async () => {
   const [typesRes, signersRes, usersRes] = await Promise.all([
     api.get('/outgoing-letters/letter-types'),
     api.get('/outgoing-letters/signers'),
-    api.get('/users/list'),
+    api.get('/user-list'),
   ])
   letterTypes.value = typesRes.data
   signers.value = signersRes.data
