@@ -7,6 +7,7 @@ use App\Models\AcademicCalendar;
 use App\Models\AcademicYear;
 use App\Models\Krs;
 use App\Models\LecturerPosition;
+use App\Models\OutgoingLetter;
 use App\Models\Rpkps;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -182,6 +183,58 @@ class VerifyController extends Controller
             'signed_by'     => $wk1Name,
             'position'      => 'Wakil Ketua I Bidang Akademik',
             'is_valid'      => true,
+        ]);
+    }
+
+    /**
+     * Verifikasi Surat Keluar via QR Code
+     * URL: /api/verify/surat/{token}
+     */
+    public function verifyOutgoingLetter(string $token): JsonResponse
+    {
+        $letter = OutgoingLetter::with(['letterType', 'signer.lecturer'])
+            ->where('verification_token', $token)
+            ->first();
+
+        if (!$letter) {
+            return response()->json([
+                'valid'   => false,
+                'message' => 'Surat tidak ditemukan atau token verifikasi tidak valid.',
+            ], 404);
+        }
+
+        if (!in_array($letter->status, ['DITANDATANGANI', 'TERKIRIM'])) {
+            return response()->json([
+                'valid'    => false,
+                'message'  => 'Surat belum selesai ditandatangani.',
+                'document' => 'SURAT KELUAR',
+                'status'   => $letter->status,
+            ]);
+        }
+
+        $signerName = $letter->signer?->lecturer?->display_name ?? $letter->signer?->name ?? '-';
+
+        // Jabatan penandatangan
+        $signerPosition = '';
+        if ($letter->signer?->lecturer) {
+            $pos = LecturerPosition::where('lecturer_id', $letter->signer->lecturer->id)
+                ->where('is_active', true)->first();
+            $signerPosition = $pos?->position_name ?? '';
+        }
+
+        return response()->json([
+            'valid'           => true,
+            'document'        => 'SURAT KELUAR',
+            'letter_number'   => $letter->letter_number,
+            'subject'         => $letter->subject,
+            'letter_type'     => $letter->letterType?->name,
+            'letter_date'     => $letter->letter_date?->format('d F Y'),
+            'recipient'       => $letter->recipient,
+            'signed_by'       => $signerName,
+            'signer_position' => $signerPosition,
+            'signed_at'       => $letter->signed_at?->format('d F Y, H:i'),
+            'status'          => $letter->status,
+            'is_valid'        => true,
         ]);
     }
 }
