@@ -7,6 +7,7 @@ import {
   ClockIcon, CheckCircleIcon, ExclamationTriangleIcon,
   ArrowTrendingUpIcon, BuildingLibraryIcon, BriefcaseIcon,
   CalendarDaysIcon, DocumentCheckIcon, UserGroupIcon,
+  ClipboardDocumentListIcon, ChatBubbleLeftRightIcon, ChartBarIcon,
 } from '@heroicons/vue/24/outline'
 import BarChart from '@/components/ui/BarChart.vue'
 import DonutChart from '@/components/ui/DonutChart.vue'
@@ -147,7 +148,7 @@ function formatCurrency(n: number) {
     <template v-else-if="dashboardRole === 'DOSEN'">
       <!-- Stats -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow cursor-pointer" @click="router.push('/akademik/kelas')">
           <BookOpenIcon class="w-5 h-5 text-blue-500 mb-2" />
           <p class="text-2xl font-bold text-gray-900">{{ data.stats.my_classes }}</p>
           <p class="text-xs text-gray-500">Kelas Saya</p>
@@ -157,15 +158,58 @@ function formatCurrency(n: number) {
           <p class="text-2xl font-bold text-gray-900">{{ data.stats.total_students_in_class }}</p>
           <p class="text-xs text-gray-500">Total Mahasiswa</p>
         </div>
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow cursor-pointer" @click="router.push('/akademik/krs')">
           <UserGroupIcon class="w-5 h-5 text-purple-500 mb-2" />
           <p class="text-2xl font-bold text-gray-900">{{ data.stats.my_advisees }}</p>
           <p class="text-xs text-gray-500">Mahasiswa Bimbingan</p>
         </div>
-        <div class="bg-white rounded-xl border border-gray-200 p-5" :class="data.stats.pending_krs > 0 ? 'border-orange-300 bg-orange-50' : ''">
+        <div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow cursor-pointer" :class="data.stats.pending_krs > 0 ? 'border-orange-300 bg-orange-50' : ''" @click="router.push('/akademik/krs')">
           <ClockIcon class="w-5 h-5 text-orange-500 mb-2" />
           <p class="text-2xl font-bold" :class="data.stats.pending_krs > 0 ? 'text-orange-700' : 'text-gray-900'">{{ data.stats.pending_krs }}</p>
           <p class="text-xs text-gray-500">KRS Menunggu Approval</p>
+        </div>
+      </div>
+
+      <!-- Quick Menu Shortcuts -->
+      <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <h2 class="text-sm font-semibold text-gray-800 mb-4">Menu Cepat</h2>
+        <div class="grid grid-cols-3 md:grid-cols-6 gap-3">
+          <button class="flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50 transition-all group" @click="router.push('/akademik/kelas')">
+            <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+              <BookOpenIcon class="w-5 h-5 text-blue-600" />
+            </div>
+            <span class="text-[11px] font-medium text-gray-600 text-center leading-tight">Kelas Saya</span>
+          </button>
+          <button class="flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-100 hover:border-green-200 hover:bg-green-50 transition-all group" @click="router.push('/akademik/krs')">
+            <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center group-hover:bg-green-200 transition-colors">
+              <DocumentCheckIcon class="w-5 h-5 text-green-600" />
+            </div>
+            <span class="text-[11px] font-medium text-gray-600 text-center leading-tight">Perwalian KRS</span>
+          </button>
+          <button class="flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-100 hover:border-purple-200 hover:bg-purple-50 transition-all group" @click="router.push('/rps')">
+            <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+              <ClipboardDocumentListIcon class="w-5 h-5 text-purple-600" />
+            </div>
+            <span class="text-[11px] font-medium text-gray-600 text-center leading-tight">RPKPS / RPS</span>
+          </button>
+          <button class="flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-100 hover:border-indigo-200 hover:bg-indigo-50 transition-all group" @click="router.push('/penilaian/nilai')">
+            <div class="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
+              <ChartBarIcon class="w-5 h-5 text-indigo-600" />
+            </div>
+            <span class="text-[11px] font-medium text-gray-600 text-center leading-tight">Input Nilai</span>
+          </button>
+          <button class="flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-100 hover:border-teal-200 hover:bg-teal-50 transition-all group" @click="router.push('/persuratan/surat-saya')">
+            <div class="w-10 h-10 rounded-lg bg-teal-100 flex items-center justify-center group-hover:bg-teal-200 transition-colors">
+              <ChatBubbleLeftRightIcon class="w-5 h-5 text-teal-600" />
+            </div>
+            <span class="text-[11px] font-medium text-gray-600 text-center leading-tight">Persuratan</span>
+          </button>
+          <button class="flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-100 hover:border-orange-200 hover:bg-orange-50 transition-all group" @click="router.push('/agenda')">
+            <div class="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center group-hover:bg-orange-200 transition-colors">
+              <CalendarDaysIcon class="w-5 h-5 text-orange-600" />
+            </div>
+            <span class="text-[11px] font-medium text-gray-600 text-center leading-tight">Agenda</span>
+          </button>
         </div>
       </div>
 
@@ -200,6 +244,65 @@ function formatCurrency(n: number) {
             </div>
             <button class="px-3 py-1.5 text-xs bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium" @click="router.push(`/akademik/krs/${krs.id}`)">Review</button>
           </div>
+        </div>
+      </div>
+
+      <!-- Agenda Kegiatan Terbaru (Diundang) -->
+      <div v-if="data.upcoming_events?.length" class="bg-white rounded-xl border border-gray-200 p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-sm font-semibold text-gray-800 flex items-center gap-2">
+            <CalendarDaysIcon class="w-4 h-4 text-orange-500" /> Undangan Kegiatan Terbaru
+          </h2>
+          <button class="text-xs text-blue-600 hover:text-blue-700 font-medium" @click="router.push('/agenda')">Lihat Semua →</button>
+        </div>
+        <div class="space-y-2">
+          <div v-for="evt in data.upcoming_events" :key="evt.id" class="flex items-center gap-3 p-3 bg-orange-50 border border-orange-100 rounded-lg hover:bg-orange-100 cursor-pointer transition-colors" @click="router.push(`/agenda/${evt.id}`)">
+            <div class="w-11 h-11 rounded-lg bg-orange-200 flex flex-col items-center justify-center flex-shrink-0">
+              <span class="text-[10px] font-bold text-orange-700 uppercase">{{ new Date(evt.event_date).toLocaleDateString('id-ID', { month: 'short' }) }}</span>
+              <span class="text-sm font-bold text-orange-800 -mt-0.5">{{ new Date(evt.event_date).getDate() }}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-gray-900 truncate">{{ evt.title }}</p>
+              <p class="text-xs text-gray-500">{{ evt.start_time }}{{ evt.end_time ? ' - ' + evt.end_time : '' }} · {{ evt.location }}</p>
+            </div>
+            <span v-if="evt.category" class="text-[10px] px-2 py-0.5 bg-orange-200 text-orange-700 rounded-full font-medium shrink-0">{{ evt.category }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Riwayat Kehadiran Agenda -->
+      <div v-if="data.event_attendance_history?.length" class="bg-white rounded-xl border border-gray-200 p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-sm font-semibold text-gray-800 flex items-center gap-2">
+            <CheckCircleIcon class="w-4 h-4 text-green-500" /> Riwayat Kehadiran Agenda
+          </h2>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-100">
+                <th class="text-left py-2 px-2 text-xs font-medium text-gray-500">Kegiatan</th>
+                <th class="text-left py-2 px-2 text-xs font-medium text-gray-500">Tanggal</th>
+                <th class="text-left py-2 px-2 text-xs font-medium text-gray-500">Hadir</th>
+                <th class="text-left py-2 px-2 text-xs font-medium text-gray-500">Metode</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="att in data.event_attendance_history" :key="att.id" class="border-b border-gray-50 hover:bg-gray-50 cursor-pointer" @click="router.push(`/agenda/${att.event_id}`)">
+                <td class="py-2.5 px-2">
+                  <p class="font-medium text-gray-800 truncate max-w-[200px]">{{ att.event_title }}</p>
+                  <p class="text-xs text-gray-400">{{ att.location }}</p>
+                </td>
+                <td class="py-2.5 px-2 text-xs text-gray-600">{{ att.event_date }}</td>
+                <td class="py-2.5 px-2 text-xs text-gray-600">{{ att.attended_at }}</td>
+                <td class="py-2.5 px-2">
+                  <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium" :class="att.method === 'qr' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'">
+                    {{ att.method === 'qr' ? '📱 QR' : att.method === 'manual' ? '✍️ Manual' : att.method }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -405,12 +508,103 @@ function formatCurrency(n: number) {
 
       <!-- Quick Links -->
       <div class="bg-white rounded-xl border border-gray-200 p-5">
-        <h2 class="text-sm font-semibold text-gray-800 mb-3">Akses Cepat</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <button v-for="link in data.quick_links" :key="link.to" class="flex flex-col items-center gap-2 p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors" @click="router.push(link.to)">
-            <component :is="link.color === 'blue' ? BookOpenIcon : link.color === 'green' ? DocumentCheckIcon : link.color === 'purple' ? CalendarDaysIcon : CurrencyDollarIcon" class="w-6 h-6" :class="`text-${link.color}-600`" />
-            <span class="text-xs font-medium text-gray-700">{{ link.label }}</span>
+        <h2 class="text-sm font-semibold text-gray-800 mb-4">Menu Cepat</h2>
+        <div class="grid grid-cols-3 md:grid-cols-6 gap-3">
+          <button class="flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50 transition-all group" @click="router.push('/akademik/krs-saya')">
+            <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+              <BookOpenIcon class="w-5 h-5 text-blue-600" />
+            </div>
+            <span class="text-[11px] font-medium text-gray-600 text-center leading-tight">KRS Saya</span>
           </button>
+          <button class="flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-100 hover:border-green-200 hover:bg-green-50 transition-all group" @click="router.push('/akademik-saya/khs')">
+            <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center group-hover:bg-green-200 transition-colors">
+              <DocumentCheckIcon class="w-5 h-5 text-green-600" />
+            </div>
+            <span class="text-[11px] font-medium text-gray-600 text-center leading-tight">KHS / Transkrip</span>
+          </button>
+          <button class="flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-100 hover:border-purple-200 hover:bg-purple-50 transition-all group" @click="router.push('/akademik-saya/kelas')">
+            <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+              <CalendarDaysIcon class="w-5 h-5 text-purple-600" />
+            </div>
+            <span class="text-[11px] font-medium text-gray-600 text-center leading-tight">Kelas Saya</span>
+          </button>
+          <button class="flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-100 hover:border-orange-200 hover:bg-orange-50 transition-all group" @click="router.push('/keuangan/saya')">
+            <div class="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center group-hover:bg-orange-200 transition-colors">
+              <CurrencyDollarIcon class="w-5 h-5 text-orange-600" />
+            </div>
+            <span class="text-[11px] font-medium text-gray-600 text-center leading-tight">Keuangan</span>
+          </button>
+          <button class="flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-100 hover:border-teal-200 hover:bg-teal-50 transition-all group" @click="router.push('/persuratan/surat-saya')">
+            <div class="w-10 h-10 rounded-lg bg-teal-100 flex items-center justify-center group-hover:bg-teal-200 transition-colors">
+              <ChatBubbleLeftRightIcon class="w-5 h-5 text-teal-600" />
+            </div>
+            <span class="text-[11px] font-medium text-gray-600 text-center leading-tight">Surat Masuk</span>
+          </button>
+          <button class="flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-100 hover:border-rose-200 hover:bg-rose-50 transition-all group" @click="router.push('/agenda')">
+            <div class="w-10 h-10 rounded-lg bg-rose-100 flex items-center justify-center group-hover:bg-rose-200 transition-colors">
+              <CalendarDaysIcon class="w-5 h-5 text-rose-600" />
+            </div>
+            <span class="text-[11px] font-medium text-gray-600 text-center leading-tight">Agenda</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Agenda Kegiatan Terbaru (Diundang) -->
+      <div v-if="data.upcoming_events?.length" class="bg-white rounded-xl border border-gray-200 p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-sm font-semibold text-gray-800 flex items-center gap-2">
+            <CalendarDaysIcon class="w-4 h-4 text-orange-500" /> Undangan Kegiatan Terbaru
+          </h2>
+          <button class="text-xs text-blue-600 hover:text-blue-700 font-medium" @click="router.push('/agenda')">Lihat Semua →</button>
+        </div>
+        <div class="space-y-2">
+          <div v-for="evt in data.upcoming_events" :key="evt.id" class="flex items-center gap-3 p-3 bg-orange-50 border border-orange-100 rounded-lg hover:bg-orange-100 cursor-pointer transition-colors" @click="router.push(`/agenda/${evt.id}`)">
+            <div class="w-11 h-11 rounded-lg bg-orange-200 flex flex-col items-center justify-center flex-shrink-0">
+              <span class="text-[10px] font-bold text-orange-700 uppercase">{{ new Date(evt.event_date).toLocaleDateString('id-ID', { month: 'short' }) }}</span>
+              <span class="text-sm font-bold text-orange-800 -mt-0.5">{{ new Date(evt.event_date).getDate() }}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-gray-900 truncate">{{ evt.title }}</p>
+              <p class="text-xs text-gray-500">{{ evt.start_time }}{{ evt.end_time ? ' - ' + evt.end_time : '' }} · {{ evt.location }}</p>
+            </div>
+            <span v-if="evt.category" class="text-[10px] px-2 py-0.5 bg-orange-200 text-orange-700 rounded-full font-medium shrink-0">{{ evt.category }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Riwayat Kehadiran Agenda -->
+      <div v-if="data.event_attendance_history?.length" class="bg-white rounded-xl border border-gray-200 p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-sm font-semibold text-gray-800 flex items-center gap-2">
+            <CheckCircleIcon class="w-4 h-4 text-green-500" /> Riwayat Kehadiran Agenda
+          </h2>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-100">
+                <th class="text-left py-2 px-2 text-xs font-medium text-gray-500">Kegiatan</th>
+                <th class="text-left py-2 px-2 text-xs font-medium text-gray-500">Tanggal</th>
+                <th class="text-left py-2 px-2 text-xs font-medium text-gray-500">Hadir</th>
+                <th class="text-left py-2 px-2 text-xs font-medium text-gray-500">Metode</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="att in data.event_attendance_history" :key="att.id" class="border-b border-gray-50 hover:bg-gray-50 cursor-pointer" @click="router.push(`/agenda/${att.event_id}`)">
+                <td class="py-2.5 px-2">
+                  <p class="font-medium text-gray-800 truncate max-w-[200px]">{{ att.event_title }}</p>
+                  <p class="text-xs text-gray-400">{{ att.location }}</p>
+                </td>
+                <td class="py-2.5 px-2 text-xs text-gray-600">{{ att.event_date }}</td>
+                <td class="py-2.5 px-2 text-xs text-gray-600">{{ att.attended_at }}</td>
+                <td class="py-2.5 px-2">
+                  <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium" :class="att.method === 'qr' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'">
+                    {{ att.method === 'qr' ? '📱 QR' : att.method === 'manual' ? '✍️ Manual' : att.method }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 

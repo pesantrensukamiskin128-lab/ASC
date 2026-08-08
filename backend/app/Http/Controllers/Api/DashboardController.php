@@ -7,6 +7,8 @@ use App\Models\AcademicCalendar;
 use App\Models\AcademicYear;
 use App\Models\Alumni;
 use App\Models\ClassModel;
+use App\Models\Event;
+use App\Models\EventAttendance;
 use App\Models\Invoice;
 use App\Models\Krs;
 use App\Models\Lecturer;
@@ -198,6 +200,38 @@ class DashboardController extends Controller
                 'submitted_at' => $k->submitted_at,
             ]);
 
+        // Agenda kegiatan yang diundang (mendatang)
+        $data['upcoming_events'] = Event::whereHas('invitees', fn($q) => $q->where('user_id', $user->id))
+            ->where('event_date', '>=', now()->toDateString())
+            ->orderBy('event_date')
+            ->limit(5)->get()
+            ->map(fn($e) => [
+                'id' => $e->id,
+                'title' => $e->title,
+                'event_date' => $e->event_date?->format('Y-m-d'),
+                'start_time' => $e->start_time,
+                'end_time' => $e->end_time,
+                'location' => $e->location,
+                'category' => $e->category,
+                'organizer' => $e->organizer,
+            ]);
+
+        // Riwayat kehadiran agenda
+        $data['event_attendance_history'] = EventAttendance::where('user_id', $user->id)
+            ->with('event:id,title,event_date,location,category')
+            ->orderByDesc('attended_at')
+            ->limit(10)->get()
+            ->map(fn($a) => [
+                'id' => $a->id,
+                'event_id' => $a->event_id,
+                'event_title' => $a->event?->title,
+                'event_date' => $a->event?->event_date?->format('Y-m-d'),
+                'location' => $a->event?->location,
+                'category' => $a->event?->category,
+                'attended_at' => $a->attended_at?->format('Y-m-d H:i'),
+                'method' => $a->method,
+            ]);
+
         return response()->json($data);
     }
 
@@ -371,6 +405,34 @@ class DashboardController extends Controller
                     'end_date' => $c->end_date?->format('Y-m-d'),
                     'category' => $c->category,
                     'color' => $c->color,
+                ]),
+            'upcoming_events' => Event::whereHas('invitees', fn($q) => $q->where('user_id', $user->id))
+                ->where('event_date', '>=', now()->toDateString())
+                ->orderBy('event_date')
+                ->limit(5)->get()
+                ->map(fn($e) => [
+                    'id' => $e->id,
+                    'title' => $e->title,
+                    'event_date' => $e->event_date?->format('Y-m-d'),
+                    'start_time' => $e->start_time,
+                    'end_time' => $e->end_time,
+                    'location' => $e->location,
+                    'category' => $e->category,
+                    'organizer' => $e->organizer,
+                ]),
+            'event_attendance_history' => EventAttendance::where('user_id', $user->id)
+                ->with('event:id,title,event_date,location,category')
+                ->orderByDesc('attended_at')
+                ->limit(10)->get()
+                ->map(fn($a) => [
+                    'id' => $a->id,
+                    'event_id' => $a->event_id,
+                    'event_title' => $a->event?->title,
+                    'event_date' => $a->event?->event_date?->format('Y-m-d'),
+                    'location' => $a->event?->location,
+                    'category' => $a->event?->category,
+                    'attended_at' => $a->attended_at?->format('Y-m-d H:i'),
+                    'method' => $a->method,
                 ]),
         ];
 
