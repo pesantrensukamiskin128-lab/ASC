@@ -25,7 +25,7 @@
         .letter-body ol { list-style-type: decimal; padding-left: 20px; margin: 2px 0; }
         .letter-body li { margin: 0; }
         .sign-wrapper { margin-top: 15px; width: 100%; padding: 0 40px; }
-        .sign-area { float: right; width: 240px; text-align: left; }
+        .sign-area { float: right; margin-right: 30px; width: 240px; text-align: left; }
         .sign-area p { margin: 0; font-size: 11pt; line-height: 1.2; }
         .sign-area .qr { margin: 3px 0; }
         .sign-area .name { font-weight: bold; text-decoration: underline; margin-top: 2px; }
