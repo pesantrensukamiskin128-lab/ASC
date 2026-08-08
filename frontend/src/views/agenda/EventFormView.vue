@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import api from '@/services/api'
@@ -9,6 +9,38 @@ const route = useRoute()
 const toast = useToast()
 const saving = ref(false)
 const allUsers = ref<any[]>([])
+const prodiList = ref<any[]>([])
+const inviteeSearch = ref('')
+const inviteeFilter = ref('all')
+const inviteeProdi = ref('')
+
+const filteredUsers = computed(() => {
+  let users = allUsers.value
+
+  if (inviteeFilter.value === 'dosen') {
+    users = users.filter((u: any) => u.role === 'DOSEN' && !u.has_position)
+  } else if (inviteeFilter.value === 'mahasiswa') {
+    users = users.filter((u: any) => u.role === 'MAHASISWA')
+  } else if (inviteeFilter.value === 'struktural') {
+    users = users.filter((u: any) => u.has_position)
+  }
+
+  if (inviteeProdi.value && (inviteeFilter.value === 'dosen' || inviteeFilter.value === 'mahasiswa')) {
+    users = users.filter((u: any) => u.study_program_id == inviteeProdi.value)
+  }
+
+  if (inviteeSearch.value.trim()) {
+    const q = inviteeSearch.value.toLowerCase()
+    users = users.filter((u: any) => u.name.toLowerCase().includes(q))
+  }
+
+  return users
+})
+
+const isAllFilteredSelected = computed(() => {
+  if (!filteredUsers.value.length) return false
+  return filteredUsers.value.every((u: any) => form.invitee_ids.includes(u.id))
+})
 
 const editId = route.params.id as string | undefined
 const isEdit = !!editId
@@ -31,8 +63,12 @@ const categories = ['Rapat', 'Seminar', 'Workshop', 'Pelatihan', 'Wisuda', 'Dies
 const types = ['Luring', 'Daring', 'Hibrid']
 
 onMounted(async () => {
-  const { data } = await api.get('/user-list')
-  allUsers.value = data
+  const [usersRes, prodiRes] = await Promise.all([
+    api.get('/user-list'),
+    api.get('/study-programs/all'),
+  ])
+  allUsers.value = usersRes.data
+  prodiList.value = prodiRes.data
 
   if (isEdit) {
     const { data: ev } = await api.get(`/events/${editId}`)
@@ -64,10 +100,12 @@ async function handleSave() {
 }
 
 function toggleAll() {
-  if (form.invitee_ids.length === allUsers.value.length) {
-    form.invitee_ids = []
+  const ids = filteredUsers.value.map((u: any) => u.id)
+  if (isAllFilteredSelected.value) {
+    form.invitee_ids = form.invitee_ids.filter(id => !ids.includes(id))
   } else {
-    form.invitee_ids = allUsers.value.map((u: any) => u.id)
+    const merged = new Set([...form.invitee_ids, ...ids])
+    form.invitee_ids = [...merged]
   }
 }
 </script>
@@ -141,21 +179,45 @@ function toggleAll() {
       </div>
 
       <!-- Peserta -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-        <div class="flex items-center justify-between">
-          <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wide">Peserta Diundang</h2>
-          <button type="button" class="text-xs text-blue-600 hover:underline" @click="toggleAll">
-            {{ form.invitee_ids.length === allUsers.length ? 'Batal Pilih Semua' : 'Pilih Semua' }}
-          </button>
+      <div class="bg-white rounded-xl border border-gray-200 p-6 space-y-3">
+        <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wide">Peserta Diundang</h2>
+
+        <!-- Search -->
+        <input v-model="inviteeSearch" type="text" placeholder="Cari nama..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
+        <!-- Filter buttons -->
+        <div class="flex flex-wrap gap-2">
+          <button type="button" :class="['px-2.5 py-1 rounded-full text-xs font-medium border', inviteeFilter === 'all' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 text-gray-600 hover:bg-gray-100']" @click="inviteeFilter = 'all'">Semua</button>
+          <button type="button" :class="['px-2.5 py-1 rounded-full text-xs font-medium border', inviteeFilter === 'dosen' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 text-gray-600 hover:bg-gray-100']" @click="inviteeFilter = 'dosen'">Dosen</button>
+          <button type="button" :class="['px-2.5 py-1 rounded-full text-xs font-medium border', inviteeFilter === 'mahasiswa' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 text-gray-600 hover:bg-gray-100']" @click="inviteeFilter = 'mahasiswa'">Mahasiswa</button>
+          <button type="button" :class="['px-2.5 py-1 rounded-full text-xs font-medium border', inviteeFilter === 'struktural' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 text-gray-600 hover:bg-gray-100']" @click="inviteeFilter = 'struktural'">Struktural</button>
         </div>
-        <p class="text-xs text-gray-400">{{ form.invitee_ids.length }} peserta dipilih (opsional — presensi tetap bisa dilakukan siapa saja via QR)</p>
-        <div class="max-h-60 overflow-y-auto border border-gray-200 rounded-lg p-3 space-y-1">
-          <label v-for="u in allUsers" :key="u.id" class="flex items-center gap-2 text-sm p-1 rounded hover:bg-gray-50 cursor-pointer">
+
+        <!-- Filter prodi -->
+        <div v-if="inviteeFilter === 'dosen' || inviteeFilter === 'mahasiswa'">
+          <select v-model="inviteeProdi" class="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs">
+            <option value="">Semua Program Studi</option>
+            <option v-for="p in prodiList" :key="p.id" :value="p.id">{{ p.name }}</option>
+          </select>
+        </div>
+
+        <!-- Select all + counter -->
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="selectAllInvitees" :checked="isAllFilteredSelected" @change="toggleAll" class="rounded" />
+          <label for="selectAllInvitees" class="text-xs text-gray-600 font-medium">Pilih Semua ({{ filteredUsers.length }})</label>
+          <span class="text-xs text-gray-400 ml-auto">{{ form.invitee_ids.length }} dipilih</span>
+        </div>
+
+        <!-- User list -->
+        <div class="max-h-60 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-1">
+          <label v-for="u in filteredUsers" :key="u.id" class="flex items-center gap-2 text-sm p-1.5 rounded hover:bg-gray-50 cursor-pointer">
             <input type="checkbox" :value="u.id" v-model="form.invitee_ids" class="rounded" />
-            <span class="text-gray-800">{{ u.name }}</span>
-            <span v-if="u.role_label" class="text-[10px] text-gray-400 ml-auto">{{ u.role_label }}</span>
+            <span class="text-gray-800 flex-1 truncate">{{ u.name }}</span>
+            <span v-if="u.role_label" class="text-[10px] text-gray-400">{{ u.role_label }}</span>
           </label>
+          <div v-if="!filteredUsers.length" class="text-center text-gray-400 text-xs py-3">Tidak ada user yang cocok.</div>
         </div>
+        <p class="text-xs text-gray-400">Opsional — presensi tetap bisa dilakukan siapa saja via QR</p>
       </div>
 
       <!-- Actions -->
