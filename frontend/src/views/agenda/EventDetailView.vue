@@ -19,6 +19,7 @@ onMounted(async () => {
   try {
     const { data } = await api.get(`/events/${route.params.id}`)
     event.value = data
+    loadQrImage()
   } catch { toast.error('Gagal memuat agenda.') }
   finally { loading.value = false }
 })
@@ -29,13 +30,151 @@ const qrUrl = computed(() => {
   return `${frontendUrl}/presensi/${event.value.qr_token}`
 })
 
-const qrImageUrl = computed(() => {
-  if (!event.value) return ''
-  // Gunakan QR biru dari API (sama seperti dokumen lain)
-  return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&color=1e3a8a&bgcolor=ffffff&data=${encodeURIComponent(qrUrl.value)}&ecc=H`
-})
+const qrImageUrl = ref('')
+const posterLoading = ref(false)
 
 const attendedCount = computed(() => event.value?.attendances?.length ?? 0)
+
+// Load QR with logo dari backend
+async function loadQrImage() {
+  if (!event.value) return
+  try {
+    const { data } = await api.get(`/events/${event.value.id}/qr-code`)
+    qrImageUrl.value = data.qr_image
+  } catch {
+    // Fallback ke external API
+    qrImageUrl.value = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&color=1e3a8a&data=${encodeURIComponent(qrUrl.value)}&ecc=H`
+  }
+}
+
+// Download poster QR sebagai gambar
+async function downloadPoster() {
+  if (!event.value || !qrImageUrl.value) return
+  posterLoading.value = true
+
+  try {
+    const canvas = document.createElement('canvas')
+    const W = 800, H = 1100
+    canvas.width = W
+    canvas.height = H
+    const ctx = canvas.getContext('2d')!
+
+    // Background gradient
+    const grad = ctx.createLinearGradient(0, 0, W, H)
+    grad.addColorStop(0, '#1e3a8a')
+    grad.addColorStop(0.5, '#1d4ed8')
+    grad.addColorStop(1, '#0f766e')
+    ctx.fillStyle = grad
+    ctx.fillRect(0, 0, W, H)
+
+    // Title "Scan Disini"
+    ctx.fillStyle = '#ffffff'
+    ctx.font = 'bold 42px Arial'
+    ctx.textAlign = 'center'
+    ctx.fillText('Scan Disini', W / 2, 100)
+
+    ctx.font = '18px Arial'
+    ctx.fillStyle = 'rgba(255,255,255,0.8)'
+    ctx.fillText('Scan QR berikut untuk melakukan presensi', W / 2, 140)
+
+    // QR Code (white background box)
+    const qrSize = 320
+    const qrX = (W - qrSize) / 2
+    const qrY = 180
+
+    // White rounded rect for QR
+    ctx.fillStyle = '#ffffff'
+    ctx.beginPath()
+    ctx.roundRect(qrX - 20, qrY - 20, qrSize + 40, qrSize + 40, 16)
+    ctx.fill()
+
+    // Draw QR image
+    const qrImg = new Image()
+    qrImg.crossOrigin = 'anonymous'
+    await new Promise<void>((resolve) => {
+      qrImg.onload = () => {
+        ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize)
+        resolve()
+      }
+      qrImg.onerror = () => resolve()
+      qrImg.src = qrImageUrl.value
+    })
+
+    // Event title
+    const titleY = qrY + qrSize + 80
+    ctx.fillStyle = '#ffffff'
+    ctx.font = 'bold 28px Arial'
+    ctx.textAlign = 'center'
+    const title = event.value.title.toUpperCase()
+    // Word wrap
+    const words = title.split(' ')
+    let line = ''
+    let lineY = titleY
+    for (const word of words) {
+      const test = line + word + ' '
+      if (ctx.measureText(test).width > W - 80) {
+        ctx.fillText(line.trim(), W / 2, lineY)
+        line = word + ' '
+        lineY += 36
+      } else {
+        line = test
+      }
+    }
+    ctx.fillText(line.trim(), W / 2, lineY)
+
+    // Date & time badge
+    const dateStr = new Date(event.value.event_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+    const timeStr = event.value.start_time ? `${event.value.start_time.slice(0,5)} - ${event.value.end_time?.slice(0,5) ?? 'Selesai'} WIB` : ''
+    const badgeText = `${dateStr}${timeStr ? ', ' + timeStr : ''}`
+
+    ctx.font = '16px Arial'
+    const badgeW = ctx.measureText(badgeText).width + 40
+    const badgeX = (W - badgeW) / 2
+    const badgeY = lineY + 40
+
+    ctx.fillStyle = 'rgba(255,255,255,0.15)'
+    ctx.beginPath()
+    ctx.roundRect(badgeX, badgeY, badgeW, 36, 18)
+    ctx.fill()
+    ctx.fillStyle = '#ffffff'
+    ctx.fillText(badgeText, W / 2, badgeY + 24)
+
+    // Instructions
+    const instrY = badgeY + 70
+    ctx.fillStyle = 'rgba(255,255,255,0.9)'
+    ctx.font = '14px Arial'
+    ctx.textAlign = 'left'
+    ctx.fillText('Dengan ASC App:   ① Buka Aplikasi ASC    ② Scan QR    ③ Konfirmasi Hadir', 40, instrY)
+    ctx.fillText('Dengan G-Lens:      ① Buka Google Lens    ② Scan QR    ③ Isi Form Presensi', 40, instrY + 28)
+
+    // Footer
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'
+    ctx.fillRect(0, H - 60, W, 60)
+    ctx.fillStyle = '#ffffff'
+    ctx.font = 'bold 14px Arial'
+    ctx.textAlign = 'left'
+    ctx.fillText('Al-Jawami Smart Campus', 40, H - 30)
+    ctx.font = '12px Arial'
+    ctx.fillStyle = 'rgba(255,255,255,0.7)'
+    ctx.textAlign = 'right'
+    ctx.fillText('STAI Yapata Al-Jawami Bandung', W - 40, H - 30)
+
+    // Download
+    const link = document.createElement('a')
+    link.download = `QR-Presensi-${event.value.title.replace(/[^a-zA-Z0-9]/g, '-')}.png`
+    link.href = canvas.toDataURL('image/png')
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    toast.success('Poster QR berhasil didownload.')
+  } catch (e) {
+    toast.error('Gagal membuat poster.')
+    console.error(e)
+  } finally {
+    posterLoading.value = false
+  }
+}
 
 async function toggleOpen() {
   try {
@@ -94,13 +233,17 @@ function formatDate(d: string) { return new Date(d).toLocaleDateString('id-ID', 
           <h2 class="text-sm font-semibold text-gray-800">QR Code Presensi</h2>
         </div>
         <div class="flex items-center gap-6">
-          <img :src="qrImageUrl" alt="QR Presensi" class="w-40 h-40 border border-gray-200 rounded-lg" />
+          <img v-if="qrImageUrl" :src="qrImageUrl" alt="QR Presensi" class="w-40 h-40 border border-gray-200 rounded-lg" />
+          <div v-else class="w-40 h-40 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-sm">Loading...</div>
           <div class="text-sm space-y-2">
             <p class="text-gray-600">Tampilkan QR Code ini kepada peserta untuk presensi.</p>
             <p class="text-xs text-gray-400">URL: {{ qrUrl }}</p>
             <p :class="['text-xs font-medium', event.is_open ? 'text-green-600' : 'text-red-600']">
               Status: {{ event.is_open ? '✓ Presensi Dibuka' : '✕ Presensi Ditutup' }}
             </p>
+            <button :disabled="posterLoading" class="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-xs font-medium rounded-lg" @click="downloadPoster">
+              {{ posterLoading ? '⏳ Membuat...' : '📥 Download Poster QR' }}
+            </button>
           </div>
         </div>
       </div>

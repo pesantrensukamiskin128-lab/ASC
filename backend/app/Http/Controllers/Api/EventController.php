@@ -162,4 +162,18 @@ class EventController extends Controller
             'data'    => $event->fresh(),
         ]);
     }
+
+    /** Generate QR code presensi dengan logo (base64) */
+    public function qrCode(Event $event): JsonResponse
+    {
+        $frontendUrl = rtrim(config('app.frontend_url'), '/');
+        $url = $frontendUrl . '/presensi/' . $event->qr_token;
+        $qr = \App\Helpers\QrCodeHelper::generateWithLogo($url, 400);
+
+        return response()->json([
+            'qr_image' => $qr,
+            'url'      => $url,
+            'event'    => $event->only('id', 'title', 'event_date', 'start_time', 'end_time', 'location', 'organizer'),
+        ]);
+    }
 }

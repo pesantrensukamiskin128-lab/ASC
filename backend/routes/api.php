@@ -897,6 +897,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('{event}', [EventController::class, 'update']);
         Route::delete('{event}', [EventController::class, 'destroy']);
         Route::post('{event}/toggle-open', [EventController::class, 'toggleOpen']);
+        Route::get('{event}/qr-code', [EventController::class, 'qrCode']);
         // Presensi via app (user login)
         Route::post('attend/{token}', [EventController::class, 'attend']);
     });

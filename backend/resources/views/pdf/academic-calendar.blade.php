@@ -117,7 +117,7 @@
                 </td>
                 <td>
                     <div class="verify-text">
-                        Dokumen ini telah ditandatangani dan distempel secara elektronik melalui aplikasi Al-Jawami Smart Campus, scan QR Code untuk verifikasi.
+                        Dokumen ini telah ditandatangani dan distempel secara elektronik melalui aplikasi Al-Jawami Smart Campus, klik atau scan QR Code untuk verifikasi.
                     </div>
                 </td>
             </tr>
