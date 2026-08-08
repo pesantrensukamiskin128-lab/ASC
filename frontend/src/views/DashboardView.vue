@@ -306,6 +306,35 @@ function formatCurrency(n: number) {
         </div>
       </div>
 
+      <!-- Surat Masuk Terbaru -->
+      <div v-if="data.incoming_letters?.length" class="bg-white rounded-xl border border-gray-200 p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-sm font-semibold text-gray-800 flex items-center gap-2">
+            <ChatBubbleLeftRightIcon class="w-4 h-4 text-teal-500" /> Surat Masuk Terbaru
+          </h2>
+          <button class="text-xs text-blue-600 hover:text-blue-700 font-medium" @click="router.push('/persuratan/surat-saya')">Lihat Semua →</button>
+        </div>
+        <div class="space-y-2">
+          <div v-for="letter in data.incoming_letters" :key="letter.id"
+            class="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-teal-200 hover:bg-teal-50/50 cursor-pointer transition-colors"
+            @click="router.push(`/persuratan/surat-saya/${letter.id}`)">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" :class="letter.is_read ? 'bg-gray-100' : 'bg-teal-100'">
+              <svg class="w-5 h-5" :class="letter.is_read ? 'text-gray-400' : 'text-teal-600'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <p class="text-sm text-gray-900 truncate" :class="!letter.is_read ? 'font-semibold' : 'font-medium'">{{ letter.subject }}</p>
+                <span v-if="!letter.is_read" class="w-2 h-2 bg-teal-500 rounded-full flex-shrink-0"></span>
+              </div>
+              <p class="text-xs text-gray-500 truncate">{{ letter.letter_type }} · {{ letter.letter_number }} · {{ letter.signer_name }}</p>
+            </div>
+            <span class="text-[10px] text-gray-400 flex-shrink-0">{{ letter.letter_date }}</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Kalender Akademik -->
       <div class="bg-white rounded-xl border border-gray-200 p-5">
         <div class="flex items-center justify-between mb-3">
@@ -605,6 +634,35 @@ function formatCurrency(n: number) {
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- Surat Masuk Terbaru -->
+      <div v-if="data.incoming_letters?.length" class="bg-white rounded-xl border border-gray-200 p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-sm font-semibold text-gray-800 flex items-center gap-2">
+            <ChatBubbleLeftRightIcon class="w-4 h-4 text-teal-500" /> Surat Masuk Terbaru
+          </h2>
+          <button class="text-xs text-blue-600 hover:text-blue-700 font-medium" @click="router.push('/persuratan/surat-saya')">Lihat Semua →</button>
+        </div>
+        <div class="space-y-2">
+          <div v-for="letter in data.incoming_letters" :key="letter.id"
+            class="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-teal-200 hover:bg-teal-50/50 cursor-pointer transition-colors"
+            @click="router.push(`/persuratan/surat-saya/${letter.id}`)">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" :class="letter.is_read ? 'bg-gray-100' : 'bg-teal-100'">
+              <svg class="w-5 h-5" :class="letter.is_read ? 'text-gray-400' : 'text-teal-600'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <p class="text-sm text-gray-900 truncate" :class="!letter.is_read ? 'font-semibold' : 'font-medium'">{{ letter.subject }}</p>
+                <span v-if="!letter.is_read" class="w-2 h-2 bg-teal-500 rounded-full flex-shrink-0"></span>
+              </div>
+              <p class="text-xs text-gray-500 truncate">{{ letter.letter_type }} · {{ letter.letter_number }} · {{ letter.signer_name }}</p>
+            </div>
+            <span class="text-[10px] text-gray-400 flex-shrink-0">{{ letter.letter_date }}</span>
+          </div>
         </div>
       </div>
 

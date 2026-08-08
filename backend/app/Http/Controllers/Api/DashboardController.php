@@ -13,6 +13,7 @@ use App\Models\Invoice;
 use App\Models\Krs;
 use App\Models\Lecturer;
 use App\Models\LecturerPosition;
+use App\Models\OutgoingLetter;
 use App\Models\Payment;
 use App\Models\Semester;
 use App\Models\Student;
@@ -232,6 +233,23 @@ class DashboardController extends Controller
                 'method' => $a->method,
             ]);
 
+        // Surat masuk terbaru (surat yang didistribusikan ke user)
+        $data['incoming_letters'] = OutgoingLetter::whereHas('internalRecipients', fn($q) => $q->where('user_id', $user->id))
+            ->where('status', 'TERKIRIM')
+            ->with(['letterType:id,name,code', 'signer:id,name'])
+            ->orderByDesc('sent_at')
+            ->limit(5)->get()
+            ->map(fn($l) => [
+                'id' => $l->id,
+                'subject' => $l->subject,
+                'letter_number' => $l->letter_number,
+                'letter_type' => $l->letterType?->name,
+                'letter_date' => $l->letter_date?->format('Y-m-d'),
+                'signer_name' => $l->signer?->name,
+                'sent_at' => $l->sent_at?->format('Y-m-d H:i'),
+                'is_read' => (bool) $l->internalRecipients->where('id', $user->id)->first()?->pivot?->is_read,
+            ]);
+
         return response()->json($data);
     }
 
@@ -433,6 +451,21 @@ class DashboardController extends Controller
                     'category' => $a->event?->category,
                     'attended_at' => $a->attended_at?->format('Y-m-d H:i'),
                     'method' => $a->method,
+                ]),
+            'incoming_letters' => OutgoingLetter::whereHas('internalRecipients', fn($q) => $q->where('user_id', $user->id))
+                ->where('status', 'TERKIRIM')
+                ->with(['letterType:id,name,code', 'signer:id,name'])
+                ->orderByDesc('sent_at')
+                ->limit(5)->get()
+                ->map(fn($l) => [
+                    'id' => $l->id,
+                    'subject' => $l->subject,
+                    'letter_number' => $l->letter_number,
+                    'letter_type' => $l->letterType?->name,
+                    'letter_date' => $l->letter_date?->format('Y-m-d'),
+                    'signer_name' => $l->signer?->name,
+                    'sent_at' => $l->sent_at?->format('Y-m-d H:i'),
+                    'is_read' => (bool) $l->internalRecipients->where('id', $user->id)->first()?->pivot?->is_read,
                 ]),
         ];
 
