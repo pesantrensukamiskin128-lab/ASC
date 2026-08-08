@@ -892,6 +892,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // =========================================================================
     Route::prefix('events')->group(function () {
         Route::get('/', [EventController::class, 'index']);
+        Route::get('my-attendance', [EventController::class, 'myAttendance']);
         Route::post('/', [EventController::class, 'store']);
         Route::get('{event}', [EventController::class, 'show']);
         Route::put('{event}', [EventController::class, 'update']);

@@ -12,10 +12,22 @@ class EventController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $data = Event::withCount('attendances')
+        $user = auth()->user();
+        $canManage = $user->can('agenda.create');
+
+        $query = Event::withCount('attendances')
             ->when($request->search, fn($q) => $q->where('title', 'like', "%{$request->search}%"))
-            ->when($request->category, fn($q) => $q->where('category', $request->category))
-            ->orderByDesc('event_date')
+            ->when($request->category, fn($q) => $q->where('category', $request->category));
+
+        // Non-admin: hanya lihat agenda yang diundang atau dibuat sendiri
+        if (!$canManage) {
+            $query->where(function ($q) use ($user) {
+                $q->where('created_by', $user->id)
+                  ->orWhereHas('invitees', fn($sub) => $sub->where('user_id', $user->id));
+            });
+        }
+
+        $data = $query->orderByDesc('event_date')
             ->paginate($request->per_page ?? 15);
 
         return response()->json($data);
@@ -50,6 +62,17 @@ class EventController extends Controller
 
     public function show(Event $event): JsonResponse
     {
+        $user = auth()->user();
+        $canManage = $user->can('agenda.create');
+
+        // Non-admin: hanya bisa lihat jika diundang atau pembuat
+        if (!$canManage && $event->created_by !== $user->id) {
+            $isInvited = $event->invitees()->where('user_id', $user->id)->exists();
+            if (!$isInvited) {
+                return response()->json(['message' => 'Anda tidak memiliki akses ke agenda ini.'], 403);
+            }
+        }
+
         return response()->json($event->load([
             'creator', 'invitees', 'attendances.user',
         ])->loadCount('attendances'));
@@ -161,6 +184,29 @@ class EventController extends Controller
             'message' => $event->is_open ? 'Presensi dibuka.' : 'Presensi ditutup.',
             'data'    => $event->fresh(),
         ]);
+    }
+
+    /** Riwayat kehadiran user yang sedang login */
+    public function myAttendance(): JsonResponse
+    {
+        $userId = auth()->id();
+
+        $data = EventAttendance::where('user_id', $userId)
+            ->with('event:id,title,event_date,location,category')
+            ->orderByDesc('attended_at')
+            ->limit(50)->get()
+            ->map(fn($a) => [
+                'id' => $a->id,
+                'event_id' => $a->event_id,
+                'event_title' => $a->event?->title,
+                'event_date' => $a->event?->event_date?->format('Y-m-d'),
+                'location' => $a->event?->location,
+                'category' => $a->event?->category,
+                'attended_at' => $a->attended_at?->format('Y-m-d H:i'),
+                'method' => $a->method,
+            ]);
+
+        return response()->json($data);
     }
 
     /** Generate QR code presensi dengan logo (base64) */
