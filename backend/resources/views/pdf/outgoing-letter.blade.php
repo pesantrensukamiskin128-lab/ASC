@@ -30,7 +30,7 @@
         .sign-area .qr { margin: 3px 0; }
         .sign-area .name { font-weight: bold; text-decoration: underline; margin-top: 2px; }
         .sign-area .nidn { font-size: 10pt; }
-        .verify-footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 5px 0 0; border-top: 1px solid #d1d5db; }
+        .verify-footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 8px 10mm 0 10mm; border-top: 1px solid #d1d5db; }
         .verify-footer table { width: 100%; border-collapse: collapse; }
         .verify-footer td { border: none; padding: 0; vertical-align: middle; }
         .verify-text { font-size: 10pt; color: #555; line-height: 1.2; padding-left: 6px; }
@@ -105,6 +105,35 @@
                 </td>
             </tr>
         </table>
+    </div>
+    @endif
+
+    {{-- Lampiran isi surat (setelah tanda tangan + QR verifikasi) --}}
+    @if($letter->appendix_body)
+    <div style="page-break-before: always;"></div>
+    <div class="letter-body" style="margin-top: 0;">
+        <p style="text-align: center; font-weight: bold; margin-bottom: 10px;">LAMPIRAN</p>
+        {!! $letter->appendix_body !!}
+    </div>
+    @endif
+
+    {{-- Dokumen pendukung sebagai lampiran --}}
+    @if(!empty($attachmentFiles))
+    <div style="page-break-before: always;"></div>
+    <div style="padding: 0 40px; font-size: 11pt;">
+        <p style="text-align: center; font-weight: bold; margin-bottom: 12px;">LAMPIRAN DOKUMEN PENDUKUNG</p>
+        <ol style="line-height: 1.4;">
+            @foreach($attachmentFiles as $file)
+            <li style="margin-bottom: 4px;">
+                {{ $file['name'] }}
+                <span style="color: #666; font-size: 10pt;">({{ $file['size_label'] }})</span>
+            </li>
+            @endforeach
+        </ol>
+        <p style="font-size: 10pt; color: #666; margin-top: 12px;">
+            Dokumen di atas merupakan bagian yang tidak terpisahkan dari surat ini.
+            File asli dapat diakses melalui aplikasi Al-Jawami Smart Campus.
+        </p>
     </div>
     @endif
 </body>

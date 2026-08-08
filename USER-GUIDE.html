@@ -970,15 +970,30 @@
 
 <h3>24.2 Proses yang Memicu Notifikasi</h3>
 <table>
-  <tr><th>Proses</th><th>Penerima</th></tr>
-  <tr><td>Surat dikirim ke pemeriksa/penandatangan</td><td>Pemeriksa / Penandatangan</td></tr>
-  <tr><td>Surat direvisi</td><td>Admin pembuat</td></tr>
+  <tr><th>Modul</th><th>Proses</th><th>Penerima</th></tr>
+  <tr><td rowspan="4"><strong>KRS</strong></td><td>KRS diajukan mahasiswa</td><td>Dosen Wali</td></tr>
+  <tr><td>KRS disetujui Dosen Wali</td><td>Mahasiswa</td></tr>
+  <tr><td>KRS ditolak</td><td>Mahasiswa</td></tr>
+  <tr><td>KRS ditandatangani Kaprodi</td><td>Mahasiswa</td></tr>
+  <tr><td rowspan="3"><strong>RPKPS/RPS</strong></td><td>RPS diajukan dosen</td><td>Kaprodi</td></tr>
+  <tr><td>RPS disetujui</td><td>Dosen pengampu</td></tr>
+  <tr><td>RPS perlu revisi</td><td>Dosen pengampu</td></tr>
+  <tr><td rowspan="3"><strong>Skripsi</strong></td><td>Status skripsi berubah</td><td>Mahasiswa</td></tr>
+  <tr><td>Ditunjuk sebagai pembimbing</td><td>Dosen</td></tr>
+  <tr><td>Ditunjuk sebagai penguji sidang</td><td>Dosen</td></tr>
+  <tr><td><strong>Keuangan</strong></td><td>Tagihan baru diterbitkan</td><td>Mahasiswa</td></tr>
+  <tr><td rowspan="2"><strong>Karya Dosen</strong></td><td>Karya diajukan untuk verifikasi</td><td>Admin Akademik</td></tr>
+  <tr><td>Status karya (verifikasi/publikasi)</td><td>Dosen pemilik karya</td></tr>
+  <tr><td><strong>Penelitian</strong></td><td>Status penelitian berubah</td><td>Ketua peneliti</td></tr>
+  <tr><td rowspan="7"><strong>Persuratan</strong></td><td>Surat dikirim ke pemeriksa</td><td>Pemeriksa</td></tr>
+  <tr><td>Surat diteruskan ke penandatangan</td><td>Penandatangan</td></tr>
+  <tr><td>Surat direvisi pemeriksa/penandatangan</td><td>Admin pembuat</td></tr>
   <tr><td>Surat ditandatangani</td><td>Admin pembuat</td></tr>
   <tr><td>Surat didistribusikan</td><td>Setiap penerima internal</td></tr>
-  <tr><td>Disposisi baru</td><td>Penerima disposisi</td></tr>
-  <tr><td>Disposisi dijawab</td><td>Pembuat disposisi</td></tr>
-  <tr><td>Pengajuan surat baru</td><td>Admin Umum</td></tr>
-  <tr><td>Pengajuan diproses/ditolak</td><td>Pengaju</td></tr>
+  <tr><td>Disposisi baru / dijawab</td><td>Penerima / Pembuat disposisi</td></tr>
+  <tr><td>Pengajuan surat (baru/diproses/ditolak)</td><td>Admin / Pengaju</td></tr>
+  <tr><td rowspan="2"><strong>Penugasan</strong></td><td>Dosen ditugaskan mengampu MK</td><td>Dosen</td></tr>
+  <tr><td>Dosen ditunjuk sebagai Dosen Wali</td><td>Dosen</td></tr>
 </table>
 
 <h3>24.3 Menonaktifkan</h3>

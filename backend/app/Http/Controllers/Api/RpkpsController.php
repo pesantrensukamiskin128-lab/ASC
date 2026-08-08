@@ -496,10 +496,11 @@ class RpkpsController extends Controller
             }
         }
 
-        // QR Code data — URL verifikasi frontend (ukuran kecil untuk tanda tangan)
+        // QR Code via helper (biru + logo untuk footer)
         $verifyUrl = rtrim(config('app.frontend_url'), '/') . "/verify/rpkps/{$rpkp->verification_code}";
-        $qrDosenUrl = "https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=" . urlencode($verifyUrl . '?signer=dosen');
-        $qrKaprodiUrl = "https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=" . urlencode($verifyUrl . '?signer=kaprodi');
+        $qrDosenUrl = \App\Helpers\QrCodeHelper::generate($verifyUrl . '?signer=dosen', 120);
+        $qrKaprodiUrl = \App\Helpers\QrCodeHelper::generate($verifyUrl . '?signer=kaprodi', 120);
+        $qrFooter = \App\Helpers\QrCodeHelper::generateWithLogo($verifyUrl, 160);
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.rpkps', [
             'rpkps' => $rpkp,
@@ -508,6 +509,7 @@ class RpkpsController extends Controller
             'kaprodi' => $kaprodi,
             'qrDosenUrl' => $qrDosenUrl,
             'qrKaprodiUrl' => $qrKaprodiUrl,
+            'qrFooter' => $qrFooter,
             'verifyUrl' => $verifyUrl,
         ])->setPaper('a4', 'landscape')
           ->setOption('isRemoteEnabled', true);

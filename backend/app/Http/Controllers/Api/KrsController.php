@@ -314,11 +314,12 @@ class KrsController extends Controller
             if ($pos) $kaprodi = \App\Models\Lecturer::find($pos->lecturer_id);
         }
 
-        // QR codes — link ke halaman verifikasi frontend (ukuran kecil untuk tanda tangan)
+        // QR codes via helper (biru + logo untuk footer)
         $verifyUrl = rtrim(config('app.frontend_url'), '/') . "/verify/krs/{$krs->id}";
-        $qrKaprodi = "https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=" . urlencode($verifyUrl . '?signer=kaprodi');
-        $qrAdvisor = "https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=" . urlencode($verifyUrl . '?signer=dosen_wali');
-        $qrStudent = "https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=" . urlencode($verifyUrl . '?signer=mahasiswa');
+        $qrKaprodi = \App\Helpers\QrCodeHelper::generate($verifyUrl . '?signer=kaprodi', 120);
+        $qrAdvisor = \App\Helpers\QrCodeHelper::generate($verifyUrl . '?signer=dosen_wali', 120);
+        $qrStudent = \App\Helpers\QrCodeHelper::generate($verifyUrl . '?signer=mahasiswa', 120);
+        $qrFooter  = \App\Helpers\QrCodeHelper::generateWithLogo($verifyUrl, 160);
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.krs', [
             'krs' => $krs,
@@ -328,6 +329,7 @@ class KrsController extends Controller
             'qrKaprodi' => $qrKaprodi,
             'qrAdvisor' => $qrAdvisor,
             'qrStudent' => $qrStudent,
+            'qrFooter'  => $qrFooter,
             'verifyUrl' => $verifyUrl,
         ])->setPaper('a4', 'portrait')->setOption('isRemoteEnabled', true);
 

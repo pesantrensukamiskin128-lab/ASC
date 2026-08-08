@@ -695,6 +695,11 @@ const router = createRouter({
           name: 'profile',
           component: () => import('@/views/ProfileView.vue'),
         },
+        {
+          path: 'scan-qr',
+          name: 'scan-qr',
+          component: () => import('@/views/ScanQRView.vue'),
+        },
 
         // =========================================================
         // PERSURATAN

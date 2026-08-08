@@ -29,7 +29,11 @@ const qrUrl = computed(() => {
   return `${frontendUrl}/presensi/${event.value.qr_token}`
 })
 
-const qrImageUrl = computed(() => `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl.value)}`)
+const qrImageUrl = computed(() => {
+  if (!event.value) return ''
+  // Gunakan QR biru dari API (sama seperti dokumen lain)
+  return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&color=1e3a8a&bgcolor=ffffff&data=${encodeURIComponent(qrUrl.value)}&ecc=H`
+})
 
 const attendedCount = computed(() => event.value?.attendances?.length ?? 0)
 

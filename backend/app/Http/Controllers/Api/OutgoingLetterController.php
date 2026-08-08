@@ -303,6 +303,22 @@ class OutgoingLetterController extends Controller
         $qrSignature = $isFinal ? \App\Helpers\QrCodeHelper::generate($verifyUrl, 120) : '';
         $qrFooter = $isFinal ? \App\Helpers\QrCodeHelper::generateWithLogo($verifyUrl, 160) : '';
 
+        // Dokumen pendukung — format untuk lampiran PDF
+        $attachmentFiles = [];
+        if ($outgoingLetter->supporting_documents) {
+            foreach ($outgoingLetter->supporting_documents as $doc) {
+                $size = $doc['size'] ?? 0;
+                $sizeLabel = $size < 1024 * 1024
+                    ? round($size / 1024, 1) . ' KB'
+                    : round($size / (1024 * 1024), 1) . ' MB';
+                $attachmentFiles[] = [
+                    'name'       => $doc['name'] ?? 'Dokumen',
+                    'size_label' => $sizeLabel,
+                    'path'       => $doc['path'] ?? '',
+                ];
+            }
+        }
+
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.outgoing-letter', [
             'letter'         => $outgoingLetter,
             'institution'    => $institution,
@@ -313,6 +329,7 @@ class OutgoingLetterController extends Controller
             'verifyUrl'      => $verifyUrl,
             'qrSignature'    => $qrSignature,
             'qrFooter'       => $qrFooter,
+            'attachmentFiles'=> $attachmentFiles,
             'isFinal'        => $isFinal,
         ])->setPaper('a4', 'portrait')
           ->setOption('isRemoteEnabled', true);

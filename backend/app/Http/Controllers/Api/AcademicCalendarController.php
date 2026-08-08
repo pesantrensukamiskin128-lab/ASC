@@ -141,10 +141,12 @@ class AcademicCalendarController extends Controller
             $wk1Nidn = $wk1Lecturer->nidn ?? '-';
         }
 
-        // Generate verification URL & QR
+        // Generate verification URL & QR via helper
         $academicYearId = $request->academic_year_id ?? 'all';
         $verifyUrl = rtrim(config('app.frontend_url'), '/')
             . '/verify/academic-calendar/' . $academicYearId;
+        $qrSignature = \App\Helpers\QrCodeHelper::generate($verifyUrl, 120);
+        $qrFooter = \App\Helpers\QrCodeHelper::generateWithLogo($verifyUrl, 160);
 
         $pdf = Pdf::loadView('pdf.academic-calendar', [
             'events'        => $events,
@@ -155,6 +157,8 @@ class AcademicCalendarController extends Controller
                 : 'Semua Tahun Akademik',
             'wk1Name'       => $wk1Name,
             'wk1Nidn'       => $wk1Nidn,
+            'qrSignature'   => $qrSignature,
+            'qrFooter'      => $qrFooter,
             'verifyUrl'     => $verifyUrl,
         ])->setPaper('a4', 'portrait')
           ->setOption('isRemoteEnabled', true);

@@ -199,6 +199,12 @@ const navigation = computed(() => [
     show: auth.hasPermission('agenda.view'),
   },
   {
+    label: 'Scan QR',
+    to: '/scan-qr',
+    icon: CalendarDaysIcon,
+    show: true,
+  },
+  {
     label: 'Pengaturan',
     icon: Cog6ToothIcon,
     show: auth.hasPermission('user.view'),

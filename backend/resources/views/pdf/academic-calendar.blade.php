@@ -33,10 +33,10 @@
         .sign-area .qr { margin: 5px 0; }
         .sign-area .name { font-weight: bold; text-decoration: underline; margin-top: 3px; }
 
-        .verify-footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 0 0; border-top: 1px solid #e5e7eb; }
+        .verify-footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 8px 10mm 0 10mm; border-top: 1px solid #e5e7eb; }
         .verify-footer table { width: 100%; border-collapse: collapse; }
         .verify-footer td { border: none; padding: 0; vertical-align: middle; }
-        .verify-text { font-size: 8px; color: #666; line-height: 1.4; padding-left: 8px; }
+        .verify-text { font-size: 9px; color: #666; line-height: 1.4; padding-left: 8px; }
     </style>
 </head>
 <body>
@@ -101,7 +101,7 @@
             <p>Bandung, {{ now()->translatedFormat('d F Y') }}</p>
             <p>Wakil Ketua I Bidang Akademik</p>
             <div class="qr">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=50x50&data={{ urlencode($verifyUrl) }}" width="50" height="50" alt="QR">
+                <a href="{{ $verifyUrl }}"><img src="{{ $qrSignature }}" width="50" height="50" alt="QR"></a>
             </div>
             <p class="name">{{ $wk1Name }}</p>
             <p style="font-size: 10px; margin-top: 2px;">NIDN: {{ $wk1Nidn }}</p>
@@ -113,7 +113,7 @@
         <table>
             <tr>
                 <td style="width: 60px;">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data={{ urlencode($verifyUrl) }}" width="60" height="60" alt="QR Verifikasi">
+                    <a href="{{ $verifyUrl }}"><img src="{{ $qrFooter }}" width="60" height="60" alt="QR Verifikasi"></a>
                 </td>
                 <td>
                     <div class="verify-text">
