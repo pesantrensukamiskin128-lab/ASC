@@ -86,57 +86,90 @@ async function downloadPoster() {
     ctx.beginPath(); ctx.arc(60, H - 60, 160, 0, Math.PI * 2); ctx.fill()
     ctx.globalAlpha = 1
 
+    // Logo institusi (dari PWA icon)
+    let logoY = 30
+    try {
+      const logoImg = new Image()
+      logoImg.crossOrigin = 'anonymous'
+      await new Promise<void>(r => {
+        logoImg.onload = () => {
+          const logoSize = 80
+          ctx.drawImage(logoImg, (W - logoSize) / 2, logoY, logoSize, logoSize)
+          r()
+        }
+        logoImg.onerror = () => r()
+        logoImg.src = '/icons/pwa-192x192.png'
+      })
+    } catch {}
+
+    // Nama institusi
     ctx.fillStyle = '#fff'
-    ctx.font = 'bold 42px Arial'
+    ctx.font = 'bold 18px Arial'
     ctx.textAlign = 'center'
-    ctx.fillText('Scan Disini', W / 2, 100)
-    ctx.font = '18px Arial'
+    ctx.fillText('STAI YAPATA AL-JAWAMI BANDUNG', W / 2, logoY + 100)
+
+    // Scan Disini
+    ctx.font = 'bold 40px Arial'
+    ctx.fillText('Scan Disini', W / 2, logoY + 155)
+    ctx.font = '16px Arial'
     ctx.fillStyle = 'rgba(255,255,255,0.75)'
-    ctx.fillText('Scan QR berikut untuk melakukan presensi', W / 2, 135)
+    ctx.fillText('Scan QR berikut untuk melakukan presensi', W / 2, logoY + 185)
 
     // QR box
-    const qrSize = 320, qrX = (W - qrSize) / 2, qrY = 175
+    const qrSize = 300, qrX = (W - qrSize) / 2, qrY = logoY + 210
     ctx.fillStyle = '#fff'
-    ctx.beginPath(); ctx.roundRect(qrX - 20, qrY - 20, qrSize + 40, qrSize + 40, 16); ctx.fill()
+    ctx.beginPath(); ctx.roundRect(qrX - 18, qrY - 18, qrSize + 36, qrSize + 36, 16); ctx.fill()
 
     const qrImg = new Image()
     qrImg.crossOrigin = 'anonymous'
     await new Promise<void>(r => { qrImg.onload = () => { ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize); r() }; qrImg.onerror = () => r(); qrImg.src = qrImageUrl.value })
 
-    // Title
-    let lineY = qrY + qrSize + 70
+    // Title agenda
+    let lineY = qrY + qrSize + 60
     ctx.fillStyle = '#fff'
-    ctx.font = 'bold 28px Arial'
+    ctx.font = 'bold 26px Arial'
+    ctx.textAlign = 'center'
     const words = event.value.title.toUpperCase().split(' ')
     let line = ''
     for (const w of words) {
-      if (ctx.measureText(line + w + ' ').width > W - 80 && line) { ctx.fillText(line.trim(), W / 2, lineY); line = w + ' '; lineY += 36 } else { line += w + ' ' }
+      if (ctx.measureText(line + w + ' ').width > W - 80 && line) { ctx.fillText(line.trim(), W / 2, lineY); line = w + ' '; lineY += 34 } else { line += w + ' ' }
     }
     ctx.fillText(line.trim(), W / 2, lineY)
 
-    // Badge
+    // Badge tanggal
     const dateStr = new Date(event.value.event_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
     const timeStr = event.value.start_time ? `${event.value.start_time.slice(0,5)} - ${event.value.end_time?.slice(0,5) ?? 'Selesai'} WIB` : ''
     const badge = `${dateStr}${timeStr ? ', ' + timeStr : ''}`
     ctx.font = '16px Arial'
     const bW = ctx.measureText(badge).width + 40
-    const bY = lineY + 40
+    const bY = lineY + 35
     ctx.fillStyle = 'rgba(255,255,255,0.15)'
-    ctx.beginPath(); ctx.roundRect((W - bW) / 2, bY, bW, 36, 18); ctx.fill()
-    ctx.fillStyle = '#fff'; ctx.fillText(badge, W / 2, bY + 24)
+    ctx.beginPath(); ctx.roundRect((W - bW) / 2, bY, bW, 34, 17); ctx.fill()
+    ctx.fillStyle = '#fff'; ctx.fillText(badge, W / 2, bY + 23)
 
-    // Steps
-    const sY = bY + 70
-    ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.font = '14px Arial'; ctx.textAlign = 'left'
-    ctx.fillText('Dengan ASC:      ① Buka Aplikasi    ② Scan QR    ③ Konfirmasi Hadir', 40, sY)
-    ctx.fillText('Tanpa Login:       ① Scan QR Code   ② Isi Form    ③ Kirim Kehadiran', 40, sY + 28)
+    // Langkah presensi (rata tengah, lebih besar)
+    const sY = bY + 65
+    ctx.fillStyle = '#fff'
+    ctx.font = 'bold 17px Arial'
+    ctx.textAlign = 'center'
+    ctx.fillText('Cara Presensi via Aplikasi:', W / 2, sY)
+
+    ctx.font = '16px Arial'
+    ctx.fillStyle = 'rgba(255,255,255,0.9)'
+    ctx.fillText('① Buka Aplikasi ASC   ② Tap Scan QR   ③ Konfirmasi Hadir', W / 2, sY + 30)
+
+    ctx.fillStyle = '#fff'
+    ctx.font = 'bold 17px Arial'
+    ctx.fillText('Cara Presensi tanpa Login:', W / 2, sY + 70)
+
+    ctx.font = '16px Arial'
+    ctx.fillStyle = 'rgba(255,255,255,0.9)'
+    ctx.fillText('① Scan QR dengan Kamera   ② Isi Form   ③ Kirim Kehadiran', W / 2, sY + 100)
 
     // Footer
-    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(0, H - 55, W, 55)
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 14px Arial'; ctx.textAlign = 'left'
-    ctx.fillText('Al-Jawami Smart Campus', 40, H - 25)
-    ctx.font = '12px Arial'; ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.textAlign = 'right'
-    ctx.fillText('STAI Yapata Al-Jawami Bandung', W - 40, H - 25)
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(0, H - 50, W, 50)
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center'
+    ctx.fillText('Al-Jawami Smart Campus — Sistem Informasi Akademik Terpadu', W / 2, H - 22)
 
     const link = document.createElement('a')
     link.download = `QR-${event.value.title.replace(/[^a-zA-Z0-9]/g, '-')}.png`
