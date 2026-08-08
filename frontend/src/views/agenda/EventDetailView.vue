@@ -89,40 +89,56 @@ async function downloadPoster() {
     ctx.globalAlpha = 1
 
     // Logo institusi resmi (besar seperti kop surat)
-    let logoY = 30
+    let logoY = 25
     const institutionLogoUrl = institutionStore.logoUrl
     if (institutionLogoUrl) {
       try {
+        // Fetch logo as blob to avoid CORS
+        const logoBlob = await fetch(institutionLogoUrl).then(r => r.blob())
+        const logoBlobUrl = URL.createObjectURL(logoBlob)
         const logoImg = new Image()
-        logoImg.crossOrigin = 'anonymous'
         await new Promise<void>(r => {
           logoImg.onload = () => {
-            const maxH = 100, maxW = 300
+            const maxH = 110, maxW = 320
             let lW = logoImg.naturalWidth, lH = logoImg.naturalHeight
             const scale = Math.min(maxW / lW, maxH / lH, 1)
             lW *= scale; lH *= scale
             ctx.drawImage(logoImg, (W - lW) / 2, logoY, lW, lH)
-            logoY += lH + 10
+            logoY += lH + 12
+            URL.revokeObjectURL(logoBlobUrl)
             r()
           }
-          logoImg.onerror = () => { logoY += 10; r() }
-          logoImg.src = institutionLogoUrl
+          logoImg.onerror = () => { logoY += 10; URL.revokeObjectURL(logoBlobUrl); r() }
+          logoImg.src = logoBlobUrl
         })
       } catch { logoY += 10 }
     } else {
-      logoY += 10
+      // Fallback: coba dari PWA icon
+      try {
+        const logoImg = new Image()
+        await new Promise<void>(r => {
+          logoImg.onload = () => {
+            const logoSize = 90
+            ctx.drawImage(logoImg, (W - logoSize) / 2, logoY, logoSize, logoSize)
+            logoY += logoSize + 12
+            r()
+          }
+          logoImg.onerror = () => { logoY += 10; r() }
+          logoImg.src = '/icons/pwa-192x192.png'
+        })
+      } catch { logoY += 10 }
     }
 
     // Nama institusi
     ctx.fillStyle = '#fff'
-    ctx.font = 'bold 20px Arial'
+    ctx.font = 'bold 22px Arial'
     ctx.textAlign = 'center'
     ctx.fillText('STAI YAPATA AL-JAWAMI BANDUNG', W / 2, logoY + 10)
 
     // Scan Disini
-    ctx.font = 'bold 40px Arial'
+    ctx.font = 'bold 42px Arial'
     ctx.fillText('Scan Disini', W / 2, logoY + 65)
-    ctx.font = '16px Arial'
+    ctx.font = '17px Arial'
     ctx.fillStyle = 'rgba(255,255,255,0.75)'
     ctx.fillText('Scan QR berikut untuk melakukan presensi', W / 2, logoY + 95)
 
@@ -138,12 +154,12 @@ async function downloadPoster() {
     // Title agenda
     let lineY = qrY + qrSize + 60
     ctx.fillStyle = '#fff'
-    ctx.font = 'bold 26px Arial'
+    ctx.font = 'bold 28px Arial'
     ctx.textAlign = 'center'
     const words = event.value.title.toUpperCase().split(' ')
     let line = ''
     for (const w of words) {
-      if (ctx.measureText(line + w + ' ').width > W - 80 && line) { ctx.fillText(line.trim(), W / 2, lineY); line = w + ' '; lineY += 34 } else { line += w + ' ' }
+      if (ctx.measureText(line + w + ' ').width > W - 80 && line) { ctx.fillText(line.trim(), W / 2, lineY); line = w + ' '; lineY += 36 } else { line += w + ' ' }
     }
     ctx.fillText(line.trim(), W / 2, lineY)
 
@@ -151,31 +167,31 @@ async function downloadPoster() {
     const dateStr = new Date(event.value.event_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
     const timeStr = event.value.start_time ? `${event.value.start_time.slice(0,5)} - ${event.value.end_time?.slice(0,5) ?? 'Selesai'} WIB` : ''
     const badge = `${dateStr}${timeStr ? ', ' + timeStr : ''}`
-    ctx.font = '16px Arial'
-    const bW = ctx.measureText(badge).width + 40
+    ctx.font = '17px Arial'
+    const bW = ctx.measureText(badge).width + 44
     const bY = lineY + 35
     ctx.fillStyle = 'rgba(255,255,255,0.15)'
-    ctx.beginPath(); ctx.roundRect((W - bW) / 2, bY, bW, 34, 17); ctx.fill()
-    ctx.fillStyle = '#fff'; ctx.fillText(badge, W / 2, bY + 23)
+    ctx.beginPath(); ctx.roundRect((W - bW) / 2, bY, bW, 36, 18); ctx.fill()
+    ctx.fillStyle = '#fff'; ctx.fillText(badge, W / 2, bY + 24)
 
-    // Langkah presensi (rata tengah)
-    const sY = bY + 65
+    // Langkah presensi (ukuran lebih besar)
+    const sY = bY + 70
     ctx.fillStyle = '#fff'
-    ctx.font = 'bold 17px Arial'
+    ctx.font = 'bold 20px Arial'
     ctx.textAlign = 'center'
     ctx.fillText('Cara Presensi via Aplikasi:', W / 2, sY)
 
-    ctx.font = '16px Arial'
+    ctx.font = '19px Arial'
     ctx.fillStyle = 'rgba(255,255,255,0.9)'
-    ctx.fillText('① Buka Aplikasi ASC   ② Tap Scan QR   ③ Konfirmasi Hadir', W / 2, sY + 30)
+    ctx.fillText('① Buka Aplikasi ASC   ② Tap Scan QR   ③ Konfirmasi Hadir', W / 2, sY + 34)
 
     ctx.fillStyle = '#fff'
-    ctx.font = 'bold 17px Arial'
-    ctx.fillText('Cara Presensi tanpa Login:', W / 2, sY + 70)
+    ctx.font = 'bold 20px Arial'
+    ctx.fillText('Cara Presensi tanpa Login:', W / 2, sY + 80)
 
-    ctx.font = '16px Arial'
+    ctx.font = '19px Arial'
     ctx.fillStyle = 'rgba(255,255,255,0.9)'
-    ctx.fillText('① Scan QR dengan Kamera   ② Isi Form   ③ Kirim Kehadiran', W / 2, sY + 100)
+    ctx.fillText('① Scan QR dengan Kamera   ② Isi Form   ③ Kirim Kehadiran', W / 2, sY + 114)
 
     // Footer with app logo
     ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(0, H - 60, W, 60)
@@ -183,7 +199,6 @@ async function downloadPoster() {
     // App icon kecil di footer
     try {
       const appIcon = new Image()
-      appIcon.crossOrigin = 'anonymous'
       await new Promise<void>(r => {
         appIcon.onload = () => {
           const iconSize = 28
