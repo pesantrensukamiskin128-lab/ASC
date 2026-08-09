@@ -120,7 +120,6 @@ const navigation = computed(() => [
     children: [
       { label: 'Karya Dosen', to: '/karya-dosen' },
       { label: 'Skripsi / TA', to: '/skripsi' },
-      { label: 'Praktikum / KKN', to: '/praktikum' },
       { label: 'Hibah Penelitian', to: '/penelitian' },
       { label: 'Periode Hibah', to: '/penelitian/periode' },
     ],
