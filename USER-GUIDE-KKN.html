@@ -73,7 +73,7 @@ tr:nth-child(even) { background: #f9fafb; }
   <h1>📘 User Guide</h1>
   <h2>Modul KKN / Praktikum / PPL / Magang / PKL</h2>
   <p class="subtitle">Al-Jawami Smart Campus (ASC)<br>STAI YAPATA AL-JAWAMI BANDUNG</p>
-  <div class="badge">Versi 1.0 — Agustus 2026</div>
+  <div class="badge">Versi 1.1 — Agustus 2026</div>
 </div>
 
 <!-- DAFTAR ISI -->
@@ -86,12 +86,12 @@ tr:nth-child(even) { background: #f9fafb; }
     <li><a href="#bab3">Alur Proses KKN/Praktikum</a></li>
     <li><a href="#bab4">Panduan Admin — Membuat Program</a></li>
     <li><a href="#bab5">Panduan Admin — Kelola Lokasi Penempatan</a></li>
-    <li><a href="#bab6">Panduan Admin — Kelola Kelompok</a></li>
+    <li><a href="#bab6">Panduan Admin — Kelola Kelompok & Ketua Kelompok</a></li>
     <li><a href="#bab7">Panduan Admin — Kelola Peserta</a></li>
     <li><a href="#bab8">Panduan Mahasiswa — Pendaftaran Mandiri</a></li>
-    <li><a href="#bab9">Panduan Mahasiswa — Logbook Harian</a></li>
+    <li><a href="#bab9">Panduan Mahasiswa — Logbook Harian & Bukti Kegiatan</a></li>
     <li><a href="#bab10">Panduan Mahasiswa — Presensi</a></li>
-    <li><a href="#bab11">Panduan Mahasiswa — Submit Laporan Akhir</a></li>
+    <li><a href="#bab11">Panduan Mahasiswa — Laporan Individu & Kelompok</a></li>
     <li><a href="#bab12">Panduan Dosen — Approve Logbook</a></li>
     <li><a href="#bab13">Panduan Dosen — Review Laporan</a></li>
     <li><a href="#bab14">Panduan Dosen — Input Penilaian</a></li>
@@ -123,12 +123,12 @@ tr:nth-child(even) { background: #f9fafb; }
   <tr><th>No</th><th>Entitas</th><th>Fungsi</th></tr>
   <tr><td>1</td><td>Program</td><td>Data utama program (KKN, PPL, dll) per semester</td></tr>
   <tr><td>2</td><td>Lokasi</td><td>Tempat penempatan peserta (desa, sekolah, instansi)</td></tr>
-  <tr><td>3</td><td>Kelompok</td><td>Pengelompokan peserta per lokasi/pembimbing</td></tr>
+  <tr><td>3</td><td>Kelompok</td><td>Pengelompokan peserta per lokasi/pembimbing + penunjukan ketua kelompok</td></tr>
   <tr><td>4</td><td>Peserta</td><td>Mahasiswa yang terdaftar di program</td></tr>
-  <tr><td>5</td><td>Logbook</td><td>Catatan kegiatan harian peserta</td></tr>
+  <tr><td>5</td><td>Logbook</td><td>Catatan kegiatan harian peserta + link bukti kegiatan (foto/file)</td></tr>
   <tr><td>6</td><td>Presensi</td><td>Rekap kehadiran peserta</td></tr>
   <tr><td>7</td><td>Penilaian</td><td>Komponen nilai (multi-komponen, berbobot)</td></tr>
-  <tr><td>8</td><td>Laporan Akhir</td><td>Laporan final yang di-review pembimbing</td></tr>
+  <tr><td>8</td><td>Laporan Akhir</td><td>Laporan individu (per mahasiswa) dan laporan kelompok (oleh ketua kelompok)</td></tr>
 </table>
 
 <!-- BAB 3 -->
@@ -223,8 +223,8 @@ tr:nth-child(even) { background: #f9fafb; }
 </div>
 
 <!-- BAB 6 -->
-<h2 id="bab6">6. Panduan Admin — Kelola Kelompok</h2>
-<p>Kelompok digunakan untuk mengelompokan peserta agar lebih mudah dikelola.</p>
+<h2 id="bab6">6. Panduan Admin — Kelola Kelompok & Ketua Kelompok</h2>
+<p>Kelompok digunakan untuk mengelompokan peserta agar lebih mudah dikelola. Setiap kelompok dapat memiliki <strong>ketua kelompok</strong> yang nantinya bertanggung jawab membuat laporan kelompok.</p>
 <div class="step-box">
   <strong>Langkah 1:</strong> Buka detail program → klik tab <strong>"Kelompok"</strong>
 </div>
@@ -237,11 +237,21 @@ tr:nth-child(even) { background: #f9fafb; }
     <li><strong>Nama Kelompok</strong> — contoh: "Kelompok 1", "Tim A"</li>
     <li><strong>Lokasi</strong> — pilih lokasi penempatan (opsional)</li>
     <li><strong>Dosen Pembimbing</strong> — pilih dosen yang membimbing kelompok ini</li>
+    <li><strong>Ketua Kelompok</strong> — pilih salah satu peserta sebagai ketua</li>
   </ul>
 </div>
 <div class="step-box">
   <strong>Langkah 4:</strong> Klik <strong>Simpan</strong>
 </div>
+<div class="info-box"><strong>ℹ️ Tentang Ketua Kelompok:</strong>
+<ul>
+  <li>Ketua kelompok dipilih dari daftar peserta yang sudah terdaftar di program</li>
+  <li>Hanya ketua kelompok yang dapat membuat <strong>laporan kelompok</strong></li>
+  <li>Ketua kelompok tetap wajib membuat laporan individu seperti anggota lainnya</li>
+  <li>Admin dapat mengubah ketua kelompok kapan saja melalui edit kelompok</li>
+</ul>
+</div>
+<div class="warning-box"><strong>⚠️ Tips:</strong> Pastikan peserta sudah didaftarkan terlebih dahulu sebelum menunjuk ketua kelompok. Jika ketua belum tersedia saat membuat kelompok, bisa diatur nanti melalui edit kelompok.</div>
 
 <!-- BAB 7 -->
 <h2 id="bab7">7. Panduan Admin — Kelola Peserta</h2>
@@ -291,8 +301,8 @@ tr:nth-child(even) { background: #f9fafb; }
 </div>
 
 <!-- BAB 9 -->
-<h2 id="bab9">9. Panduan Mahasiswa — Logbook Harian</h2>
-<p>Selama pelaksanaan KKN/Praktikum, mahasiswa wajib mengisi logbook kegiatan setiap hari.</p>
+<h2 id="bab9">9. Panduan Mahasiswa — Logbook Harian & Bukti Kegiatan</h2>
+<p>Selama pelaksanaan KKN/Praktikum, mahasiswa wajib mengisi logbook kegiatan setiap hari beserta bukti kegiatan berupa foto atau file dokumentasi.</p>
 <div class="step-box">
   <strong>Langkah 1:</strong> Buka halaman <strong>Detail Peserta</strong> (dari menu Praktikum → klik program → Detail)
 </div>
@@ -309,14 +319,26 @@ tr:nth-child(even) { background: #f9fafb; }
     <li><strong>Jam Mulai & Selesai</strong> — waktu pelaksanaan (opsional)</li>
     <li><strong>Kegiatan</strong> — deskripsi kegiatan yang dilakukan (wajib)</li>
     <li><strong>Hasil</strong> — output/hasil dari kegiatan (opsional)</li>
+    <li><strong>Link Bukti Kegiatan</strong> — URL foto/file dokumentasi di Google Drive (opsional tapi disarankan)</li>
   </ul>
 </div>
 <div class="step-box">
   <strong>Langkah 5:</strong> Klik <strong>Simpan</strong> — logbook akan berstatus <strong>SUBMITTED</strong>
 </div>
-<p>Setelah submit, dosen pembimbing akan mereview logbook Anda. Status akan berubah menjadi:</p>
+
+<h3>Tentang Bukti Kegiatan:</h3>
+<p>Bukti kegiatan berupa link ke file foto atau dokumen yang diupload ke Google Drive. Dosen pembimbing akan memeriksa bukti ini sebelum menyetujui logbook.</p>
+<div class="info-box"><strong>ℹ️ Cara menyertakan bukti:</strong>
+<ol>
+  <li>Upload foto/file ke Google Drive</li>
+  <li>Klik kanan file → "Dapatkan link" → ubah akses ke "Siapa saja yang memiliki link"</li>
+  <li>Copy link dan paste ke field "Link Bukti Kegiatan"</li>
+</ol>
+</div>
+
+<p>Setelah submit, dosen pembimbing akan mereview logbook dan bukti kegiatan. Status akan berubah menjadi:</p>
 <ul>
-  <li><strong>APPROVED</strong> ✓ — logbook disetujui</li>
+  <li><strong>APPROVED</strong> ✓ — logbook dan bukti disetujui</li>
   <li><strong>REVISION</strong> — perlu diperbaiki, cek catatan dari dosen</li>
 </ul>
 
@@ -345,8 +367,16 @@ tr:nth-child(even) { background: #f9fafb; }
 
 <!-- BAB 11 -->
 <div class="page-break"></div>
-<h2 id="bab11">11. Panduan Mahasiswa — Submit Laporan Akhir</h2>
-<p>Setelah masa pelaksanaan selesai, mahasiswa wajib menyusun dan mengumpulkan laporan akhir KKN/Praktikum.</p>
+<h2 id="bab11">11. Panduan Mahasiswa — Laporan Individu & Kelompok</h2>
+<p>Setelah masa pelaksanaan selesai, terdapat <strong>dua jenis laporan</strong> yang harus dikumpulkan:</p>
+
+<table>
+  <tr><th>Jenis Laporan</th><th>Yang Submit</th><th>Keterangan</th></tr>
+  <tr><td><strong>👤 Laporan Individu</strong></td><td>Setiap mahasiswa</td><td>Laporan pribadi masing-masing peserta tentang pengalaman dan hasil kegiatan</td></tr>
+  <tr><td><strong>👥 Laporan Kelompok</strong></td><td>Ketua kelompok</td><td>Laporan bersama satu kelompok yang disubmit oleh ketua kelompok</td></tr>
+</table>
+
+<h3>11.1 Submit Laporan Individu</h3>
 <div class="step-box">
   <strong>Langkah 1:</strong> Buka halaman Detail Peserta → tab <strong>"Laporan"</strong>
 </div>
@@ -354,16 +384,53 @@ tr:nth-child(even) { background: #f9fafb; }
   <strong>Langkah 2:</strong> Klik <strong>"Submit Laporan"</strong>
 </div>
 <div class="step-box">
-  <strong>Langkah 3:</strong> Isi formulir:
+  <strong>Langkah 3:</strong> Pilih jenis laporan: <strong>👤 Individu</strong>
+</div>
+<div class="step-box">
+  <strong>Langkah 4:</strong> Isi formulir:
   <ul>
     <li><strong>Judul Laporan</strong> — judul lengkap laporan akhir (wajib)</li>
     <li><strong>Abstrak</strong> — ringkasan isi laporan</li>
-    <li><strong>Link File</strong> — URL file laporan di Google Drive atau platform lainnya</li>
+    <li><strong>Link File</strong> — URL file laporan di Google Drive</li>
   </ul>
 </div>
 <div class="step-box">
-  <strong>Langkah 4:</strong> Klik <strong>Submit</strong> — status laporan akan menjadi <strong>SUBMITTED</strong>
+  <strong>Langkah 5:</strong> Klik <strong>Submit</strong>
 </div>
+
+<h3>11.2 Submit Laporan Kelompok (Khusus Ketua)</h3>
+<div class="warning-box"><strong>⚠️ Penting:</strong> Hanya <strong>ketua kelompok</strong> yang dapat membuat laporan kelompok. Jika Anda bukan ketua, opsi "Kelompok" tidak akan berhasil disubmit.</div>
+<div class="step-box">
+  <strong>Langkah 1:</strong> Buka halaman Detail Peserta → tab <strong>"Laporan"</strong>
+</div>
+<div class="step-box">
+  <strong>Langkah 2:</strong> Klik <strong>"Submit Laporan"</strong>
+</div>
+<div class="step-box">
+  <strong>Langkah 3:</strong> Pilih jenis laporan: <strong>👥 Kelompok</strong>
+</div>
+<div class="step-box">
+  <strong>Langkah 4:</strong> Isi judul, abstrak, dan link file laporan kelompok
+</div>
+<div class="step-box">
+  <strong>Langkah 5:</strong> Klik <strong>Submit</strong> — laporan akan terlihat oleh seluruh anggota kelompok
+</div>
+
+<div class="info-box"><strong>ℹ️ Catatan:</strong>
+<ul>
+  <li>Laporan kelompok yang disubmit ketua akan otomatis tampil di halaman laporan seluruh anggota kelompok</li>
+  <li>Anggota kelompok (bukan ketua) tetap wajib submit laporan individu masing-masing</li>
+  <li>Ketua kelompok juga wajib submit laporan individu selain laporan kelompok</li>
+</ul>
+</div>
+
+<h3>11.3 Status Laporan:</h3>
+<table>
+  <tr><th>Status</th><th>Keterangan</th></tr>
+  <tr><td><strong>SUBMITTED</strong></td><td>Laporan sudah disubmit, menunggu review dosen</td></tr>
+  <tr><td><strong>REVISION</strong></td><td>Perlu diperbaiki sesuai catatan dosen</td></tr>
+  <tr><td><strong>APPROVED</strong></td><td>Laporan disetujui dan diterima</td></tr>
+</table>
 <div class="warning-box"><strong>⚠️ Tips:</strong>
 <ul>
   <li>Pastikan link file bisa diakses oleh dosen pembimbing (set sharing ke "Anyone with the link")</li>
@@ -371,17 +438,9 @@ tr:nth-child(even) { background: #f9fafb; }
 </ul>
 </div>
 
-<h3>Status Laporan:</h3>
-<table>
-  <tr><th>Status</th><th>Keterangan</th></tr>
-  <tr><td><strong>SUBMITTED</strong></td><td>Laporan sudah disubmit, menunggu review dosen</td></tr>
-  <tr><td><strong>REVISION</strong></td><td>Perlu diperbaiki sesuai catatan dosen</td></tr>
-  <tr><td><strong>APPROVED</strong></td><td>Laporan disetujui dan diterima</td></tr>
-</table>
-
 <!-- BAB 12 -->
 <h2 id="bab12">12. Panduan Dosen — Approve Logbook</h2>
-<p>Dosen pembimbing dapat mereview logbook yang disubmit oleh peserta bimbingannya.</p>
+<p>Dosen pembimbing mereview logbook dan <strong>memeriksa bukti kegiatan</strong> yang disubmit oleh peserta bimbingannya.</p>
 <div class="step-box">
   <strong>Langkah 1:</strong> Masuk ke menu <strong>Akademik → Praktikum / KKN</strong>
 </div>
@@ -392,30 +451,47 @@ tr:nth-child(even) { background: #f9fafb; }
   <strong>Langkah 3:</strong> Pada tab <strong>"Logbook"</strong>, lihat daftar logbook berstatus <strong>SUBMITTED</strong>
 </div>
 <div class="step-box">
-  <strong>Langkah 4:</strong> Pilih tindakan:
+  <strong>Langkah 4:</strong> Klik link <strong>"📎 Bukti Kegiatan"</strong> untuk memeriksa dokumentasi/foto yang dilampirkan mahasiswa
+</div>
+<div class="step-box">
+  <strong>Langkah 5:</strong> Pilih tindakan:
   <ul>
     <li>Klik <strong>✓ (centang hijau)</strong> untuk <strong>menyetujui</strong> logbook</li>
-    <li>Klik <strong>✕ (silang kuning)</strong> untuk <strong>meminta revisi</strong></li>
+    <li>Klik <strong>✕ (silang kuning)</strong> untuk <strong>meminta revisi</strong> (jika bukti kurang/kegiatan tidak sesuai)</li>
   </ul>
 </div>
+<div class="info-box"><strong>ℹ️ Tips Review:</strong> Periksa kesesuaian antara deskripsi kegiatan, waktu pelaksanaan, dan bukti foto/file yang dilampirkan sebelum menyetujui logbook.</div>
 
 <!-- BAB 13 -->
 <h2 id="bab13">13. Panduan Dosen — Review Laporan</h2>
-<p>Setelah mahasiswa submit laporan akhir, dosen pembimbing mereview dan memutuskan apakah laporan diterima atau perlu revisi.</p>
+<p>Dosen pembimbing mereview <strong>laporan individu</strong> maupun <strong>laporan kelompok</strong> yang disubmit peserta.</p>
 <div class="step-box">
   <strong>Langkah 1:</strong> Buka detail peserta → tab <strong>"Laporan"</strong>
 </div>
 <div class="step-box">
-  <strong>Langkah 2:</strong> Klik laporan yang berstatus <strong>SUBMITTED</strong>
+  <strong>Langkah 2:</strong> Lihat daftar laporan — badge menunjukkan jenis laporan:
+  <ul>
+    <li><strong>👤 Individu</strong> — laporan pribadi mahasiswa</li>
+    <li><strong>👥 Kelompok</strong> — laporan bersama dari ketua kelompok</li>
+  </ul>
 </div>
 <div class="step-box">
-  <strong>Langkah 3:</strong> Pilih tindakan:
+  <strong>Langkah 3:</strong> Klik link file untuk memeriksa isi laporan
+</div>
+<div class="step-box">
+  <strong>Langkah 4:</strong> Pilih tindakan:
   <ul>
     <li><strong>Approve</strong> — laporan diterima, status berubah ke APPROVED</li>
     <li><strong>Revision</strong> — laporan perlu diperbaiki, tambahkan catatan revisi</li>
   </ul>
 </div>
-<div class="info-box"><strong>ℹ️ Catatan:</strong> Saat approve, tanggal persetujuan akan tercatat otomatis beserta nama reviewer.</div>
+<div class="info-box"><strong>ℹ️ Catatan:</strong>
+<ul>
+  <li>Review laporan kelompok cukup dilakukan sekali — hasilnya berlaku untuk seluruh anggota kelompok</li>
+  <li>Laporan individu di-review satu per satu untuk masing-masing peserta</li>
+  <li>Saat approve, tanggal persetujuan dan nama reviewer akan tercatat otomatis</li>
+</ul>
+</div>
 
 <!-- BAB 14 -->
 <div class="page-break"></div>
@@ -518,11 +594,26 @@ tr:nth-child(even) { background: #f9fafb; }
 <h4>Q: Bagaimana jika mahasiswa lupa mengisi logbook beberapa hari?</h4>
 <p>Mahasiswa tetap dapat menambahkan logbook untuk tanggal sebelumnya. Tidak ada batasan waktu pengisian.</p>
 
+<h4>Q: Apakah bukti kegiatan (link foto/file) wajib dilampirkan di logbook?</h4>
+<p>Tidak wajib secara teknis (field bersifat opsional), namun sangat disarankan karena dosen pembimbing akan memeriksa bukti tersebut sebelum approve logbook.</p>
+
 <h4>Q: Apakah dosen bisa menginput presensi untuk mahasiswa?</h4>
 <p>Ya, dosen (dan admin) memiliki akses untuk mencatat presensi peserta bimbingannya.</p>
 
+<h4>Q: Siapa yang bisa ditunjuk sebagai ketua kelompok?</h4>
+<p>Semua peserta yang sudah terdaftar di program tersebut bisa ditunjuk sebagai ketua kelompok. Penunjukan dilakukan oleh admin/koordinator melalui form kelola kelompok.</p>
+
+<h4>Q: Apakah ketua kelompok bisa diganti?</h4>
+<p>Ya, admin/koordinator dapat mengubah ketua kelompok kapan saja melalui edit kelompok.</p>
+
+<h4>Q: Apa bedanya laporan individu dan laporan kelompok?</h4>
+<p><strong>Laporan individu</strong> dibuat oleh masing-masing mahasiswa tentang pengalaman pribadinya. <strong>Laporan kelompok</strong> dibuat oleh ketua kelompok sebagai laporan bersama yang mewakili seluruh anggota kelompok.</p>
+
+<h4>Q: Jika saya bukan ketua, apakah saya bisa melihat laporan kelompok?</h4>
+<p>Ya, laporan kelompok yang disubmit ketua akan otomatis tampil di halaman laporan seluruh anggota kelompok yang sama.</p>
+
 <h4>Q: Berapa kali mahasiswa bisa submit laporan?</h4>
-<p>Mahasiswa dapat submit laporan berkali-kali. Setiap submit akan membuat record laporan baru. Biasanya yang terakhir di-approve yang dianggap final.</p>
+<p>Mahasiswa dapat submit laporan individu berkali-kali. Untuk laporan kelompok, hanya ketua yang bisa submit. Biasanya yang terakhir di-approve yang dianggap final.</p>
 
 <h4>Q: Bagaimana cara mengubah status peserta menjadi SELESAI?</h4>
 <p>Admin atau dosen pembimbing dapat mengubah status peserta melalui halaman detail peserta → edit status menjadi SELESAI.</p>
@@ -538,7 +629,7 @@ tr:nth-child(even) { background: #f9fafb; }
 <div style="text-align:center; padding:60px 0; color:#6b7280;">
   <p style="font-size:14pt; font-weight:bold; color:#1e3a8a;">Al-Jawami Smart Campus</p>
   <p style="margin-top:8px;">STAI YAPATA AL-JAWAMI BANDUNG</p>
-  <p style="margin-top:20px; font-size:10pt;">User Guide Modul KKN/Praktikum — Versi 1.0</p>
+  <p style="margin-top:20px; font-size:10pt;">User Guide Modul KKN/Praktikum — Versi 1.1</p>
   <p style="font-size:10pt;">Diterbitkan: Agustus 2026</p>
 </div>
 
