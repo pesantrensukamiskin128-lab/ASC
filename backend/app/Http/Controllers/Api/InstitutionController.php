@@ -14,6 +14,28 @@ class InstitutionController extends Controller
         return response()->json(Institution::all());
     }
 
+    /** Serve logo institusi sebagai file response (untuk canvas / cross-origin) */
+    public function logo()
+    {
+        $institution = Institution::first();
+        if (!$institution?->logo_path) {
+            abort(404, 'Logo not found');
+        }
+
+        $disk = \Illuminate\Support\Facades\Storage::disk('public');
+        if (!$disk->exists($institution->logo_path)) {
+            abort(404, 'Logo file not found');
+        }
+
+        $mime = $disk->mimeType($institution->logo_path) ?: 'image/png';
+        $content = $disk->get($institution->logo_path);
+
+        return response($content, 200)
+            ->header('Content-Type', $mime)
+            ->header('Cache-Control', 'public, max-age=86400')
+            ->header('Access-Control-Allow-Origin', '*');
+    }
+
     public function public(): JsonResponse
     {
         $institution = Institution::select(

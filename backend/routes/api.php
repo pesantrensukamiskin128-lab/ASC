@@ -83,6 +83,7 @@ Route::middleware('auth:sanctum')->prefix('auth/2fa')->group(function () {
 
 // Public institution info (untuk halaman login & header)
 Route::get('institution/public', [InstitutionController::class, 'public']);
+Route::get('institution/logo', [InstitutionController::class, 'logo']);
 
 // Public academic calendar & announcements (untuk halaman login)
 Route::get('public/academic-calendar', [AcademicCalendarController::class, 'publicCalendar']);

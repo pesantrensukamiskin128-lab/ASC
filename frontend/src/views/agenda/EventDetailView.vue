@@ -90,11 +90,13 @@ async function downloadPoster() {
 
     // Logo institusi resmi (besar seperti kop surat)
     let logoY = 25
-    const institutionLogoUrl = institutionStore.logoUrl
-    if (institutionLogoUrl) {
-      try {
-        // Fetch logo as blob to avoid CORS
-        const logoBlob = await fetch(institutionLogoUrl).then(r => r.blob())
+    let logoLoaded = false
+    try {
+      // Fetch logo via API endpoint (avoids CORS issues)
+      const apiBase = (api.defaults.baseURL || '').replace(/\/+$/, '')
+      const logoRes = await fetch(`${apiBase}/institution/logo`)
+      if (logoRes.ok) {
+        const logoBlob = await logoRes.blob()
         const logoBlobUrl = URL.createObjectURL(logoBlob)
         const logoImg = new Image()
         await new Promise<void>(r => {
@@ -105,15 +107,17 @@ async function downloadPoster() {
             lW *= scale; lH *= scale
             ctx.drawImage(logoImg, (W - lW) / 2, logoY, lW, lH)
             logoY += lH + 12
+            logoLoaded = true
             URL.revokeObjectURL(logoBlobUrl)
             r()
           }
-          logoImg.onerror = () => { logoY += 10; URL.revokeObjectURL(logoBlobUrl); r() }
+          logoImg.onerror = () => { URL.revokeObjectURL(logoBlobUrl); r() }
           logoImg.src = logoBlobUrl
         })
-      } catch { logoY += 10 }
-    } else {
-      // Fallback: coba dari PWA icon
+      }
+    } catch {}
+    // Fallback: PWA icon jika logo institusi gagal
+    if (!logoLoaded) {
       try {
         const logoImg = new Image()
         await new Promise<void>(r => {
