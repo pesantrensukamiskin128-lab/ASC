@@ -146,8 +146,23 @@ async function downloadPoster() {
     ctx.fillStyle = 'rgba(255,255,255,0.75)'
     ctx.fillText('Scan QR berikut untuk melakukan presensi', W / 2, logoY + 95)
 
-    // QR box
-    const qrSize = 300, qrX = (W - qrSize) / 2, qrY = logoY + 120
+    // === QR block centered vertically & horizontally ===
+    // Calculate remaining space between header and footer
+    const headerBottom = logoY + 110 // after institution name + "Scan Disini" + subtitle
+    const footerTop = H - 60 // footer area
+    const availableH = footerTop - headerBottom
+    
+    // Content below header: QR(336) + gap(50) + title(~36) + gap(35) + badge(36) + gap(86) + steps(~114)
+    // Estimate total content height
+    const qrBoxH = 336 // qrSize(300) + padding(36)
+    const contentAfterQr = 50 + 36 + 35 + 36 + 86 + 114 // title + gaps + badge + gap + steps
+    const totalContentH = qrBoxH + contentAfterQr
+    
+    // Center offset
+    const startY = headerBottom + Math.max(0, (availableH - totalContentH) / 2)
+
+    // QR box (centered)
+    const qrSize = 300, qrX = (W - qrSize) / 2, qrY = startY
     ctx.fillStyle = '#fff'
     ctx.beginPath(); ctx.roundRect(qrX - 18, qrY - 18, qrSize + 36, qrSize + 36, 16); ctx.fill()
 
@@ -178,8 +193,8 @@ async function downloadPoster() {
     ctx.beginPath(); ctx.roundRect((W - bW) / 2, bY, bW, 36, 18); ctx.fill()
     ctx.fillStyle = '#fff'; ctx.fillText(badge, W / 2, bY + 24)
 
-    // Langkah presensi (ukuran lebih besar)
-    const sY = bY + 70
+    // Langkah presensi (ukuran lebih besar) — tambah jarak 12pt (16px) dari badge
+    const sY = bY + 36 + 16 + 20
     ctx.fillStyle = '#fff'
     ctx.font = 'bold 20px Arial'
     ctx.textAlign = 'center'
