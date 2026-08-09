@@ -51,7 +51,7 @@ async function loadParticipants(page = 1) {
 }
 
 const partModal = ref(false); const partSaving = ref(false)
-const partForm = reactive({ student_id: '', group_id: '', location_id: '', supervisor_id: '' })
+const partForm = reactive({ student_id: '', group_id: '', location_id: '', supervisor_id: '', supervisor2_id: '' })
 const searchStudent = ref(''); const studentResults = ref<any[]>([])
 
 let sTimeout: any
@@ -82,7 +82,7 @@ async function removeParticipant(p: any) {
 
 // === LOCATIONS ===
 const locModal = ref(false); const locSaving = ref(false)
-const locForm = reactive({ name: '', address: '', city: '', contact_person: '', contact_phone: '', capacity: '', supervisor_id: '' })
+const locForm = reactive({ name: '', address: '', city: '', contact_person: '', contact_phone: '', capacity: '', supervisor_id: '', supervisor2_id: '' })
 
 async function saveLocation() {
   locSaving.value = true
@@ -102,7 +102,7 @@ async function removeLocation(loc: any) {
 
 // === GROUPS ===
 const grpModal = ref(false); const grpSaving = ref(false)
-const grpForm = reactive({ name: '', location_id: '', supervisor_id: '', leader_id: '', notes: '' })
+const grpForm = reactive({ name: '', location_id: '', supervisor_id: '', supervisor2_id: '', leader_id: '', notes: '' })
 
 async function saveGroup() {
   grpSaving.value = true
@@ -157,7 +157,7 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
     <!-- TAB: Peserta -->
     <div v-if="activeTab === 'peserta'" class="space-y-4">
       <div class="flex justify-end">
-        <button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="Object.assign(partForm, {student_id:'',group_id:'',location_id:'',supervisor_id:''}); searchStudent=''; partModal=true"><PlusIcon class="w-3.5 h-3.5" /> Daftarkan Peserta</button>
+        <button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="Object.assign(partForm, {student_id:'',group_id:'',location_id:'',supervisor_id:'',supervisor2_id:''}); searchStudent=''; partModal=true"><PlusIcon class="w-3.5 h-3.5" /> Daftarkan Peserta</button>
       </div>
       <div v-if="!participants.length" class="text-center py-8 text-gray-400 text-sm">Belum ada peserta.</div>
       <div v-else class="space-y-2">
@@ -179,7 +179,7 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
     <!-- TAB: Lokasi -->
     <div v-if="activeTab === 'lokasi'" class="space-y-4">
       <div class="flex justify-end">
-        <button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="Object.assign(locForm,{name:'',address:'',city:'',contact_person:'',contact_phone:'',capacity:'',supervisor_id:''}); locModal=true"><PlusIcon class="w-3.5 h-3.5" /> Tambah Lokasi</button>
+        <button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="Object.assign(locForm,{name:'',address:'',city:'',contact_person:'',contact_phone:'',capacity:'',supervisor_id:'',supervisor2_id:''}); locModal=true"><PlusIcon class="w-3.5 h-3.5" /> Tambah Lokasi</button>
       </div>
       <div v-if="!program.locations?.length" class="text-center py-8 text-gray-400 text-sm">Belum ada lokasi.</div>
       <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -188,7 +188,8 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
             <div>
               <p class="font-medium text-gray-900 text-sm flex items-center gap-1"><MapPinIcon class="w-4 h-4 text-red-500" /> {{ loc.name }}</p>
               <p v-if="loc.address" class="text-xs text-gray-500 mt-1">{{ loc.address }}, {{ loc.city ?? '' }}</p>
-              <p v-if="loc.supervisor" class="text-xs text-gray-500 mt-1">Pembimbing: {{ loc.supervisor.name }}</p>
+              <p v-if="loc.supervisor" class="text-xs text-gray-500 mt-1">Pembimbing 1: {{ loc.supervisor.name }}</p>
+              <p v-if="loc.supervisor2" class="text-xs text-gray-500 mt-0.5">Pembimbing 2: {{ loc.supervisor2.name }}</p>
             </div>
             <button class="p-1 rounded text-red-500 hover:bg-red-50" @click="removeLocation(loc)"><TrashIcon class="w-4 h-4" /></button>
           </div>
@@ -199,7 +200,7 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
     <!-- TAB: Kelompok -->
     <div v-if="activeTab === 'kelompok'" class="space-y-4">
       <div class="flex justify-end">
-        <button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="Object.assign(grpForm,{name:'',location_id:'',supervisor_id:'',leader_id:'',notes:''}); grpModal=true"><PlusIcon class="w-3.5 h-3.5" /> Tambah Kelompok</button>
+        <button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="Object.assign(grpForm,{name:'',location_id:'',supervisor_id:'',supervisor2_id:'',leader_id:'',notes:''}); grpModal=true"><PlusIcon class="w-3.5 h-3.5" /> Tambah Kelompok</button>
       </div>
       <div v-if="!program.groups?.length" class="text-center py-8 text-gray-400 text-sm">Belum ada kelompok.</div>
       <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -208,7 +209,8 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
             <div>
               <p class="font-semibold text-gray-900 text-sm flex items-center gap-1"><UsersIcon class="w-4 h-4 text-blue-500" /> {{ g.name }}</p>
               <p v-if="g.location" class="text-xs text-gray-500 mt-1">📍 {{ g.location.name }}</p>
-              <p v-if="g.supervisor" class="text-xs text-gray-500 mt-0.5">Pembimbing: {{ g.supervisor.name }}</p>
+              <p v-if="g.supervisor" class="text-xs text-gray-500 mt-0.5">Pembimbing 1: {{ g.supervisor.name }}</p>
+              <p v-if="g.supervisor2" class="text-xs text-gray-500 mt-0.5">Pembimbing 2: {{ g.supervisor2.name }}</p>
               <p v-if="g.leader?.student" class="text-xs text-green-700 mt-0.5 font-medium">👑 Ketua: {{ g.leader.student.name }}</p>
             </div>
             <button class="p-1 rounded text-red-500 hover:bg-red-50" @click="removeGroup(g)"><TrashIcon class="w-4 h-4" /></button>
@@ -232,7 +234,8 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
         <div><label class="block text-sm font-medium text-gray-700 mb-1">Kelompok</label><select v-model="partForm.group_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"><option value="">-- Belum --</option><option v-for="g in program.groups" :key="g.id" :value="g.id">{{ g.name }}</option></select></div>
         <div><label class="block text-sm font-medium text-gray-700 mb-1">Lokasi</label><select v-model="partForm.location_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"><option value="">-- Belum --</option><option v-for="l in program.locations" :key="l.id" :value="l.id">{{ l.name }}</option></select></div>
       </div>
-      <div><label class="block text-sm font-medium text-gray-700 mb-1">Dosen Pembimbing</label><select v-model="partForm.supervisor_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"><option value="">-- Pilih --</option><option v-for="l in lecturers" :key="l.id" :value="l.id">{{ l.name }}</option></select></div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Dosen Pembimbing 1</label><select v-model="partForm.supervisor_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"><option value="">-- Pilih --</option><option v-for="l in lecturers" :key="l.id" :value="l.id">{{ l.name }}</option></select></div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Dosen Pembimbing 2 <span class="text-xs text-gray-400">(opsional)</span></label><select v-model="partForm.supervisor2_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"><option value="">-- Tidak ada --</option><option v-for="l in lecturers" :key="l.id" :value="l.id">{{ l.name }}</option></select></div>
     </form>
     <template #footer>
       <button class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg" @click="partModal = false">Batal</button>
@@ -253,7 +256,8 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
         <div><label class="text-xs font-medium text-gray-700">Kontak</label><input v-model="locForm.contact_person" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" /></div>
         <div><label class="text-xs font-medium text-gray-700">No. HP</label><input v-model="locForm.contact_phone" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" /></div>
       </div>
-      <div><label class="text-xs font-medium text-gray-700">Dosen Pembimbing Lapangan</label><select v-model="locForm.supervisor_id" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"><option value="">-- Pilih --</option><option v-for="l in lecturers" :key="l.id" :value="l.id">{{ l.name }}</option></select></div>
+      <div><label class="text-xs font-medium text-gray-700">Dosen Pembimbing Lapangan 1</label><select v-model="locForm.supervisor_id" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"><option value="">-- Pilih --</option><option v-for="l in lecturers" :key="l.id" :value="l.id">{{ l.name }}</option></select></div>
+      <div><label class="text-xs font-medium text-gray-700">Dosen Pembimbing Lapangan 2 <span class="text-xs text-gray-400">(opsional)</span></label><select v-model="locForm.supervisor2_id" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"><option value="">-- Tidak ada --</option><option v-for="l in lecturers" :key="l.id" :value="l.id">{{ l.name }}</option></select></div>
     </form>
     <template #footer>
       <button class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg" @click="locModal = false">Batal</button>
@@ -266,7 +270,8 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
     <form class="space-y-3" @submit.prevent="saveGroup">
       <div><label class="text-xs font-medium text-gray-700">Nama Kelompok <span class="text-red-500">*</span></label><input v-model="grpForm.name" required placeholder="Kelompok 1" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" /></div>
       <div><label class="text-xs font-medium text-gray-700">Lokasi</label><select v-model="grpForm.location_id" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"><option value="">-- Pilih --</option><option v-for="l in program.locations" :key="l.id" :value="l.id">{{ l.name }}</option></select></div>
-      <div><label class="text-xs font-medium text-gray-700">Dosen Pembimbing</label><select v-model="grpForm.supervisor_id" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"><option value="">-- Pilih --</option><option v-for="l in lecturers" :key="l.id" :value="l.id">{{ l.name }}</option></select></div>
+      <div><label class="text-xs font-medium text-gray-700">Dosen Pembimbing 1</label><select v-model="grpForm.supervisor_id" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"><option value="">-- Pilih --</option><option v-for="l in lecturers" :key="l.id" :value="l.id">{{ l.name }}</option></select></div>
+      <div><label class="text-xs font-medium text-gray-700">Dosen Pembimbing 2 <span class="text-xs text-gray-400">(opsional)</span></label><select v-model="grpForm.supervisor2_id" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"><option value="">-- Tidak ada --</option><option v-for="l in lecturers" :key="l.id" :value="l.id">{{ l.name }}</option></select></div>
       <div><label class="text-xs font-medium text-gray-700">Ketua Kelompok</label><select v-model="grpForm.leader_id" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"><option value="">-- Belum ditentukan --</option><option v-for="p in participants" :key="p.id" :value="p.id">{{ p.student?.name }} ({{ p.student?.nim }})</option></select></div>
     </form>
     <template #footer>

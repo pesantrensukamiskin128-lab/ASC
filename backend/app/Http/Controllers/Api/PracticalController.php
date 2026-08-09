@@ -31,7 +31,7 @@ class PracticalController extends Controller
 
     public function showProgram(PracticalProgram $program): JsonResponse
     {
-        return response()->json($program->load(['semester', 'studyProgram', 'coordinator', 'locations.supervisor', 'groups.supervisor', 'groups.location', 'groups.leader.student']));
+        return response()->json($program->load(['semester', 'studyProgram', 'coordinator', 'locations.supervisor', 'locations.supervisor2', 'groups.supervisor', 'groups.supervisor2', 'groups.location', 'groups.leader.student']));
     }
 
     public function storeProgram(Request $request): JsonResponse
@@ -87,6 +87,7 @@ class PracticalController extends Controller
             'name' => 'required|string|max:255', 'address' => 'nullable|string', 'city' => 'nullable|string|max:100',
             'contact_person' => 'nullable|string', 'contact_phone' => 'nullable|string|max:20',
             'capacity' => 'nullable|integer', 'supervisor_id' => 'nullable|exists:lecturers,id',
+            'supervisor2_id' => 'nullable|exists:lecturers,id',
         ]);
         $loc = $program->locations()->create($validated);
         return response()->json(['message' => 'Lokasi berhasil ditambahkan.', 'data' => $loc], 201);
@@ -103,11 +104,12 @@ class PracticalController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:100', 'location_id' => 'nullable|exists:practical_locations,id',
-            'supervisor_id' => 'nullable|exists:lecturers,id', 'leader_id' => 'nullable|exists:practical_participants,id',
+            'supervisor_id' => 'nullable|exists:lecturers,id', 'supervisor2_id' => 'nullable|exists:lecturers,id',
+            'leader_id' => 'nullable|exists:practical_participants,id',
             'notes' => 'nullable|string',
         ]);
         $group = $program->groups()->create($validated);
-        return response()->json(['message' => 'Kelompok berhasil dibuat.', 'data' => $group->load(['location', 'supervisor', 'leader.student'])], 201);
+        return response()->json(['message' => 'Kelompok berhasil dibuat.', 'data' => $group->load(['location', 'supervisor', 'supervisor2', 'leader.student'])], 201);
     }
 
     public function destroyGroup(PracticalProgram $program, PracticalGroup $group): JsonResponse
@@ -121,17 +123,18 @@ class PracticalController extends Controller
     {
         $validated = $request->validate([
             'name' => 'sometimes|string|max:100', 'location_id' => 'nullable|exists:practical_locations,id',
-            'supervisor_id' => 'nullable|exists:lecturers,id', 'leader_id' => 'nullable|exists:practical_participants,id',
+            'supervisor_id' => 'nullable|exists:lecturers,id', 'supervisor2_id' => 'nullable|exists:lecturers,id',
+            'leader_id' => 'nullable|exists:practical_participants,id',
             'notes' => 'nullable|string',
         ]);
         $group->update($validated);
-        return response()->json(['message' => 'Kelompok berhasil diupdate.', 'data' => $group->fresh()->load(['location', 'supervisor', 'leader.student'])]);
+        return response()->json(['message' => 'Kelompok berhasil diupdate.', 'data' => $group->fresh()->load(['location', 'supervisor', 'supervisor2', 'leader.student'])]);
     }
 
     // === PARTICIPANTS ===
     public function participants(Request $request, PracticalProgram $program): JsonResponse
     {
-        $data = $program->participants()->with(['student.studyProgram', 'group', 'location', 'supervisor'])
+        $data = $program->participants()->with(['student.studyProgram', 'group', 'location', 'supervisor', 'supervisor2'])
             ->withCount(['logbooks', 'attendances', 'assessments'])
             ->when($request->status, fn($q) => $q->where('status', $request->status))
             ->paginate($request->per_page ?? 20);
@@ -145,6 +148,7 @@ class PracticalController extends Controller
             'group_id'      => 'nullable|exists:practical_groups,id',
             'location_id'   => 'nullable|exists:practical_locations,id',
             'supervisor_id' => 'nullable|exists:lecturers,id',
+            'supervisor2_id' => 'nullable|exists:lecturers,id',
         ]);
         if ($program->participants()->where('student_id', $validated['student_id'])->exists()) {
             return response()->json(['message' => 'Mahasiswa sudah terdaftar.'], 422);
@@ -199,7 +203,8 @@ class PracticalController extends Controller
     {
         $validated = $request->validate([
             'group_id' => 'nullable|exists:practical_groups,id', 'location_id' => 'nullable|exists:practical_locations,id',
-            'supervisor_id' => 'nullable|exists:lecturers,id', 'status' => 'nullable|in:TERDAFTAR,AKTIF,SELESAI,MENGUNDURKAN_DIRI,GAGAL',
+            'supervisor_id' => 'nullable|exists:lecturers,id', 'supervisor2_id' => 'nullable|exists:lecturers,id',
+            'status' => 'nullable|in:TERDAFTAR,AKTIF,SELESAI,MENGUNDURKAN_DIRI,GAGAL',
         ]);
         $participant->update($validated);
         return response()->json(['message' => 'Peserta berhasil diupdate.', 'data' => $participant->fresh()]);
