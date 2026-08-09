@@ -41,11 +41,12 @@ async function loadAll() {
   logbooks.value = logRes.data
   attendances.value = attRes.data
   assessments.value = assRes.data
+  loadReports()
 }
 
 // === LOGBOOK ===
 const logModal = ref(false); const logSaving = ref(false)
-const logForm = reactive({ activity_date: '', start_time: '', end_time: '', activity: '', result: '', notes: '' })
+const logForm = reactive({ activity_date: '', start_time: '', end_time: '', activity: '', result: '', notes: '', attachment_url: '' })
 
 async function saveLogbook() {
   logSaving.value = true
@@ -102,14 +103,34 @@ const totalWeightedScore = computed(() => {
 
 // === LAPORAN ===
 const repModal = ref(false); const repSaving = ref(false)
-const repForm = reactive({ title: '', abstract: '', file_url: '' })
+const repForm = reactive({ title: '', abstract: '', file_url: '', report_type: 'INDIVIDU' })
 const reports = ref<any[]>([])
+const reportsLoading = ref(false)
+
+async function loadReports() {
+  reportsLoading.value = true
+  try {
+    const { data } = await api.get(`/practical-participants/${route.params.id}/reports`)
+    reports.value = data
+  } catch {}
+  finally { reportsLoading.value = false }
+}
+
+// Check if current participant is group leader
+const isGroupLeader = ref(false)
+async function checkLeaderStatus() {
+  try {
+    // Load participant info to check if they are group leader
+    const { data } = await api.get(`/practical-participants/${route.params.id}/assessments`)
+    // We'll check leader from the group data loaded via program detail
+  } catch {}
+}
 
 async function saveReport() {
   repSaving.value = true
   try {
     await api.post(`/practical-participants/${route.params.id}/reports`, repForm)
-    toast.success('Laporan berhasil disubmit.'); repModal.value = false
+    toast.success('Laporan berhasil disubmit.'); repModal.value = false; loadReports()
   } catch (e: any) { toast.error(e?.response?.data?.message ?? 'Gagal.') }
   finally { repSaving.value = false }
 }
@@ -137,7 +158,7 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
 
     <!-- LOGBOOK -->
     <div v-if="activeTab === 'logbook'" class="space-y-4">
-      <div class="flex justify-end"><button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="Object.assign(logForm,{activity_date:'',start_time:'',end_time:'',activity:'',result:'',notes:''}); logModal=true"><PlusIcon class="w-3.5 h-3.5" /> Tambah Logbook</button></div>
+      <div class="flex justify-end"><button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="Object.assign(logForm,{activity_date:'',start_time:'',end_time:'',activity:'',result:'',notes:'',attachment_url:''}); logModal=true"><PlusIcon class="w-3.5 h-3.5" /> Tambah Logbook</button></div>
       <div v-if="!logbooks.length" class="text-center py-8 text-gray-400 text-sm">Belum ada logbook.</div>
       <div v-else class="space-y-2">
         <div v-for="l in logbooks" :key="l.id" class="p-4 bg-white rounded-xl border border-gray-200">
@@ -150,6 +171,7 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
               </div>
               <p class="text-sm text-gray-800">{{ l.activity }}</p>
               <p v-if="l.result" class="text-xs text-gray-500 mt-1">Hasil: {{ l.result }}</p>
+              <a v-if="l.attachment_url" :href="l.attachment_url" target="_blank" class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 mt-1 font-medium">📎 Bukti Kegiatan</a>
             </div>
             <div v-if="l.status === 'SUBMITTED'" class="flex items-center gap-1 ml-3 shrink-0">
               <button class="p-1 rounded text-green-600 hover:bg-green-50" @click="reviewLogbook(l, 'approve')"><CheckCircleIcon class="w-4 h-4" /></button>
@@ -202,8 +224,26 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
 
     <!-- LAPORAN -->
     <div v-if="activeTab === 'laporan'" class="space-y-4">
-      <div class="flex justify-end"><button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="Object.assign(repForm,{title:'',abstract:'',file_url:''}); repModal=true"><PlusIcon class="w-3.5 h-3.5" /> Submit Laporan</button></div>
-      <div class="bg-white rounded-xl border border-gray-200 p-6 text-center text-gray-400 text-sm">Fitur laporan tersedia setelah submit.</div>
+      <div class="flex justify-end"><button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="Object.assign(repForm,{title:'',abstract:'',file_url:'',report_type:'INDIVIDU'}); repModal=true"><PlusIcon class="w-3.5 h-3.5" /> Submit Laporan</button></div>
+      <div v-if="reportsLoading" class="text-center py-8 text-gray-400 text-sm">Memuat laporan...</div>
+      <div v-else-if="!reports.length" class="bg-white rounded-xl border border-gray-200 p-6 text-center text-gray-400 text-sm">Belum ada laporan yang disubmit.</div>
+      <div v-else class="space-y-2">
+        <div v-for="r in reports" :key="r.id" class="p-4 bg-white rounded-xl border border-gray-200">
+          <div class="flex items-start justify-between">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span :class="['text-xs px-2 py-0.5 rounded-full font-medium', r.report_type === 'KELOMPOK' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700']">{{ r.report_type === 'KELOMPOK' ? '👥 Kelompok' : '👤 Individu' }}</span>
+                <span :class="['text-xs px-2 py-0.5 rounded-full font-medium', logStatusColor[r.status]]">{{ r.status }}</span>
+              </div>
+              <p class="text-sm font-medium text-gray-900">{{ r.title }}</p>
+              <p v-if="r.abstract" class="text-xs text-gray-500 mt-1 line-clamp-2">{{ r.abstract }}</p>
+              <a v-if="r.file_url" :href="r.file_url" target="_blank" class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 mt-1 font-medium">📎 Buka File Laporan</a>
+              <p v-if="r.reviewer_notes" class="text-xs text-orange-600 mt-1 italic">Catatan reviewer: {{ r.reviewer_notes }}</p>
+              <p class="text-xs text-gray-400 mt-1">Disubmit: {{ r.submitted_at }} {{ r.participant?.student ? '· oleh ' + r.participant.student.name : '' }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -217,6 +257,7 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
       </div>
       <div><label class="text-xs text-gray-700">Kegiatan <span class="text-red-500">*</span></label><textarea v-model="logForm.activity" required rows="3" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" /></div>
       <div><label class="text-xs text-gray-700">Hasil</label><textarea v-model="logForm.result" rows="2" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" /></div>
+      <div><label class="text-xs text-gray-700">Link Bukti Kegiatan (Foto/File)</label><input v-model="logForm.attachment_url" type="url" placeholder="https://drive.google.com/..." class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" /></div>
     </form>
     <template #footer>
       <button class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg" @click="logModal = false">Batal</button>
@@ -258,6 +299,19 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
   <!-- Modal Laporan -->
   <BaseModal :open="repModal" title="Submit Laporan" @close="repModal = false">
     <form class="space-y-3" @submit.prevent="saveReport">
+      <div><label class="text-xs text-gray-700">Jenis Laporan <span class="text-red-500">*</span></label>
+        <div class="flex gap-3 mt-1">
+          <label class="flex items-center gap-2 text-sm cursor-pointer">
+            <input type="radio" v-model="repForm.report_type" value="INDIVIDU" class="text-blue-600" />
+            <span>👤 Individu</span>
+          </label>
+          <label class="flex items-center gap-2 text-sm cursor-pointer">
+            <input type="radio" v-model="repForm.report_type" value="KELOMPOK" class="text-purple-600" />
+            <span>👥 Kelompok</span>
+          </label>
+        </div>
+        <p v-if="repForm.report_type === 'KELOMPOK'" class="text-xs text-purple-600 mt-1">Hanya ketua kelompok yang dapat submit laporan kelompok.</p>
+      </div>
       <div><label class="text-xs text-gray-700">Judul <span class="text-red-500">*</span></label><input v-model="repForm.title" required class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" /></div>
       <div><label class="text-xs text-gray-700">Abstrak</label><textarea v-model="repForm.abstract" rows="3" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" /></div>
       <div><label class="text-xs text-gray-700">Link File (Google Drive)</label><input v-model="repForm.file_url" placeholder="https://drive.google.com/..." class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" /></div>

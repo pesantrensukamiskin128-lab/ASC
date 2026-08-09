@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Guide - Modul KKN/Praktikum - Al-Jawami Smart Campus</title>
+<style>
+@page { size: A4; margin: 20mm 18mm; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt; line-height: 1.6; color: #1f2937; }
+.page-break { page-break-before: always; }
+
+/* Cover */
+.cover { display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 100vh; text-align: center; background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #0f766e 100%);
+  color: #fff; padding: 60px 40px; }
+.cover h1 { font-size: 28pt; margin-bottom: 10px; }
+.cover h2 { font-size: 16pt; font-weight: 400; opacity: 0.9; margin-bottom: 30px; }
+.cover .subtitle { font-size: 12pt; opacity: 0.75; margin-top: 20px; }
+.cover .badge { display: inline-block; background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3); padding: 8px 24px; border-radius: 30px;
+  font-size: 11pt; margin-top: 30px; }
+
+/* TOC */
+.toc { padding: 30px 0; }
+.toc h2 { font-size: 18pt; color: #1e3a8a; margin-bottom: 20px; border-bottom: 2px solid #1e3a8a; padding-bottom: 8px; }
+.toc ol { padding-left: 20px; }
+.toc li { margin: 8px 0; font-size: 11pt; }
+.toc li a { color: #1d4ed8; text-decoration: none; }
+
+/* Content styles */
+h2 { font-size: 16pt; color: #1e3a8a; margin: 30px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #e5e7eb; }
+h3 { font-size: 13pt; color: #1e40af; margin: 20px 0 8px; }
+h4 { font-size: 11pt; color: #374151; margin: 14px 0 6px; }
+p { margin: 6px 0; text-align: justify; }
+ul, ol { margin: 8px 0 8px 20px; }
+li { margin: 4px 0; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 10pt; }
+th, td { border: 1px solid #d1d5db; padding: 8px 10px; text-align: left; }
+th { background: #f3f4f6; font-weight: 600; color: #374151; }
+tr:nth-child(even) { background: #f9fafb; }
+
+.info-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;
+  padding: 12px 16px; margin: 12px 0; font-size: 10pt; }
+.info-box strong { color: #1e40af; }
+.warning-box { background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px;
+  padding: 12px 16px; margin: 12px 0; font-size: 10pt; }
+.warning-box strong { color: #92400e; }
+.step-box { background: #f0fdf4; border-left: 4px solid #16a34a; padding: 10px 14px;
+  margin: 8px 0; border-radius: 0 8px 8px 0; }
+
+/* Flowchart */
+.flow { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 16px 0; justify-content: center; }
+.flow-item { background: #1e3a8a; color: #fff; padding: 8px 16px; border-radius: 8px;
+  font-size: 10pt; font-weight: 600; text-align: center; min-width: 100px; }
+.flow-arrow { font-size: 16pt; color: #6b7280; }
+.flow-item.green { background: #16a34a; }
+.flow-item.orange { background: #ea580c; }
+.flow-item.purple { background: #7c3aed; }
+
+.print-btn { position: fixed; bottom: 20px; right: 20px; background: #1e3a8a;
+  color: #fff; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer;
+  font-size: 11pt; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 100; }
+.print-btn:hover { background: #1d4ed8; }
+@media print { .print-btn { display: none; } }
+</style>
+</head>
+<body>
+<button class="print-btn" onclick="window.print()">🖨️ Cetak / Simpan PDF</button>
+
+<!-- COVER -->
+<div class="cover">
+  <h1>📘 User Guide</h1>
+  <h2>Modul KKN / Praktikum / PPL / Magang / PKL</h2>
+  <p class="subtitle">Al-Jawami Smart Campus (ASC)<br>STAI YAPATA AL-JAWAMI BANDUNG</p>
+  <div class="badge">Versi 1.0 — Agustus 2026</div>
+</div>
+
+<!-- DAFTAR ISI -->
+<div class="page-break"></div>
+<div class="toc">
+  <h2>Daftar Isi</h2>
+  <ol>
+    <li><a href="#bab1">Pendahuluan</a></li>
+    <li><a href="#bab2">Gambaran Umum Modul</a></li>
+    <li><a href="#bab3">Alur Proses KKN/Praktikum</a></li>
+    <li><a href="#bab4">Panduan Admin — Membuat Program</a></li>
+    <li><a href="#bab5">Panduan Admin — Kelola Lokasi Penempatan</a></li>
+    <li><a href="#bab6">Panduan Admin — Kelola Kelompok</a></li>
+    <li><a href="#bab7">Panduan Admin — Kelola Peserta</a></li>
+    <li><a href="#bab8">Panduan Mahasiswa — Pendaftaran Mandiri</a></li>
+    <li><a href="#bab9">Panduan Mahasiswa — Logbook Harian</a></li>
+    <li><a href="#bab10">Panduan Mahasiswa — Presensi</a></li>
+    <li><a href="#bab11">Panduan Mahasiswa — Submit Laporan Akhir</a></li>
+    <li><a href="#bab12">Panduan Dosen — Approve Logbook</a></li>
+    <li><a href="#bab13">Panduan Dosen — Review Laporan</a></li>
+    <li><a href="#bab14">Panduan Dosen — Input Penilaian</a></li>
+    <li><a href="#bab15">Hak Akses & Role</a></li>
+    <li><a href="#bab16">Status & Transisi</a></li>
+    <li><a href="#bab17">FAQ</a></li>
+  </ol>
+</div>
+
+<!-- BAB 1 -->
+<div class="page-break"></div>
+<h2 id="bab1">1. Pendahuluan</h2>
+<p>Modul KKN/Praktikum pada aplikasi Al-Jawami Smart Campus (ASC) dirancang untuk mengelola seluruh proses kegiatan lapangan mahasiswa, mulai dari pendaftaran, penempatan, pelaksanaan kegiatan harian, hingga pelaporan dan penilaian akhir.</p>
+<p>Modul ini mendukung beberapa jenis program:</p>
+<table>
+  <tr><th>Jenis Program</th><th>Keterangan</th></tr>
+  <tr><td><strong>KKN</strong></td><td>Kuliah Kerja Nyata — pengabdian masyarakat</td></tr>
+  <tr><td><strong>PPL</strong></td><td>Praktik Pengalaman Lapangan — praktik mengajar</td></tr>
+  <tr><td><strong>MAGANG</strong></td><td>Magang / Internship di instansi/perusahaan</td></tr>
+  <tr><td><strong>PRAKTIKUM</strong></td><td>Praktikum mata kuliah tertentu</td></tr>
+  <tr><td><strong>PKL</strong></td><td>Praktik Kerja Lapangan</td></tr>
+</table>
+<div class="info-box"><strong>ℹ️ Catatan:</strong> Seluruh jenis program menggunakan alur yang sama. Perbedaan hanya pada penamaan dan konteks kegiatan.</div>
+
+<!-- BAB 2 -->
+<h2 id="bab2">2. Gambaran Umum Modul</h2>
+<p>Modul ini terdiri dari 8 entitas utama yang saling terhubung:</p>
+<table>
+  <tr><th>No</th><th>Entitas</th><th>Fungsi</th></tr>
+  <tr><td>1</td><td>Program</td><td>Data utama program (KKN, PPL, dll) per semester</td></tr>
+  <tr><td>2</td><td>Lokasi</td><td>Tempat penempatan peserta (desa, sekolah, instansi)</td></tr>
+  <tr><td>3</td><td>Kelompok</td><td>Pengelompokan peserta per lokasi/pembimbing</td></tr>
+  <tr><td>4</td><td>Peserta</td><td>Mahasiswa yang terdaftar di program</td></tr>
+  <tr><td>5</td><td>Logbook</td><td>Catatan kegiatan harian peserta</td></tr>
+  <tr><td>6</td><td>Presensi</td><td>Rekap kehadiran peserta</td></tr>
+  <tr><td>7</td><td>Penilaian</td><td>Komponen nilai (multi-komponen, berbobot)</td></tr>
+  <tr><td>8</td><td>Laporan Akhir</td><td>Laporan final yang di-review pembimbing</td></tr>
+</table>
+
+<!-- BAB 3 -->
+<div class="page-break"></div>
+<h2 id="bab3">3. Alur Proses KKN/Praktikum</h2>
+<p>Berikut adalah alur lengkap dari awal hingga akhir:</p>
+
+<div class="flow">
+  <div class="flow-item">Buat Program</div><span class="flow-arrow">→</span>
+  <div class="flow-item">Atur Lokasi</div><span class="flow-arrow">→</span>
+  <div class="flow-item">Buat Kelompok</div><span class="flow-arrow">→</span>
+  <div class="flow-item green">Daftar Peserta</div><span class="flow-arrow">→</span>
+  <div class="flow-item orange">Pelaksanaan</div><span class="flow-arrow">→</span>
+  <div class="flow-item purple">Pelaporan & Penilaian</div>
+</div>
+
+<h3>3.1 Tahap Persiapan (Admin/Koordinator)</h3>
+<ol>
+  <li>Admin membuat program baru (nama, jenis, semester, jadwal)</li>
+  <li>Admin menambahkan lokasi penempatan</li>
+  <li>Admin membuat kelompok dan assign lokasi + pembimbing</li>
+  <li>Admin mendaftarkan peserta ke kelompok & lokasi</li>
+</ol>
+
+<h3>3.2 Tahap Pelaksanaan (Mahasiswa)</h3>
+<ol>
+  <li>Mahasiswa mengisi logbook kegiatan setiap hari</li>
+  <li>Mahasiswa mencatat presensi harian</li>
+  <li>Dosen pembimbing mereview dan meng-approve logbook</li>
+</ol>
+
+<h3>3.3 Tahap Pelaporan & Penilaian</h3>
+<ol>
+  <li>Mahasiswa menyusun dan submit laporan akhir</li>
+  <li>Dosen pembimbing mereview laporan (approve/revisi)</li>
+  <li>Dosen pembimbing menginput nilai per komponen</li>
+  <li>Status peserta diubah menjadi SELESAI</li>
+</ol>
+
+<!-- BAB 4 -->
+<h2 id="bab4">4. Panduan Admin — Membuat Program</h2>
+<h3>Langkah-langkah:</h3>
+<div class="step-box">
+  <strong>Langkah 1:</strong> Masuk ke menu <strong>Akademik → Praktikum / KKN</strong>
+</div>
+<div class="step-box">
+  <strong>Langkah 2:</strong> Klik tombol <strong>"Buat Program"</strong> di pojok kanan atas
+</div>
+<div class="step-box">
+  <strong>Langkah 3:</strong> Isi formulir program:
+  <ul>
+    <li><strong>Nama Program</strong> — contoh: "KKN Reguler 2026"</li>
+    <li><strong>Jenis</strong> — pilih: KKN / PPL / MAGANG / PRAKTIKUM / PKL</li>
+    <li><strong>Semester</strong> — pilih semester pelaksanaan</li>
+    <li><strong>Program Studi</strong> — kosongkan jika lintas prodi</li>
+    <li><strong>Periode Pendaftaran</strong> — tanggal buka & tutup pendaftaran</li>
+    <li><strong>Periode Pelaksanaan</strong> — tanggal mulai & selesai program</li>
+    <li><strong>Bobot SKS</strong> — jumlah SKS yang didapat peserta</li>
+    <li><strong>Min SKS</strong> — syarat minimal SKS untuk mendaftar</li>
+    <li><strong>Koordinator</strong> — dosen penanggung jawab program</li>
+  </ul>
+</div>
+<div class="step-box">
+  <strong>Langkah 4:</strong> Centang <strong>"Aktifkan program"</strong> lalu klik <strong>Simpan</strong>
+</div>
+<div class="warning-box"><strong>⚠️ Penting:</strong> Program yang sudah memiliki peserta tidak dapat dihapus. Nonaktifkan saja jika tidak digunakan lagi.</div>
+
+<!-- BAB 5 -->
+<div class="page-break"></div>
+<h2 id="bab5">5. Panduan Admin — Kelola Lokasi Penempatan</h2>
+<p>Setelah program dibuat, tambahkan lokasi-lokasi penempatan peserta.</p>
+<div class="step-box">
+  <strong>Langkah 1:</strong> Buka detail program → klik tab <strong>"Lokasi"</strong>
+</div>
+<div class="step-box">
+  <strong>Langkah 2:</strong> Klik <strong>"Tambah Lokasi"</strong>
+</div>
+<div class="step-box">
+  <strong>Langkah 3:</strong> Isi data lokasi:
+  <ul>
+    <li><strong>Nama Lokasi</strong> — contoh: "Desa Cikadut", "SMP Negeri 5 Bandung"</li>
+    <li><strong>Alamat</strong> — alamat lengkap lokasi</li>
+    <li><strong>Kota</strong> — kota/kabupaten</li>
+    <li><strong>Kapasitas</strong> — jumlah maksimal peserta di lokasi ini</li>
+    <li><strong>Kontak</strong> — nama contact person di lokasi</li>
+    <li><strong>No. HP</strong> — nomor telepon contact person</li>
+    <li><strong>Dosen Pembimbing Lapangan</strong> — dosen yang bertanggung jawab di lokasi ini</li>
+  </ul>
+</div>
+<div class="step-box">
+  <strong>Langkah 4:</strong> Klik <strong>Simpan</strong>
+</div>
+
+<!-- BAB 6 -->
+<h2 id="bab6">6. Panduan Admin — Kelola Kelompok</h2>
+<p>Kelompok digunakan untuk mengelompokan peserta agar lebih mudah dikelola.</p>
+<div class="step-box">
+  <strong>Langkah 1:</strong> Buka detail program → klik tab <strong>"Kelompok"</strong>
+</div>
+<div class="step-box">
+  <strong>Langkah 2:</strong> Klik <strong>"Tambah Kelompok"</strong>
+</div>
+<div class="step-box">
+  <strong>Langkah 3:</strong> Isi data:
+  <ul>
+    <li><strong>Nama Kelompok</strong> — contoh: "Kelompok 1", "Tim A"</li>
+    <li><strong>Lokasi</strong> — pilih lokasi penempatan (opsional)</li>
+    <li><strong>Dosen Pembimbing</strong> — pilih dosen yang membimbing kelompok ini</li>
+  </ul>
+</div>
+<div class="step-box">
+  <strong>Langkah 4:</strong> Klik <strong>Simpan</strong>
+</div>
+
+<!-- BAB 7 -->
+<h2 id="bab7">7. Panduan Admin — Kelola Peserta</h2>
+<p>Admin dapat mendaftarkan mahasiswa ke program dan mengatur penempatan mereka.</p>
+<div class="step-box">
+  <strong>Langkah 1:</strong> Buka detail program → tab <strong>"Peserta"</strong>
+</div>
+<div class="step-box">
+  <strong>Langkah 2:</strong> Klik <strong>"Daftarkan Peserta"</strong>
+</div>
+<div class="step-box">
+  <strong>Langkah 3:</strong> Cari mahasiswa (ketik NIM atau nama), lalu pilih:
+  <ul>
+    <li><strong>Kelompok</strong> — assign ke kelompok yang sudah dibuat</li>
+    <li><strong>Lokasi</strong> — assign ke lokasi penempatan</li>
+    <li><strong>Dosen Pembimbing</strong> — pilih pembimbing individu (opsional)</li>
+  </ul>
+</div>
+<div class="step-box">
+  <strong>Langkah 4:</strong> Klik <strong>Daftarkan</strong>
+</div>
+<p>Untuk melihat detail peserta (logbook, presensi, nilai), klik tombol <strong>"Detail"</strong> pada baris peserta.</p>
+<div class="info-box"><strong>ℹ️ Tips:</strong> Admin juga dapat mengubah status peserta: TERDAFTAR → AKTIF → SELESAI secara manual melalui halaman detail.</div>
+
+<!-- BAB 8 -->
+<div class="page-break"></div>
+<h2 id="bab8">8. Panduan Mahasiswa — Pendaftaran Mandiri</h2>
+<p>Mahasiswa dapat mendaftar sendiri ke program yang sedang membuka pendaftaran.</p>
+<div class="step-box">
+  <strong>Langkah 1:</strong> Masuk ke menu <strong>Akademik → Praktikum / KKN</strong>
+</div>
+<div class="step-box">
+  <strong>Langkah 2:</strong> Cari program yang statusnya <strong>Aktif</strong> dan dalam periode pendaftaran
+</div>
+<div class="step-box">
+  <strong>Langkah 3:</strong> Klik tombol <strong>"Daftar"</strong> pada program yang diinginkan
+</div>
+<div class="step-box">
+  <strong>Langkah 4:</strong> Konfirmasi pendaftaran → status Anda akan menjadi <strong>TERDAFTAR</strong>
+</div>
+<div class="warning-box"><strong>⚠️ Syarat Pendaftaran:</strong>
+<ul>
+  <li>Program harus dalam status Aktif</li>
+  <li>Tanggal saat ini dalam periode pendaftaran</li>
+  <li>Belum pernah mendaftar ke program yang sama</li>
+</ul>
+</div>
+
+<!-- BAB 9 -->
+<h2 id="bab9">9. Panduan Mahasiswa — Logbook Harian</h2>
+<p>Selama pelaksanaan KKN/Praktikum, mahasiswa wajib mengisi logbook kegiatan setiap hari.</p>
+<div class="step-box">
+  <strong>Langkah 1:</strong> Buka halaman <strong>Detail Peserta</strong> (dari menu Praktikum → klik program → Detail)
+</div>
+<div class="step-box">
+  <strong>Langkah 2:</strong> Pilih tab <strong>"Logbook"</strong>
+</div>
+<div class="step-box">
+  <strong>Langkah 3:</strong> Klik <strong>"Tambah Logbook"</strong>
+</div>
+<div class="step-box">
+  <strong>Langkah 4:</strong> Isi formulir:
+  <ul>
+    <li><strong>Tanggal</strong> — tanggal kegiatan dilakukan</li>
+    <li><strong>Jam Mulai & Selesai</strong> — waktu pelaksanaan (opsional)</li>
+    <li><strong>Kegiatan</strong> — deskripsi kegiatan yang dilakukan (wajib)</li>
+    <li><strong>Hasil</strong> — output/hasil dari kegiatan (opsional)</li>
+  </ul>
+</div>
+<div class="step-box">
+  <strong>Langkah 5:</strong> Klik <strong>Simpan</strong> — logbook akan berstatus <strong>SUBMITTED</strong>
+</div>
+<p>Setelah submit, dosen pembimbing akan mereview logbook Anda. Status akan berubah menjadi:</p>
+<ul>
+  <li><strong>APPROVED</strong> ✓ — logbook disetujui</li>
+  <li><strong>REVISION</strong> — perlu diperbaiki, cek catatan dari dosen</li>
+</ul>
+
+<!-- BAB 10 -->
+<h2 id="bab10">10. Panduan Mahasiswa — Presensi</h2>
+<p>Catat kehadiran Anda setiap hari selama pelaksanaan program.</p>
+<div class="step-box">
+  <strong>Langkah 1:</strong> Buka halaman Detail Peserta → tab <strong>"Presensi"</strong>
+</div>
+<div class="step-box">
+  <strong>Langkah 2:</strong> Klik <strong>"Catat Presensi"</strong>
+</div>
+<div class="step-box">
+  <strong>Langkah 3:</strong> Pilih tanggal dan status kehadiran:
+  <ul>
+    <li><strong>HADIR</strong> — hadir di lokasi</li>
+    <li><strong>IZIN</strong> — tidak hadir dengan izin</li>
+    <li><strong>SAKIT</strong> — tidak hadir karena sakit</li>
+    <li><strong>ALPHA</strong> — tidak hadir tanpa keterangan</li>
+  </ul>
+</div>
+<div class="step-box">
+  <strong>Langkah 4:</strong> Tambahkan catatan jika perlu, lalu klik <strong>Simpan</strong>
+</div>
+<div class="info-box"><strong>ℹ️ Catatan:</strong> Presensi bersifat upsert — jika sudah ada data untuk tanggal yang sama, data akan diperbarui.</div>
+
+<!-- BAB 11 -->
+<div class="page-break"></div>
+<h2 id="bab11">11. Panduan Mahasiswa — Submit Laporan Akhir</h2>
+<p>Setelah masa pelaksanaan selesai, mahasiswa wajib menyusun dan mengumpulkan laporan akhir KKN/Praktikum.</p>
+<div class="step-box">
+  <strong>Langkah 1:</strong> Buka halaman Detail Peserta → tab <strong>"Laporan"</strong>
+</div>
+<div class="step-box">
+  <strong>Langkah 2:</strong> Klik <strong>"Submit Laporan"</strong>
+</div>
+<div class="step-box">
+  <strong>Langkah 3:</strong> Isi formulir:
+  <ul>
+    <li><strong>Judul Laporan</strong> — judul lengkap laporan akhir (wajib)</li>
+    <li><strong>Abstrak</strong> — ringkasan isi laporan</li>
+    <li><strong>Link File</strong> — URL file laporan di Google Drive atau platform lainnya</li>
+  </ul>
+</div>
+<div class="step-box">
+  <strong>Langkah 4:</strong> Klik <strong>Submit</strong> — status laporan akan menjadi <strong>SUBMITTED</strong>
+</div>
+<div class="warning-box"><strong>⚠️ Tips:</strong>
+<ul>
+  <li>Pastikan link file bisa diakses oleh dosen pembimbing (set sharing ke "Anyone with the link")</li>
+  <li>Jika diminta revisi, perbaiki file lalu submit ulang</li>
+</ul>
+</div>
+
+<h3>Status Laporan:</h3>
+<table>
+  <tr><th>Status</th><th>Keterangan</th></tr>
+  <tr><td><strong>SUBMITTED</strong></td><td>Laporan sudah disubmit, menunggu review dosen</td></tr>
+  <tr><td><strong>REVISION</strong></td><td>Perlu diperbaiki sesuai catatan dosen</td></tr>
+  <tr><td><strong>APPROVED</strong></td><td>Laporan disetujui dan diterima</td></tr>
+</table>
+
+<!-- BAB 12 -->
+<h2 id="bab12">12. Panduan Dosen — Approve Logbook</h2>
+<p>Dosen pembimbing dapat mereview logbook yang disubmit oleh peserta bimbingannya.</p>
+<div class="step-box">
+  <strong>Langkah 1:</strong> Masuk ke menu <strong>Akademik → Praktikum / KKN</strong>
+</div>
+<div class="step-box">
+  <strong>Langkah 2:</strong> Buka program yang dibimbing → tab <strong>"Peserta"</strong> → klik <strong>"Detail"</strong> pada peserta
+</div>
+<div class="step-box">
+  <strong>Langkah 3:</strong> Pada tab <strong>"Logbook"</strong>, lihat daftar logbook berstatus <strong>SUBMITTED</strong>
+</div>
+<div class="step-box">
+  <strong>Langkah 4:</strong> Pilih tindakan:
+  <ul>
+    <li>Klik <strong>✓ (centang hijau)</strong> untuk <strong>menyetujui</strong> logbook</li>
+    <li>Klik <strong>✕ (silang kuning)</strong> untuk <strong>meminta revisi</strong></li>
+  </ul>
+</div>
+
+<!-- BAB 13 -->
+<h2 id="bab13">13. Panduan Dosen — Review Laporan</h2>
+<p>Setelah mahasiswa submit laporan akhir, dosen pembimbing mereview dan memutuskan apakah laporan diterima atau perlu revisi.</p>
+<div class="step-box">
+  <strong>Langkah 1:</strong> Buka detail peserta → tab <strong>"Laporan"</strong>
+</div>
+<div class="step-box">
+  <strong>Langkah 2:</strong> Klik laporan yang berstatus <strong>SUBMITTED</strong>
+</div>
+<div class="step-box">
+  <strong>Langkah 3:</strong> Pilih tindakan:
+  <ul>
+    <li><strong>Approve</strong> — laporan diterima, status berubah ke APPROVED</li>
+    <li><strong>Revision</strong> — laporan perlu diperbaiki, tambahkan catatan revisi</li>
+  </ul>
+</div>
+<div class="info-box"><strong>ℹ️ Catatan:</strong> Saat approve, tanggal persetujuan akan tercatat otomatis beserta nama reviewer.</div>
+
+<!-- BAB 14 -->
+<div class="page-break"></div>
+<h2 id="bab14">14. Panduan Dosen — Input Penilaian</h2>
+<p>Penilaian menggunakan sistem multi-komponen dengan bobot. Dosen dapat menambahkan beberapa komponen penilaian untuk setiap peserta.</p>
+<div class="step-box">
+  <strong>Langkah 1:</strong> Buka detail peserta → tab <strong>"Penilaian"</strong>
+</div>
+<div class="step-box">
+  <strong>Langkah 2:</strong> Klik <strong>"Tambah Komponen"</strong>
+</div>
+<div class="step-box">
+  <strong>Langkah 3:</strong> Isi data penilaian:
+  <ul>
+    <li><strong>Komponen</strong> — nama komponen (contoh: Laporan, Presentasi, Kinerja, Disiplin)</li>
+    <li><strong>Nilai (0-100)</strong> — skor untuk komponen ini</li>
+    <li><strong>Bobot</strong> — bobot relatif komponen (misal: 1, 2, 3)</li>
+    <li><strong>Catatan</strong> — keterangan tambahan (opsional)</li>
+  </ul>
+</div>
+<div class="step-box">
+  <strong>Langkah 4:</strong> Klik <strong>Simpan</strong>
+</div>
+
+<h3>Contoh Penilaian KKN:</h3>
+<table>
+  <tr><th>Komponen</th><th>Bobot</th><th>Nilai</th><th>Bobot × Nilai</th></tr>
+  <tr><td>Laporan Akhir</td><td>3</td><td>85</td><td>255</td></tr>
+  <tr><td>Presentasi</td><td>2</td><td>80</td><td>160</td></tr>
+  <tr><td>Kinerja Lapangan</td><td>3</td><td>90</td><td>270</td></tr>
+  <tr><td>Disiplin & Kehadiran</td><td>2</td><td>88</td><td>176</td></tr>
+  <tr><th colspan="3">Nilai Akhir</th><th>(255+160+270+176) / (3+2+3+2) = <strong>86.1</strong></th></tr>
+</table>
+<div class="info-box"><strong>ℹ️ Rumus:</strong> Nilai Akhir = Σ(Nilai × Bobot) / Σ(Bobot). Sistem menghitung otomatis dan menampilkan di halaman.</div>
+
+<!-- BAB 15 -->
+<h2 id="bab15">15. Hak Akses & Role</h2>
+<table>
+  <tr><th>Role</th><th>Akses</th></tr>
+  <tr><td><strong>SUPER_ADMIN / ADMIN_AKADEMIK</strong></td><td>Full akses: CRUD program, lokasi, kelompok, peserta, penilaian, review logbook & laporan</td></tr>
+  <tr><td><strong>DOSEN</strong></td><td>CRUD program, kelola peserta bimbingan, approve logbook, review laporan, input nilai</td></tr>
+  <tr><td><strong>LP2M</strong></td><td>Sama dengan DOSEN — untuk monitoring program pengabdian</td></tr>
+  <tr><td><strong>MAHASISWA</strong></td><td>Lihat program, self-register, isi logbook, catat presensi, submit laporan, lihat nilai</td></tr>
+</table>
+
+<h3>Permission yang Digunakan:</h3>
+<table>
+  <tr><th>Permission</th><th>Keterangan</th></tr>
+  <tr><td>kkn.create / kkn.edit</td><td>Membuat & mengelola program praktikum</td></tr>
+  <tr><td>kkn.view (via role)</td><td>Melihat daftar program & data peserta</td></tr>
+</table>
+
+<!-- BAB 16 -->
+<div class="page-break"></div>
+<h2 id="bab16">16. Status & Transisi</h2>
+
+<h3>16.1 Status Peserta</h3>
+<div class="flow">
+  <div class="flow-item">TERDAFTAR</div><span class="flow-arrow">→</span>
+  <div class="flow-item green">AKTIF</div><span class="flow-arrow">→</span>
+  <div class="flow-item purple">SELESAI</div>
+</div>
+<table>
+  <tr><th>Status</th><th>Keterangan</th></tr>
+  <tr><td><strong>TERDAFTAR</strong></td><td>Mahasiswa sudah mendaftar, belum mulai pelaksanaan</td></tr>
+  <tr><td><strong>AKTIF</strong></td><td>Sedang menjalani program (di lapangan)</td></tr>
+  <tr><td><strong>SELESAI</strong></td><td>Telah menyelesaikan seluruh kewajiban</td></tr>
+  <tr><td><strong>MENGUNDURKAN_DIRI</strong></td><td>Mengundurkan diri dari program</td></tr>
+  <tr><td><strong>GAGAL</strong></td><td>Tidak memenuhi syarat kelulusan</td></tr>
+</table>
+
+<h3>16.2 Status Logbook</h3>
+<div class="flow">
+  <div class="flow-item">SUBMITTED</div><span class="flow-arrow">→</span>
+  <div class="flow-item green">APPROVED</div>
+</div>
+<div class="flow" style="margin-top:-8px">
+  <div class="flow-item" style="visibility:hidden">SUBMITTED</div><span class="flow-arrow">↘</span>
+  <div class="flow-item orange">REVISION</div><span class="flow-arrow">→ perbaiki →</span>
+  <div class="flow-item">SUBMITTED</div>
+</div>
+
+<h3>16.3 Status Laporan</h3>
+<div class="flow">
+  <div class="flow-item">SUBMITTED</div><span class="flow-arrow">→</span>
+  <div class="flow-item green">APPROVED</div>
+</div>
+<div class="flow" style="margin-top:-8px">
+  <div class="flow-item" style="visibility:hidden">SUBMITTED</div><span class="flow-arrow">↘</span>
+  <div class="flow-item orange">REVISION</div><span class="flow-arrow">→ revisi →</span>
+  <div class="flow-item">SUBMITTED</div>
+</div>
+
+<!-- BAB 17 -->
+<h2 id="bab17">17. FAQ (Pertanyaan Umum)</h2>
+
+<h4>Q: Apakah mahasiswa bisa mendaftar ke lebih dari satu program?</h4>
+<p>Ya, mahasiswa dapat mendaftar ke beberapa program berbeda (misal KKN dan MAGANG). Namun tidak bisa mendaftar dua kali ke program yang sama.</p>
+
+<h4>Q: Bagaimana jika mahasiswa lupa mengisi logbook beberapa hari?</h4>
+<p>Mahasiswa tetap dapat menambahkan logbook untuk tanggal sebelumnya. Tidak ada batasan waktu pengisian.</p>
+
+<h4>Q: Apakah dosen bisa menginput presensi untuk mahasiswa?</h4>
+<p>Ya, dosen (dan admin) memiliki akses untuk mencatat presensi peserta bimbingannya.</p>
+
+<h4>Q: Berapa kali mahasiswa bisa submit laporan?</h4>
+<p>Mahasiswa dapat submit laporan berkali-kali. Setiap submit akan membuat record laporan baru. Biasanya yang terakhir di-approve yang dianggap final.</p>
+
+<h4>Q: Bagaimana cara mengubah status peserta menjadi SELESAI?</h4>
+<p>Admin atau dosen pembimbing dapat mengubah status peserta melalui halaman detail peserta → edit status menjadi SELESAI.</p>
+
+<h4>Q: Apakah nilai otomatis masuk ke transkrip?</h4>
+<p>Saat ini penilaian di modul KKN/Praktikum bersifat internal. Untuk memasukkan nilai ke transkrip, admin perlu menginput nilai final di modul Input Nilai menggunakan mata kuliah yang sesuai.</p>
+
+<h4>Q: Bagaimana jika pendaftaran sudah ditutup tapi ada mahasiswa yang belum terdaftar?</h4>
+<p>Admin tetap dapat mendaftarkan mahasiswa secara manual meskipun periode pendaftaran sudah lewat.</p>
+
+<!-- Footer -->
+<div class="page-break"></div>
+<div style="text-align:center; padding:60px 0; color:#6b7280;">
+  <p style="font-size:14pt; font-weight:bold; color:#1e3a8a;">Al-Jawami Smart Campus</p>
+  <p style="margin-top:8px;">STAI YAPATA AL-JAWAMI BANDUNG</p>
+  <p style="margin-top:20px; font-size:10pt;">User Guide Modul KKN/Praktikum — Versi 1.0</p>
+  <p style="font-size:10pt;">Diterbitkan: Agustus 2026</p>
+</div>
+
+</body>
+</html>

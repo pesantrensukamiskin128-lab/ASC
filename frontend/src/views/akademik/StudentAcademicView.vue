@@ -17,6 +17,12 @@ const loading = ref(true)
 const myClasses = ref<any[]>([])
 const myRps = ref<any[]>([])
 
+// KKN data
+const kknLoading = ref(true)
+const myKknPrograms = ref<any[]>([])
+const kknTypeColor: Record<string, string> = { KKN: 'bg-green-100 text-green-700', PPL: 'bg-blue-100 text-blue-700', MAGANG: 'bg-purple-100 text-purple-700', PRAKTIKUM: 'bg-orange-100 text-orange-700', PKL: 'bg-teal-100 text-teal-700' }
+const kknStatusColor: Record<string, string> = { TERDAFTAR: 'bg-gray-100 text-gray-600', AKTIF: 'bg-green-100 text-green-700', SELESAI: 'bg-blue-100 text-blue-700', MENGUNDURKAN_DIRI: 'bg-yellow-100 text-yellow-700', GAGAL: 'bg-red-100 text-red-600' }
+
 onMounted(async () => {
   try {
     if (props.section === 'kelas' || props.section === 'rps') {
@@ -28,8 +34,13 @@ onMounted(async () => {
         myClasses.value = detail.details ?? []
       }
     }
+    if (props.section === 'praktikum') {
+      const { data } = await api.get('/practical-my-programs')
+      myKknPrograms.value = data ?? []
+      kknLoading.value = false
+    }
   } catch { /* silent */ }
-  finally { loading.value = false }
+  finally { loading.value = false; kknLoading.value = false }
 })
 
 async function downloadRps(courseId: number, courseName: string) {
@@ -161,14 +172,54 @@ async function downloadTranskrip() {
 
     <!-- Praktikum / KKN -->
     <template v-else-if="section === 'praktikum'">
-      <div>
-        <h1 class="text-xl font-bold text-gray-900">Praktikum / KKN / Magang</h1>
-        <p class="text-sm text-gray-500 mt-0.5">Daftar dan ikuti program praktikum, KKN, atau magang</p>
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-xl font-bold text-gray-900">Praktikum / KKN / Magang</h1>
+          <p class="text-sm text-gray-500 mt-0.5">Program yang sedang dan pernah Anda ikuti</p>
+        </div>
+        <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg" @click="router.push('/praktikum')">Cari Program Baru</button>
       </div>
-      <div class="bg-white rounded-xl border border-gray-200 p-8 text-center">
+
+      <div v-if="kknLoading" class="text-center py-12 text-gray-400">Memuat...</div>
+
+      <div v-else-if="!myKknPrograms.length" class="bg-white rounded-xl border border-gray-200 p-8 text-center">
         <AcademicCapIcon class="w-12 h-12 text-gray-300 mx-auto mb-3" />
-        <p class="text-sm text-gray-500">Fitur pendaftaran praktikum/KKN tersedia di halaman khusus.</p>
-        <button class="mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg" @click="router.push('/praktikum')">Buka Halaman Praktikum</button>
+        <p class="text-sm text-gray-500 font-medium">Anda belum terdaftar di program KKN/Praktikum apapun</p>
+        <p class="text-xs text-gray-400 mt-1">Klik tombol di atas untuk mencari dan mendaftar ke program yang tersedia</p>
+      </div>
+
+      <div v-else class="space-y-4">
+        <div v-for="p in myKknPrograms" :key="p.id" class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <!-- Header program -->
+          <div class="p-5 border-b border-gray-100">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="flex items-center gap-2 mb-1">
+                  <span :class="['text-xs px-2 py-0.5 rounded font-bold', kknTypeColor[p.program?.program_type] ?? 'bg-gray-100 text-gray-600']">{{ p.program?.program_type }}</span>
+                  <span :class="['text-xs px-2 py-0.5 rounded-full font-medium', kknStatusColor[p.status] ?? 'bg-gray-100 text-gray-600']">{{ p.status }}</span>
+                </div>
+                <h3 class="text-base font-semibold text-gray-900">{{ p.program?.name }}</h3>
+                <p class="text-xs text-gray-500 mt-0.5">{{ p.program?.semester?.name }} · {{ p.group?.name ?? 'Belum dikelompokkan' }} · {{ p.location?.name ?? 'Belum ada lokasi' }}</p>
+                <p v-if="p.supervisor" class="text-xs text-gray-500 mt-0.5">Pembimbing: <strong>{{ p.supervisor.name }}</strong></p>
+              </div>
+              <button class="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg" @click="router.push(`/praktikum/peserta/${p.id}`)">
+                Buka Detail
+              </button>
+            </div>
+          </div>
+          <!-- Quick actions -->
+          <div class="px-5 py-3 bg-gray-50 flex flex-wrap gap-2">
+            <button class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 bg-white hover:bg-blue-50 hover:border-blue-200 text-gray-700" @click="router.push(`/praktikum/peserta/${p.id}`)">
+              📝 Logbook
+            </button>
+            <button class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 bg-white hover:bg-green-50 hover:border-green-200 text-gray-700" @click="router.push(`/praktikum/peserta/${p.id}`)">
+              ✅ Presensi
+            </button>
+            <button class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 bg-white hover:bg-purple-50 hover:border-purple-200 text-gray-700" @click="router.push(`/praktikum/peserta/${p.id}`)">
+              📄 Laporan
+            </button>
+          </div>
+        </div>
       </div>
     </template>
 

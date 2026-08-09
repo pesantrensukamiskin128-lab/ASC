@@ -594,6 +594,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('practical-programs/{program}/locations/{location}', [PracticalController::class, 'destroyLocation']);
         // Groups
         Route::post('practical-programs/{program}/groups', [PracticalController::class, 'storeGroup']);
+        Route::put('practical-programs/{program}/groups/{group}', [PracticalController::class, 'updateGroup']);
         Route::delete('practical-programs/{program}/groups/{group}', [PracticalController::class, 'destroyGroup']);
         // Participants
         Route::get('practical-programs/{program}/participants', [PracticalController::class, 'participants']);
@@ -619,6 +620,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('practical-participants/{participant}/logbooks', [PracticalController::class, 'storeLogbook']);
         Route::get('practical-participants/{participant}/attendances', [PracticalController::class, 'attendances']);
         Route::post('practical-participants/{participant}/attendances', [PracticalController::class, 'storeAttendance']);
+        Route::get('practical-participants/{participant}/reports', [PracticalController::class, 'reports']);
         Route::post('practical-participants/{participant}/reports', [PracticalController::class, 'storeReport']);
     });
 

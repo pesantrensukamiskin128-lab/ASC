@@ -102,7 +102,7 @@ async function removeLocation(loc: any) {
 
 // === GROUPS ===
 const grpModal = ref(false); const grpSaving = ref(false)
-const grpForm = reactive({ name: '', location_id: '', supervisor_id: '', notes: '' })
+const grpForm = reactive({ name: '', location_id: '', supervisor_id: '', leader_id: '', notes: '' })
 
 async function saveGroup() {
   grpSaving.value = true
@@ -199,7 +199,7 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
     <!-- TAB: Kelompok -->
     <div v-if="activeTab === 'kelompok'" class="space-y-4">
       <div class="flex justify-end">
-        <button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="Object.assign(grpForm,{name:'',location_id:'',supervisor_id:'',notes:''}); grpModal=true"><PlusIcon class="w-3.5 h-3.5" /> Tambah Kelompok</button>
+        <button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="Object.assign(grpForm,{name:'',location_id:'',supervisor_id:'',leader_id:'',notes:''}); grpModal=true"><PlusIcon class="w-3.5 h-3.5" /> Tambah Kelompok</button>
       </div>
       <div v-if="!program.groups?.length" class="text-center py-8 text-gray-400 text-sm">Belum ada kelompok.</div>
       <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -209,6 +209,7 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
               <p class="font-semibold text-gray-900 text-sm flex items-center gap-1"><UsersIcon class="w-4 h-4 text-blue-500" /> {{ g.name }}</p>
               <p v-if="g.location" class="text-xs text-gray-500 mt-1">📍 {{ g.location.name }}</p>
               <p v-if="g.supervisor" class="text-xs text-gray-500 mt-0.5">Pembimbing: {{ g.supervisor.name }}</p>
+              <p v-if="g.leader?.student" class="text-xs text-green-700 mt-0.5 font-medium">👑 Ketua: {{ g.leader.student.name }}</p>
             </div>
             <button class="p-1 rounded text-red-500 hover:bg-red-50" @click="removeGroup(g)"><TrashIcon class="w-4 h-4" /></button>
           </div>
@@ -266,6 +267,7 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
       <div><label class="text-xs font-medium text-gray-700">Nama Kelompok <span class="text-red-500">*</span></label><input v-model="grpForm.name" required placeholder="Kelompok 1" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" /></div>
       <div><label class="text-xs font-medium text-gray-700">Lokasi</label><select v-model="grpForm.location_id" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"><option value="">-- Pilih --</option><option v-for="l in program.locations" :key="l.id" :value="l.id">{{ l.name }}</option></select></div>
       <div><label class="text-xs font-medium text-gray-700">Dosen Pembimbing</label><select v-model="grpForm.supervisor_id" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"><option value="">-- Pilih --</option><option v-for="l in lecturers" :key="l.id" :value="l.id">{{ l.name }}</option></select></div>
+      <div><label class="text-xs font-medium text-gray-700">Ketua Kelompok</label><select v-model="grpForm.leader_id" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"><option value="">-- Belum ditentukan --</option><option v-for="p in participants" :key="p.id" :value="p.id">{{ p.student?.name }} ({{ p.student?.nim }})</option></select></div>
     </form>
     <template #footer>
       <button class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg" @click="grpModal = false">Batal</button>

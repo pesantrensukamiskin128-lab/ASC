@@ -31,7 +31,7 @@ class PracticalController extends Controller
 
     public function showProgram(PracticalProgram $program): JsonResponse
     {
-        return response()->json($program->load(['semester', 'studyProgram', 'coordinator', 'locations.supervisor', 'groups.supervisor', 'groups.location']));
+        return response()->json($program->load(['semester', 'studyProgram', 'coordinator', 'locations.supervisor', 'groups.supervisor', 'groups.location', 'groups.leader.student']));
     }
 
     public function storeProgram(Request $request): JsonResponse
@@ -103,10 +103,11 @@ class PracticalController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:100', 'location_id' => 'nullable|exists:practical_locations,id',
-            'supervisor_id' => 'nullable|exists:lecturers,id', 'notes' => 'nullable|string',
+            'supervisor_id' => 'nullable|exists:lecturers,id', 'leader_id' => 'nullable|exists:practical_participants,id',
+            'notes' => 'nullable|string',
         ]);
         $group = $program->groups()->create($validated);
-        return response()->json(['message' => 'Kelompok berhasil dibuat.', 'data' => $group->load(['location', 'supervisor'])], 201);
+        return response()->json(['message' => 'Kelompok berhasil dibuat.', 'data' => $group->load(['location', 'supervisor', 'leader.student'])], 201);
     }
 
     public function destroyGroup(PracticalProgram $program, PracticalGroup $group): JsonResponse
@@ -114,6 +115,17 @@ class PracticalController extends Controller
         $group->participants()->update(['group_id' => null]);
         $group->delete();
         return response()->json(['message' => 'Kelompok berhasil dihapus.']);
+    }
+
+    public function updateGroup(Request $request, PracticalProgram $program, PracticalGroup $group): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:100', 'location_id' => 'nullable|exists:practical_locations,id',
+            'supervisor_id' => 'nullable|exists:lecturers,id', 'leader_id' => 'nullable|exists:practical_participants,id',
+            'notes' => 'nullable|string',
+        ]);
+        $group->update($validated);
+        return response()->json(['message' => 'Kelompok berhasil diupdate.', 'data' => $group->fresh()->load(['location', 'supervisor', 'leader.student'])]);
     }
 
     // === PARTICIPANTS ===
@@ -213,6 +225,7 @@ class PracticalController extends Controller
             'activity_date' => 'required|date', 'start_time' => 'nullable|date_format:H:i',
             'end_time' => 'nullable|date_format:H:i', 'activity' => 'required|string',
             'result' => 'nullable|string', 'notes' => 'nullable|string',
+            'attachment_url' => 'nullable|url|max:500',
         ]);
         $log = $participant->logbooks()->create(array_merge($validated, ['status' => 'SUBMITTED']));
         return response()->json(['message' => 'Logbook berhasil ditambahkan.', 'data' => $log], 201);
@@ -268,9 +281,37 @@ class PracticalController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255', 'abstract' => 'nullable|string',
             'file_url' => 'nullable|string|max:500',
+            'report_type' => 'required|in:INDIVIDU,KELOMPOK',
         ]);
+
+        // Jika laporan kelompok, pastikan peserta ini adalah ketua kelompok
+        if ($validated['report_type'] === 'KELOMPOK') {
+            $group = $participant->group;
+            if (!$group || $group->leader_id !== $participant->id) {
+                return response()->json(['message' => 'Hanya ketua kelompok yang dapat membuat laporan kelompok.'], 403);
+            }
+            $validated['group_id'] = $group->id;
+        }
+
         $r = $participant->reports()->create(array_merge($validated, ['status' => 'SUBMITTED', 'submitted_at' => now()]));
         return response()->json(['message' => 'Laporan berhasil disubmit.', 'data' => $r], 201);
+    }
+
+    /** Ambil daftar laporan peserta (termasuk laporan kelompok) */
+    public function reports(PracticalParticipant $participant): JsonResponse
+    {
+        // Laporan individu milik peserta + laporan kelompok (jika ada group)
+        $query = PracticalReport::where(function ($q) use ($participant) {
+            $q->where('participant_id', $participant->id);
+            if ($participant->group_id) {
+                $q->orWhere(function ($sub) use ($participant) {
+                    $sub->where('group_id', $participant->group_id)
+                        ->where('report_type', 'KELOMPOK');
+                });
+            }
+        })->with('participant.student')->orderByDesc('submitted_at');
+
+        return response()->json($query->get());
     }
 
     public function reviewReport(Request $request, PracticalReport $report): JsonResponse

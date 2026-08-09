@@ -144,8 +144,8 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
         <h1 class="text-xl font-bold text-gray-900">Program Praktikum</h1>
         <p class="text-sm text-gray-500 mt-0.5">{{ isMahasiswa ? 'Lihat dan daftar program praktikum, KKN, atau magang' : 'Kelola KKN, PPL, Magang, Praktikum, dan PKL' }}</p>
       </div>
-      <!-- Hanya admin/dosen/LP2M yang bisa buat program -->
-      <button v-if="!isMahasiswa" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg" @click="openCreate">
+      <!-- Hanya admin/LP2M/koordinator yang bisa buat program -->
+      <button v-if="!isMahasiswa && auth.hasPermission('kkn.create')" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg" @click="openCreate">
         <PlusIcon class="w-4 h-4" /> Buat Program
       </button>
     </div>
@@ -193,8 +193,8 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
             <!-- Dosen/Admin: tombol manajemen -->
             <template v-else>
               <button class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50" @click="router.push(`/praktikum/${row.id}`)"><EyeIcon class="w-4 h-4" /></button>
-              <button class="p-1.5 rounded-lg text-gray-500 hover:bg-gray-50" @click="openEdit(row)"><PencilIcon class="w-4 h-4" /></button>
-              <button class="p-1.5 rounded-lg text-red-500 hover:bg-red-50" @click="handleDelete(row)"><TrashIcon class="w-4 h-4" /></button>
+              <button v-if="auth.hasPermission('kkn.edit')" class="p-1.5 rounded-lg text-gray-500 hover:bg-gray-50" @click="openEdit(row)"><PencilIcon class="w-4 h-4" /></button>
+              <button v-if="auth.hasPermission('kkn.create')" class="p-1.5 rounded-lg text-red-500 hover:bg-red-50" @click="handleDelete(row)"><TrashIcon class="w-4 h-4" /></button>
             </template>
           </div>
         </td>

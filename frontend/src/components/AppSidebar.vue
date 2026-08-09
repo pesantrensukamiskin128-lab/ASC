@@ -88,7 +88,7 @@ const navigation = computed(() => [
       { label: 'Input Nilai', to: '/penilaian/nilai', show: auth.hasPermission('nilai.create') },
       { label: 'Bank Soal', to: '/bank-soal', show: auth.hasPermission('nilai.view') },
       { label: 'KHS & Transkrip', to: '/penilaian/khs', show: auth.hasPermission('khs.view') || auth.hasPermission('khs.generate') },
-      { label: 'Praktikum / KKN', to: '/praktikum', show: auth.hasPermission('kkn.create') || auth.hasPermission('kkn.edit') },
+      { label: 'Praktikum / KKN', to: '/praktikum', show: auth.hasPermission('kkn.create') || auth.hasPermission('kkn.edit') || auth.hasPermission('kkn.view') },
       { label: 'Skripsi / TA', to: '/skripsi', show: auth.hasPermission('skripsi.create') || auth.hasPermission('skripsi.approve') },
       { label: 'Karya Dosen', to: '/karya-dosen', show: (auth.hasPermission('skripsi.view') || auth.hasPermission('karya.view')) && !auth.hasRole('MAHASISWA') },
       { label: 'Penelitian & Pengabdian', to: '/penelitian', show: auth.hasPermission('skripsi.view') && !auth.hasRole('MAHASISWA') },
