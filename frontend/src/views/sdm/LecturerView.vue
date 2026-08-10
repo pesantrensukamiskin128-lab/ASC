@@ -140,7 +140,6 @@ async function handleDelete(item: Lecturer) {
 }
 
 // --- Foto upload ---
-const toast          = useToast()
 const photoInput     = ref<HTMLInputElement | null>(null)
 const photoPreview   = ref<string | null>(null)
 const uploadingPhoto = ref(false)
