@@ -223,7 +223,6 @@ async function uploadPhoto(file: File) {
     </div>
 
     <!-- Filter -->
-    <div class="flex flex-wrap gap-3">
     <div class="flex flex-wrap items-center gap-3">
       <input
         v-model="search" type="text" placeholder="Cari NIDN, NUPTK atau nama..."
