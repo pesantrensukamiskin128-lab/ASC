@@ -176,9 +176,9 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
               <p v-if="l.result" class="text-xs text-gray-500 mt-1">Hasil: {{ l.result }}</p>
               <a v-if="l.attachment_url" :href="l.attachment_url" target="_blank" class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 mt-1 font-medium">📎 Bukti Kegiatan</a>
             </div>
-            <div v-if="!isMahasiswa && l.status === 'SUBMITTED'" class="flex items-center gap-1 ml-3 shrink-0">
-              <button class="p-1 rounded text-green-600 hover:bg-green-50" @click="reviewLogbook(l, 'approve')"><CheckCircleIcon class="w-4 h-4" /></button>
-              <button class="p-1 rounded text-yellow-600 hover:bg-yellow-50" @click="reviewLogbook(l, 'revision')"><XCircleIcon class="w-4 h-4" /></button>
+            <div v-if="!isMahasiswa && (l.status === 'SUBMITTED' || l.status === 'APPROVED')" class="flex items-center gap-1 ml-3 shrink-0">
+              <button v-if="l.status === 'SUBMITTED'" class="p-1 rounded text-green-600 hover:bg-green-50" title="Approve" @click="reviewLogbook(l, 'approve')"><CheckCircleIcon class="w-4 h-4" /></button>
+              <button class="p-1 rounded text-yellow-600 hover:bg-yellow-50" title="Revisi" @click="reviewLogbook(l, 'revision')"><XCircleIcon class="w-4 h-4" /></button>
             </div>
           </div>
         </div>
