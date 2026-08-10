@@ -19,19 +19,49 @@ class PracticalController extends Controller
     // === PROGRAMS ===
     public function programs(Request $request): JsonResponse
     {
-        $data = PracticalProgram::with(['semester', 'studyProgram', 'coordinator'])
+        $user = auth()->user();
+        $query = PracticalProgram::with(['semester', 'studyProgram', 'coordinator'])
             ->withCount('participants')
             ->when($request->program_type, fn($q) => $q->where('program_type', $request->program_type))
             ->when($request->semester_id, fn($q) => $q->where('semester_id', $request->semester_id))
-            ->when($request->search, fn($q) => $q->where('name', 'like', "%{$request->search}%"))
-            ->orderByDesc('created_at')
-            ->paginate($request->per_page ?? 15);
+            ->when($request->search, fn($q) => $q->where('name', 'like', "%{$request->search}%"));
+
+        // Dosen biasa (hanya kkn.view, tanpa kkn.create): hanya lihat program yang terkait
+        if ($user->hasRole('DOSEN') && !$user->can('kkn.create')) {
+            $lecturer = \App\Models\Lecturer::where('user_id', $user->id)->first();
+            if ($lecturer) {
+                $query->where(function ($q) use ($lecturer) {
+                    $q->where('coordinator_id', $lecturer->id)
+                      ->orWhereHas('participants', fn($sub) => $sub->where('supervisor_id', $lecturer->id)->orWhere('supervisor2_id', $lecturer->id))
+                      ->orWhereHas('groups', fn($sub) => $sub->where('supervisor_id', $lecturer->id)->orWhere('supervisor2_id', $lecturer->id))
+                      ->orWhereHas('locations', fn($sub) => $sub->where('supervisor_id', $lecturer->id)->orWhere('supervisor2_id', $lecturer->id));
+                });
+            }
+        }
+
+        $data = $query->orderByDesc('created_at')->paginate($request->per_page ?? 15);
         return response()->json($data);
     }
 
     public function showProgram(PracticalProgram $program): JsonResponse
     {
-        return response()->json($program->load(['semester', 'studyProgram', 'coordinator', 'locations.supervisor', 'locations.supervisor2', 'groups.supervisor', 'groups.supervisor2', 'groups.location', 'groups.leader.student']));
+        $program->load(['semester', 'studyProgram', 'coordinator', 'locations.supervisor', 'locations.supervisor2', 'groups.supervisor', 'groups.supervisor2', 'groups.location', 'groups.leader.student']);
+
+        // Dosen biasa: filter kelompok & lokasi yang menjadi bimbingannya saja
+        $user = auth()->user();
+        if ($user->hasRole('DOSEN') && !$user->can('kkn.create')) {
+            $lecturer = \App\Models\Lecturer::where('user_id', $user->id)->first();
+            if ($lecturer) {
+                $program->setRelation('groups', $program->groups->filter(function ($g) use ($lecturer) {
+                    return $g->supervisor_id == $lecturer->id || $g->supervisor2_id == $lecturer->id;
+                })->values());
+                $program->setRelation('locations', $program->locations->filter(function ($l) use ($lecturer) {
+                    return $l->supervisor_id == $lecturer->id || $l->supervisor2_id == $lecturer->id;
+                })->values());
+            }
+        }
+
+        return response()->json($program);
     }
 
     public function storeProgram(Request $request): JsonResponse
@@ -134,10 +164,24 @@ class PracticalController extends Controller
     // === PARTICIPANTS ===
     public function participants(Request $request, PracticalProgram $program): JsonResponse
     {
-        $data = $program->participants()->with(['student.studyProgram', 'group', 'location', 'supervisor', 'supervisor2'])
+        $user = auth()->user();
+        $query = $program->participants()->with(['student.studyProgram', 'group', 'location', 'supervisor', 'supervisor2'])
             ->withCount(['logbooks', 'attendances', 'assessments'])
-            ->when($request->status, fn($q) => $q->where('status', $request->status))
-            ->paginate($request->per_page ?? 20);
+            ->when($request->status, fn($q) => $q->where('status', $request->status));
+
+        // Dosen biasa: hanya lihat peserta yang menjadi bimbingannya
+        if ($user->hasRole('DOSEN') && !$user->can('kkn.create')) {
+            $lecturer = \App\Models\Lecturer::where('user_id', $user->id)->first();
+            if ($lecturer) {
+                $query->where(function ($q) use ($lecturer) {
+                    $q->where('supervisor_id', $lecturer->id)
+                      ->orWhere('supervisor2_id', $lecturer->id)
+                      ->orWhereHas('group', fn($sub) => $sub->where('supervisor_id', $lecturer->id)->orWhere('supervisor2_id', $lecturer->id));
+                });
+            }
+        }
+
+        $data = $query->paginate($request->per_page ?? 20);
         return response()->json($data);
     }
 
