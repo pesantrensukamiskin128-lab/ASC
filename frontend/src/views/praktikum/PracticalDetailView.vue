@@ -2,7 +2,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
-import { ArrowLeftIcon, PlusIcon, TrashIcon, CheckCircleIcon, MapPinIcon, UsersIcon, ClipboardDocumentListIcon } from '@heroicons/vue/24/outline'
+import { ArrowLeftIcon, PlusIcon, TrashIcon, PencilIcon, CheckCircleIcon, MapPinIcon, UsersIcon, ClipboardDocumentListIcon } from '@heroicons/vue/24/outline'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import api from '@/services/api'
 
@@ -103,12 +103,38 @@ async function removeLocation(loc: any) {
 // === GROUPS ===
 const grpModal = ref(false); const grpSaving = ref(false)
 const grpForm = reactive({ name: '', location_id: '', supervisor_id: '', supervisor2_id: '', leader_id: '', notes: '' })
+const editingGroupId = ref<number | null>(null)
+
+function openCreateGroup() {
+  editingGroupId.value = null
+  Object.assign(grpForm, { name: '', location_id: '', supervisor_id: '', supervisor2_id: '', leader_id: '', notes: '' })
+  grpModal.value = true
+}
+
+function openEditGroup(g: any) {
+  editingGroupId.value = g.id
+  Object.assign(grpForm, {
+    name: g.name,
+    location_id: g.location_id ?? '',
+    supervisor_id: g.supervisor_id ?? '',
+    supervisor2_id: g.supervisor2_id ?? '',
+    leader_id: g.leader_id ?? '',
+    notes: g.notes ?? '',
+  })
+  grpModal.value = true
+}
 
 async function saveGroup() {
   grpSaving.value = true
   try {
-    await api.post(`/practical-programs/${route.params.id}/groups`, grpForm)
-    toast.success('Kelompok ditambahkan.'); grpModal.value = false
+    if (editingGroupId.value) {
+      await api.put(`/practical-programs/${route.params.id}/groups/${editingGroupId.value}`, grpForm)
+      toast.success('Kelompok berhasil diupdate.')
+    } else {
+      await api.post(`/practical-programs/${route.params.id}/groups`, grpForm)
+      toast.success('Kelompok ditambahkan.')
+    }
+    grpModal.value = false
     const { data } = await api.get(`/practical-programs/${route.params.id}`); program.value = data
   } catch (e: any) { toast.error(e?.response?.data?.message ?? 'Gagal.') }
   finally { grpSaving.value = false }
@@ -200,7 +226,7 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
     <!-- TAB: Kelompok -->
     <div v-if="activeTab === 'kelompok'" class="space-y-4">
       <div class="flex justify-end">
-        <button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="Object.assign(grpForm,{name:'',location_id:'',supervisor_id:'',supervisor2_id:'',leader_id:'',notes:''}); grpModal=true"><PlusIcon class="w-3.5 h-3.5" /> Tambah Kelompok</button>
+        <button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="openCreateGroup()"><PlusIcon class="w-3.5 h-3.5" /> Tambah Kelompok</button>
       </div>
       <div v-if="!program.groups?.length" class="text-center py-8 text-gray-400 text-sm">Belum ada kelompok.</div>
       <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -213,7 +239,10 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
               <p v-if="g.supervisor2" class="text-xs text-gray-500 mt-0.5">Pembimbing 2: {{ g.supervisor2.name }}</p>
               <p v-if="g.leader?.student" class="text-xs text-green-700 mt-0.5 font-medium">👑 Ketua: {{ g.leader.student.name }}</p>
             </div>
-            <button class="p-1 rounded text-red-500 hover:bg-red-50" @click="removeGroup(g)"><TrashIcon class="w-4 h-4" /></button>
+            <div class="flex items-center gap-1">
+              <button class="p-1 rounded text-blue-600 hover:bg-blue-50" @click="openEditGroup(g)" title="Edit"><PencilIcon class="w-4 h-4" /></button>
+              <button class="p-1 rounded text-red-500 hover:bg-red-50" @click="removeGroup(g)" title="Hapus"><TrashIcon class="w-4 h-4" /></button>
+            </div>
           </div>
         </div>
       </div>
@@ -266,7 +295,7 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
   </BaseModal>
 
   <!-- Modal Kelompok -->
-  <BaseModal :open="grpModal" title="Tambah Kelompok" @close="grpModal = false">
+  <BaseModal :open="grpModal" :title="editingGroupId ? 'Edit Kelompok' : 'Tambah Kelompok'" @close="grpModal = false">
     <form class="space-y-3" @submit.prevent="saveGroup">
       <div><label class="text-xs font-medium text-gray-700">Nama Kelompok <span class="text-red-500">*</span></label><input v-model="grpForm.name" required placeholder="Kelompok 1" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" /></div>
       <div><label class="text-xs font-medium text-gray-700">Lokasi</label><select v-model="grpForm.location_id" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"><option value="">-- Pilih --</option><option v-for="l in program.locations" :key="l.id" :value="l.id">{{ l.name }}</option></select></div>

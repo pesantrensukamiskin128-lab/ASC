@@ -24,6 +24,14 @@ class Lecturer extends Model
         'status'     => 'boolean',
     ];
 
+    protected $appends = ['name'];
+
+    /** Alias "name" agar kompatibel dengan relasi yang memanggil ->name */
+    public function getNameAttribute(): string
+    {
+        return $this->display_name;
+    }
+
     /** Nama lengkap beserta gelar, contoh: "Dr. Ahmad Fauzi, S.Kom., M.T." */
     public function getDisplayNameAttribute(): string
     {
