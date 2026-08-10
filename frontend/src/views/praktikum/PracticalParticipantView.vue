@@ -4,10 +4,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import { ArrowLeftIcon, PlusIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/vue/24/outline'
 import BaseModal from '@/components/ui/BaseModal.vue'
+import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
 
 const route = useRoute()
 const router = useRouter()
+const auth = useAuthStore()
+const isMahasiswa = computed(() => auth.hasRole('MAHASISWA'))
 const toast = useToast()
 const loading = ref(true)
 
@@ -173,7 +176,7 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
               <p v-if="l.result" class="text-xs text-gray-500 mt-1">Hasil: {{ l.result }}</p>
               <a v-if="l.attachment_url" :href="l.attachment_url" target="_blank" class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 mt-1 font-medium">📎 Bukti Kegiatan</a>
             </div>
-            <div v-if="l.status === 'SUBMITTED'" class="flex items-center gap-1 ml-3 shrink-0">
+            <div v-if="!isMahasiswa && l.status === 'SUBMITTED'" class="flex items-center gap-1 ml-3 shrink-0">
               <button class="p-1 rounded text-green-600 hover:bg-green-50" @click="reviewLogbook(l, 'approve')"><CheckCircleIcon class="w-4 h-4" /></button>
               <button class="p-1 rounded text-yellow-600 hover:bg-yellow-50" @click="reviewLogbook(l, 'revision')"><XCircleIcon class="w-4 h-4" /></button>
             </div>
@@ -204,9 +207,9 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
     <div v-if="activeTab === 'nilai'" class="space-y-4">
       <div class="flex items-center justify-between">
         <div v-if="assessments.length" class="text-sm text-gray-600">Nilai Akhir: <strong class="text-lg text-blue-700">{{ totalWeightedScore }}</strong></div>
-        <button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="Object.assign(assForm,{component:'',score:0,weight:1,notes:''}); assModal=true"><PlusIcon class="w-3.5 h-3.5" /> Tambah Komponen</button>
+        <button v-if="!isMahasiswa" class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="Object.assign(assForm,{component:'',score:0,weight:1,notes:''}); assModal=true"><PlusIcon class="w-3.5 h-3.5" /> Tambah Komponen</button>
       </div>
-      <div v-if="!assessments.length" class="text-center py-8 text-gray-400 text-sm">Belum ada penilaian.</div>
+      <div v-if="!assessments.length" class="text-center py-8 text-gray-400 text-sm">{{ isMahasiswa ? 'Belum ada penilaian dari pembimbing.' : 'Belum ada penilaian.' }}</div>
       <div v-else class="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <table class="w-full text-sm">
           <thead><tr class="bg-gray-50 text-left text-xs text-gray-500"><th class="px-4 py-2">Komponen</th><th class="px-4 py-2 text-center">Bobot</th><th class="px-4 py-2 text-center">Nilai</th><th class="px-4 py-2">Catatan</th></tr></thead>
