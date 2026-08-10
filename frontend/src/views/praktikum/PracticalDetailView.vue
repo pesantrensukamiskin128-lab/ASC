@@ -1,17 +1,22 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import { ArrowLeftIcon, PlusIcon, TrashIcon, PencilIcon, CheckCircleIcon, MapPinIcon, UsersIcon, ClipboardDocumentListIcon } from '@heroicons/vue/24/outline'
 import BaseModal from '@/components/ui/BaseModal.vue'
+import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
 
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
+const auth = useAuthStore()
 const loading = ref(true)
 const program = ref<any>(null)
 const activeTab = ref('peserta')
+
+// Dosen pembimbing hanya bisa lihat & nilai, tidak bisa tambah/edit peserta/lokasi/kelompok
+const canManage = computed(() => auth.hasPermission('kkn.create') || auth.hasPermission('kkn.edit'))
 
 const tabs = [
   { key: 'peserta', label: 'Peserta' },
@@ -182,7 +187,7 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
 
     <!-- TAB: Peserta -->
     <div v-if="activeTab === 'peserta'" class="space-y-4">
-      <div class="flex justify-end">
+      <div v-if="canManage" class="flex justify-end">
         <button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="Object.assign(partForm, {student_id:'',group_id:'',location_id:'',supervisor_id:'',supervisor2_id:''}); searchStudent=''; partModal=true"><PlusIcon class="w-3.5 h-3.5" /> Daftarkan Peserta</button>
       </div>
       <div v-if="!participants.length" class="text-center py-8 text-gray-400 text-sm">Belum ada peserta.</div>
@@ -196,7 +201,7 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
           <span :class="['px-2 py-0.5 rounded-full text-xs font-medium', statusColor[p.status]]">{{ p.status }}</span>
           <div class="flex items-center gap-1">
             <button class="p-1 rounded text-blue-600 hover:bg-blue-50 text-xs font-medium" @click="router.push(`/praktikum/peserta/${p.id}`)">Detail</button>
-            <button class="p-1 rounded text-red-500 hover:bg-red-50" @click="removeParticipant(p)"><TrashIcon class="w-4 h-4" /></button>
+            <button v-if="canManage" class="p-1 rounded text-red-500 hover:bg-red-50" @click="removeParticipant(p)"><TrashIcon class="w-4 h-4" /></button>
           </div>
         </div>
       </div>
@@ -204,7 +209,7 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
 
     <!-- TAB: Lokasi -->
     <div v-if="activeTab === 'lokasi'" class="space-y-4">
-      <div class="flex justify-end">
+      <div v-if="canManage" class="flex justify-end">
         <button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="Object.assign(locForm,{name:'',address:'',city:'',contact_person:'',contact_phone:'',capacity:'',supervisor_id:'',supervisor2_id:''}); locModal=true"><PlusIcon class="w-3.5 h-3.5" /> Tambah Lokasi</button>
       </div>
       <div v-if="!program.locations?.length" class="text-center py-8 text-gray-400 text-sm">Belum ada lokasi.</div>
@@ -217,7 +222,7 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
               <p v-if="loc.supervisor" class="text-xs text-gray-500 mt-1">Pembimbing 1: {{ loc.supervisor.name }}</p>
               <p v-if="loc.supervisor2" class="text-xs text-gray-500 mt-0.5">Pembimbing 2: {{ loc.supervisor2.name }}</p>
             </div>
-            <button class="p-1 rounded text-red-500 hover:bg-red-50" @click="removeLocation(loc)"><TrashIcon class="w-4 h-4" /></button>
+            <button v-if="canManage" class="p-1 rounded text-red-500 hover:bg-red-50" @click="removeLocation(loc)"><TrashIcon class="w-4 h-4" /></button>
           </div>
         </div>
       </div>
@@ -225,7 +230,7 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
 
     <!-- TAB: Kelompok -->
     <div v-if="activeTab === 'kelompok'" class="space-y-4">
-      <div class="flex justify-end">
+      <div v-if="canManage" class="flex justify-end">
         <button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="openCreateGroup()"><PlusIcon class="w-3.5 h-3.5" /> Tambah Kelompok</button>
       </div>
       <div v-if="!program.groups?.length" class="text-center py-8 text-gray-400 text-sm">Belum ada kelompok.</div>
@@ -239,7 +244,7 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
               <p v-if="g.supervisor2" class="text-xs text-gray-500 mt-0.5">Pembimbing 2: {{ g.supervisor2.name }}</p>
               <p v-if="g.leader?.student" class="text-xs text-green-700 mt-0.5 font-medium">👑 Ketua: {{ g.leader.student.name }}</p>
             </div>
-            <div class="flex items-center gap-1">
+            <div v-if="canManage" class="flex items-center gap-1">
               <button class="p-1 rounded text-blue-600 hover:bg-blue-50" @click="openEditGroup(g)" title="Edit"><PencilIcon class="w-4 h-4" /></button>
               <button class="p-1 rounded text-red-500 hover:bg-red-50" @click="removeGroup(g)" title="Hapus"><TrashIcon class="w-4 h-4" /></button>
             </div>
