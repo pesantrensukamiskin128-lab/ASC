@@ -236,9 +236,15 @@ class PracticalController extends Controller
         if (!$student) return response()->json([]);
 
         $data = \App\Models\PracticalParticipant::where('student_id', $student->id)
-            ->with(['program.semester', 'group', 'location', 'supervisor'])
+            ->with(['program.semester', 'group', 'location', 'supervisor', 'supervisor2'])
+            ->withCount(['logbooks', 'attendances'])
             ->orderByDesc('created_at')
-            ->get();
+            ->get()
+            ->map(function ($p) {
+                $p->logbooks_revision = $p->logbooks()->where('status', 'REVISION')->count();
+                $p->logbooks_approved = $p->logbooks()->where('status', 'APPROVED')->count();
+                return $p;
+            });
 
         return response()->json($data);
     }
@@ -290,6 +296,16 @@ class PracticalController extends Controller
         return response()->json(['message' => 'Logbook berhasil diproses.']);
     }
 
+    /** Mahasiswa submit ulang logbook yang berstatus REVISION */
+    public function resubmitLogbook(PracticalLogbook $logbook): JsonResponse
+    {
+        if ($logbook->status !== 'REVISION') {
+            return response()->json(['message' => 'Logbook ini tidak dalam status revisi.'], 422);
+        }
+        $logbook->update(['status' => 'SUBMITTED']);
+        return response()->json(['message' => 'Logbook berhasil disubmit ulang.']);
+    }
+
     // === ATTENDANCE ===
     public function attendances(PracticalParticipant $participant): JsonResponse
     {
@@ -300,6 +316,9 @@ class PracticalController extends Controller
     {
         $validated = $request->validate([
             'attendance_date' => 'required|date', 'status' => 'required|in:HADIR,IZIN,SAKIT,ALPHA', 'notes' => 'nullable|string',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'proof_url' => 'nullable|url|max:500',
         ]);
         $att = PracticalAttendance::updateOrCreate(
             ['participant_id' => $participant->id, 'attendance_date' => $validated['attendance_date']],

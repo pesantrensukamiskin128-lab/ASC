@@ -69,9 +69,29 @@ async function reviewLogbook(log: any, action: string) {
   } catch (e: any) { toast.error(e?.response?.data?.message ?? 'Gagal.') }
 }
 
+// Mahasiswa: submit ulang logbook yang ditolak (ubah status kembali ke SUBMITTED)
+async function resubmitLogbook(log: any) {
+  try {
+    await api.post(`/practical-logbooks/${log.id}/resubmit`)
+    toast.success('Logbook berhasil disubmit ulang.')
+    const { data } = await api.get(`/practical-participants/${route.params.id}/logbooks`); logbooks.value = data
+  } catch (e: any) { toast.error(e?.response?.data?.message ?? 'Gagal.') }
+}
+
 // === PRESENSI ===
 const attModal = ref(false); const attSaving = ref(false)
-const attForm = reactive({ attendance_date: '', status: 'HADIR', notes: '' })
+const attForm = reactive({ attendance_date: '', status: 'HADIR', notes: '', latitude: null as number | null, longitude: null as number | null, proof_url: '' })
+const geoLoading = ref(false)
+
+function getGeolocation() {
+  if (!navigator.geolocation) { toast.error('Geolocation tidak tersedia di browser ini.'); return }
+  geoLoading.value = true
+  navigator.geolocation.getCurrentPosition(
+    (pos) => { attForm.latitude = pos.coords.latitude; attForm.longitude = pos.coords.longitude; geoLoading.value = false },
+    () => { toast.error('Gagal mendapatkan lokasi. Pastikan izin lokasi diaktifkan.'); geoLoading.value = false },
+    { enableHighAccuracy: true, timeout: 10000 }
+  )
+}
 
 async function saveAttendance() {
   attSaving.value = true
@@ -191,7 +211,7 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
       <div class="flex justify-end"><button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="Object.assign(logForm,{activity_date:'',start_time:'',end_time:'',activity:'',result:'',notes:'',attachment_url:''}); logModal=true"><PlusIcon class="w-3.5 h-3.5" /> Tambah Logbook</button></div>
       <div v-if="!logbooks.length" class="text-center py-8 text-gray-400 text-sm">Belum ada logbook.</div>
       <div v-else class="space-y-2">
-        <div v-for="l in logbooks" :key="l.id" class="p-4 bg-white rounded-xl border border-gray-200">
+        <div v-for="l in logbooks" :key="l.id" :class="['p-4 bg-white rounded-xl border', l.status === 'REVISION' ? 'border-yellow-300 bg-yellow-50/30' : 'border-gray-200']">
           <div class="flex items-start justify-between">
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1">
@@ -202,10 +222,20 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
               <p class="text-sm text-gray-800">{{ l.activity }}</p>
               <p v-if="l.result" class="text-xs text-gray-500 mt-1">Hasil: {{ l.result }}</p>
               <a v-if="l.attachment_url" :href="l.attachment_url" target="_blank" class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 mt-1 font-medium">📎 Bukti Kegiatan</a>
+              <!-- Catatan revisi dari dosen -->
+              <div v-if="l.status === 'REVISION' && l.notes" class="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p class="text-xs text-yellow-800 font-medium">📝 Catatan Pembimbing:</p>
+                <p class="text-xs text-yellow-700 mt-0.5">{{ l.notes }}</p>
+              </div>
             </div>
+            <!-- Dosen: tombol approve/revisi -->
             <div v-if="!isMahasiswa && (l.status === 'SUBMITTED' || l.status === 'APPROVED')" class="flex items-center gap-1 ml-3 shrink-0">
               <button v-if="l.status === 'SUBMITTED'" class="p-1 rounded text-green-600 hover:bg-green-50" title="Approve" @click="reviewLogbook(l, 'approve')"><CheckCircleIcon class="w-4 h-4" /></button>
               <button class="p-1 rounded text-yellow-600 hover:bg-yellow-50" title="Revisi" @click="reviewLogbook(l, 'revision')"><XCircleIcon class="w-4 h-4" /></button>
+            </div>
+            <!-- Mahasiswa: tombol submit ulang jika REVISION -->
+            <div v-if="isMahasiswa && l.status === 'REVISION'" class="ml-3 shrink-0">
+              <button class="px-2.5 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg" @click="resubmitLogbook(l)">Submit Ulang</button>
             </div>
           </div>
         </div>
@@ -214,15 +244,23 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
 
     <!-- PRESENSI -->
     <div v-if="activeTab === 'presensi'" class="space-y-4">
-      <div class="flex justify-end"><button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="Object.assign(attForm,{attendance_date:'',status:'HADIR',notes:''}); attModal=true"><PlusIcon class="w-3.5 h-3.5" /> Catat Presensi</button></div>
+      <div class="flex justify-end"><button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="Object.assign(attForm,{attendance_date:'',status:'HADIR',notes:'',latitude:null,longitude:null,proof_url:''}); attModal=true"><PlusIcon class="w-3.5 h-3.5" /> Catat Presensi</button></div>
       <div v-if="!attendances.length" class="text-center py-8 text-gray-400 text-sm">Belum ada data presensi.</div>
       <div v-else class="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <table class="w-full text-sm">
-          <thead><tr class="bg-gray-50 text-left text-xs text-gray-500"><th class="px-4 py-2">Tanggal</th><th class="px-4 py-2 text-center">Status</th><th class="px-4 py-2">Catatan</th></tr></thead>
+          <thead><tr class="bg-gray-50 text-left text-xs text-gray-500"><th class="px-4 py-2">Tanggal</th><th class="px-4 py-2 text-center">Status</th><th class="px-4 py-2">Lokasi</th><th class="px-4 py-2">Bukti</th><th class="px-4 py-2">Catatan</th></tr></thead>
           <tbody>
             <tr v-for="a in attendances" :key="a.id" class="border-t border-gray-100">
               <td class="px-4 py-2 text-gray-700">{{ formatDate(a.attendance_date) }}</td>
               <td class="px-4 py-2 text-center"><span :class="['px-2 py-0.5 rounded-full text-xs font-medium', attStatusColor[a.status]]">{{ a.status }}</span></td>
+              <td class="px-4 py-2 text-xs text-gray-500">
+                <a v-if="a.latitude && a.longitude" :href="`https://maps.google.com/?q=${a.latitude},${a.longitude}`" target="_blank" class="text-blue-600 hover:text-blue-800 font-medium">📍 {{ Number(a.latitude).toFixed(5) }}, {{ Number(a.longitude).toFixed(5) }}</a>
+                <span v-else class="text-gray-400">-</span>
+              </td>
+              <td class="px-4 py-2 text-xs">
+                <a v-if="a.proof_url" :href="a.proof_url" target="_blank" class="text-blue-600 hover:text-blue-800 font-medium">📎 Lihat</a>
+                <span v-else class="text-gray-400">-</span>
+              </td>
               <td class="px-4 py-2 text-gray-500 text-xs">{{ a.notes ?? '-' }}</td>
             </tr>
           </tbody>
@@ -306,6 +344,19 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
         <div><label class="text-xs text-gray-700">Tanggal</label><input v-model="attForm.attendance_date" type="date" required class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" /></div>
         <div><label class="text-xs text-gray-700">Status</label><select v-model="attForm.status" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"><option value="HADIR">Hadir</option><option value="IZIN">Izin</option><option value="SAKIT">Sakit</option><option value="ALPHA">Alpha</option></select></div>
       </div>
+      <!-- Geotag -->
+      <div>
+        <label class="text-xs text-gray-700">Lokasi (Geotag)</label>
+        <div class="flex items-center gap-2 mt-1">
+          <button type="button" :disabled="geoLoading" class="px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white text-xs font-medium rounded-lg" @click="getGeolocation">
+            {{ geoLoading ? '⏳ Memuat...' : '📍 Ambil Lokasi' }}
+          </button>
+          <span v-if="attForm.latitude && attForm.longitude" class="text-xs text-green-700 font-mono">{{ Number(attForm.latitude).toFixed(5) }}, {{ Number(attForm.longitude).toFixed(5) }}</span>
+          <span v-else class="text-xs text-gray-400">Belum ada lokasi</span>
+        </div>
+      </div>
+      <!-- Bukti kehadiran -->
+      <div><label class="text-xs text-gray-700">Link Bukti Kehadiran (Foto)</label><input v-model="attForm.proof_url" type="url" placeholder="https://drive.google.com/..." class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" /></div>
       <div><label class="text-xs text-gray-700">Catatan</label><input v-model="attForm.notes" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" /></div>
     </form>
     <template #footer>

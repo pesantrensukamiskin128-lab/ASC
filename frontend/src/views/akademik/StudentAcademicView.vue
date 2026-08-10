@@ -200,7 +200,8 @@ async function downloadTranskrip() {
                 </div>
                 <h3 class="text-base font-semibold text-gray-900">{{ p.program?.name }}</h3>
                 <p class="text-xs text-gray-500 mt-0.5">{{ p.program?.semester?.name }} · {{ p.group?.name ?? 'Belum dikelompokkan' }} · {{ p.location?.name ?? 'Belum ada lokasi' }}</p>
-                <p v-if="p.supervisor" class="text-xs text-gray-500 mt-0.5">Pembimbing: <strong>{{ p.supervisor.name }}</strong></p>
+                <p v-if="p.supervisor" class="text-xs text-gray-500 mt-0.5">Pembimbing 1: <strong>{{ p.supervisor.name }}</strong></p>
+                <p v-if="p.supervisor2" class="text-xs text-gray-500 mt-0.5">Pembimbing 2: <strong>{{ p.supervisor2.name }}</strong></p>
               </div>
               <button class="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg" @click="router.push(`/praktikum/peserta/${p.id}`)">
                 Buka Detail
@@ -218,6 +219,25 @@ async function downloadTranskrip() {
             <button class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 bg-white hover:bg-purple-50 hover:border-purple-200 text-gray-700" @click="router.push(`/praktikum/peserta/${p.id}`)">
               📄 Laporan
             </button>
+          </div>
+          <!-- Ringkasan Logbook & Presensi -->
+          <div class="px-5 py-3 border-t border-gray-100 grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+            <div class="p-2 bg-blue-50 rounded-lg">
+              <p class="text-lg font-bold text-blue-700">{{ p.logbooks_count ?? 0 }}</p>
+              <p class="text-[10px] text-blue-600">Logbook</p>
+            </div>
+            <div class="p-2 bg-yellow-50 rounded-lg">
+              <p class="text-lg font-bold text-yellow-700">{{ p.logbooks_revision ?? 0 }}</p>
+              <p class="text-[10px] text-yellow-600">Perlu Revisi</p>
+            </div>
+            <div class="p-2 bg-green-50 rounded-lg">
+              <p class="text-lg font-bold text-green-700">{{ p.attendances_count ?? 0 }}</p>
+              <p class="text-[10px] text-green-600">Presensi</p>
+            </div>
+            <div class="p-2 bg-emerald-50 rounded-lg">
+              <p class="text-lg font-bold text-emerald-700">{{ p.logbooks_approved ?? 0 }}</p>
+              <p class="text-[10px] text-emerald-600">Disetujui</p>
+            </div>
           </div>
         </div>
       </div>
