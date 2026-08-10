@@ -2,7 +2,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
-import { ArrowLeftIcon, PlusIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/vue/24/outline'
+import { ArrowLeftIcon, PlusIcon, PencilIcon, TrashIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/vue/24/outline'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
@@ -86,15 +86,42 @@ async function saveAttendance() {
 // === PENILAIAN ===
 const assModal = ref(false); const assSaving = ref(false)
 const assForm = reactive({ component: '', score: 0, weight: 1, notes: '' })
+const editingAssId = ref<number | null>(null)
+
+function openCreateAss() {
+  editingAssId.value = null
+  Object.assign(assForm, { component: '', score: 0, weight: 1, notes: '' })
+  assModal.value = true
+}
+
+function openEditAss(a: any) {
+  editingAssId.value = a.id
+  Object.assign(assForm, { component: a.component, score: a.score, weight: a.weight, notes: a.notes ?? '' })
+  assModal.value = true
+}
 
 async function saveAssessment() {
   assSaving.value = true
   try {
-    await api.post(`/practical-participants/${route.params.id}/assessments`, assForm)
-    toast.success('Nilai berhasil disimpan.')
+    if (editingAssId.value) {
+      await api.put(`/practical-assessments/${editingAssId.value}`, assForm)
+      toast.success('Nilai berhasil diupdate.')
+    } else {
+      await api.post(`/practical-participants/${route.params.id}/assessments`, assForm)
+      toast.success('Nilai berhasil disimpan.')
+    }
     assModal.value = false; const { data } = await api.get(`/practical-participants/${route.params.id}/assessments`); assessments.value = data
   } catch (e: any) { toast.error(e?.response?.data?.message ?? 'Gagal.') }
   finally { assSaving.value = false }
+}
+
+async function deleteAssessment(a: any) {
+  if (!confirm(`Hapus komponen "${a.component}"?`)) return
+  try {
+    await api.delete(`/practical-assessments/${a.id}`)
+    toast.success('Komponen dihapus.')
+    const { data } = await api.get(`/practical-participants/${route.params.id}/assessments`); assessments.value = data
+  } catch (e: any) { toast.error(e?.response?.data?.message ?? 'Gagal.') }
 }
 
 const totalWeightedScore = computed(() => {
@@ -207,18 +234,22 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
     <div v-if="activeTab === 'nilai'" class="space-y-4">
       <div class="flex items-center justify-between">
         <div v-if="assessments.length" class="text-sm text-gray-600">Nilai Akhir: <strong class="text-lg text-blue-700">{{ totalWeightedScore }}</strong></div>
-        <button v-if="!isMahasiswa" class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="Object.assign(assForm,{component:'',score:0,weight:1,notes:''}); assModal=true"><PlusIcon class="w-3.5 h-3.5" /> Tambah Komponen</button>
+        <button v-if="!isMahasiswa" class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="openCreateAss()"><PlusIcon class="w-3.5 h-3.5" /> Tambah Komponen</button>
       </div>
       <div v-if="!assessments.length" class="text-center py-8 text-gray-400 text-sm">{{ isMahasiswa ? 'Belum ada penilaian dari pembimbing.' : 'Belum ada penilaian.' }}</div>
       <div v-else class="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <table class="w-full text-sm">
-          <thead><tr class="bg-gray-50 text-left text-xs text-gray-500"><th class="px-4 py-2">Komponen</th><th class="px-4 py-2 text-center">Bobot</th><th class="px-4 py-2 text-center">Nilai</th><th class="px-4 py-2">Catatan</th></tr></thead>
+          <thead><tr class="bg-gray-50 text-left text-xs text-gray-500"><th class="px-4 py-2">Komponen</th><th class="px-4 py-2 text-center">Bobot</th><th class="px-4 py-2 text-center">Nilai</th><th class="px-4 py-2">Catatan</th><th v-if="!isMahasiswa" class="px-4 py-2 text-right">Aksi</th></tr></thead>
           <tbody>
             <tr v-for="a in assessments" :key="a.id" class="border-t border-gray-100">
               <td class="px-4 py-2 font-medium text-gray-800">{{ a.component }}</td>
               <td class="px-4 py-2 text-center text-gray-600">{{ a.weight }}</td>
               <td class="px-4 py-2 text-center font-bold text-blue-700">{{ a.score }}</td>
               <td class="px-4 py-2 text-gray-500 text-xs">{{ a.notes ?? '-' }}</td>
+              <td v-if="!isMahasiswa" class="px-4 py-2 text-right">
+                <button class="p-1 rounded text-blue-600 hover:bg-blue-50" title="Edit" @click="openEditAss(a)"><PencilIcon class="w-3.5 h-3.5" /></button>
+                <button class="p-1 rounded text-red-500 hover:bg-red-50" title="Hapus" @click="deleteAssessment(a)"><TrashIcon class="w-3.5 h-3.5" /></button>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -284,7 +315,7 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
   </BaseModal>
 
   <!-- Modal Penilaian -->
-  <BaseModal :open="assModal" title="Tambah Komponen Nilai" @close="assModal = false">
+  <BaseModal :open="assModal" :title="editingAssId ? 'Edit Komponen Nilai' : 'Tambah Komponen Nilai'" @close="assModal = false">
     <form class="space-y-3" @submit.prevent="saveAssessment">
       <div><label class="text-xs text-gray-700">Komponen <span class="text-red-500">*</span></label><input v-model="assForm.component" required placeholder="Laporan / Presentasi / Kinerja..." class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" /></div>
       <div class="grid grid-cols-2 gap-3">

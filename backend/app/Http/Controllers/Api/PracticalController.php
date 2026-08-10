@@ -324,6 +324,22 @@ class PracticalController extends Controller
         return response()->json(['message' => 'Nilai berhasil disimpan.', 'data' => $a], 201);
     }
 
+    public function updateAssessment(Request $request, PracticalAssessment $assessment): JsonResponse
+    {
+        $validated = $request->validate([
+            'component' => 'sometimes|string|max:100', 'score' => 'sometimes|numeric|min:0|max:100',
+            'weight' => 'nullable|numeric|min:0', 'notes' => 'nullable|string',
+        ]);
+        $assessment->update(array_merge($validated, ['assessed_by' => auth()->id()]));
+        return response()->json(['message' => 'Nilai berhasil diupdate.', 'data' => $assessment->fresh()]);
+    }
+
+    public function destroyAssessment(PracticalAssessment $assessment): JsonResponse
+    {
+        $assessment->delete();
+        return response()->json(['message' => 'Komponen nilai berhasil dihapus.']);
+    }
+
     // === REPORTS ===
     public function storeReport(Request $request, PracticalParticipant $participant): JsonResponse
     {
