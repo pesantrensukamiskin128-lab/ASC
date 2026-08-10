@@ -286,6 +286,17 @@ class PracticalController extends Controller
         return response()->json(['message' => 'Logbook berhasil ditambahkan.', 'data' => $log], 201);
     }
 
+    public function updateLogbook(Request $request, PracticalLogbook $logbook): JsonResponse
+    {
+        $validated = $request->validate([
+            'activity_date' => 'sometimes|date', 'start_time' => 'nullable|date_format:H:i',
+            'end_time' => 'nullable|date_format:H:i', 'activity' => 'sometimes|string',
+            'result' => 'nullable|string', 'attachment_url' => 'nullable|url|max:500',
+        ]);
+        $logbook->update($validated);
+        return response()->json(['message' => 'Logbook berhasil diupdate.', 'data' => $logbook->fresh()]);
+    }
+
     public function approveLogbook(Request $request, PracticalLogbook $logbook): JsonResponse
     {
         $request->validate(['action' => 'required|in:approve,revision', 'notes' => 'nullable|string']);

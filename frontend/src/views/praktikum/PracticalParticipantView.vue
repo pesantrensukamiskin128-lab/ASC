@@ -50,12 +50,38 @@ async function loadAll() {
 // === LOGBOOK ===
 const logModal = ref(false); const logSaving = ref(false)
 const logForm = reactive({ activity_date: '', start_time: '', end_time: '', activity: '', result: '', notes: '', attachment_url: '' })
+const editingLogId = ref<number | null>(null)
+
+function openCreateLog() {
+  editingLogId.value = null
+  Object.assign(logForm, { activity_date: '', start_time: '', end_time: '', activity: '', result: '', notes: '', attachment_url: '' })
+  logModal.value = true
+}
+
+function openEditLog(l: any) {
+  editingLogId.value = l.id
+  Object.assign(logForm, {
+    activity_date: l.activity_date?.split('T')[0] ?? '',
+    start_time: l.start_time ?? '',
+    end_time: l.end_time ?? '',
+    activity: l.activity ?? '',
+    result: l.result ?? '',
+    notes: '',
+    attachment_url: l.attachment_url ?? '',
+  })
+  logModal.value = true
+}
 
 async function saveLogbook() {
   logSaving.value = true
   try {
-    await api.post(`/practical-participants/${route.params.id}/logbooks`, logForm)
-    toast.success('Logbook berhasil ditambahkan.')
+    if (editingLogId.value) {
+      await api.put(`/practical-logbooks/${editingLogId.value}`, logForm)
+      toast.success('Logbook berhasil diupdate.')
+    } else {
+      await api.post(`/practical-participants/${route.params.id}/logbooks`, logForm)
+      toast.success('Logbook berhasil ditambahkan.')
+    }
     logModal.value = false; const { data } = await api.get(`/practical-participants/${route.params.id}/logbooks`); logbooks.value = data
   } catch (e: any) { toast.error(e?.response?.data?.message ?? 'Gagal.') }
   finally { logSaving.value = false }
@@ -208,7 +234,7 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
 
     <!-- LOGBOOK -->
     <div v-if="activeTab === 'logbook'" class="space-y-4">
-      <div class="flex justify-end"><button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="Object.assign(logForm,{activity_date:'',start_time:'',end_time:'',activity:'',result:'',notes:'',attachment_url:''}); logModal=true"><PlusIcon class="w-3.5 h-3.5" /> Tambah Logbook</button></div>
+      <div class="flex justify-end"><button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="openCreateLog()"><PlusIcon class="w-3.5 h-3.5" /> Tambah Logbook</button></div>
       <div v-if="!logbooks.length" class="text-center py-8 text-gray-400 text-sm">Belum ada logbook.</div>
       <div v-else class="space-y-2">
         <div v-for="l in logbooks" :key="l.id" :class="['p-4 bg-white rounded-xl border', l.status === 'REVISION' ? 'border-yellow-300 bg-yellow-50/30' : 'border-gray-200']">
@@ -233,8 +259,9 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
               <button v-if="l.status === 'SUBMITTED'" class="p-1 rounded text-green-600 hover:bg-green-50" title="Approve" @click="reviewLogbook(l, 'approve')"><CheckCircleIcon class="w-4 h-4" /></button>
               <button class="p-1 rounded text-yellow-600 hover:bg-yellow-50" title="Revisi" @click="reviewLogbook(l, 'revision')"><XCircleIcon class="w-4 h-4" /></button>
             </div>
-            <!-- Mahasiswa: tombol submit ulang jika REVISION -->
-            <div v-if="isMahasiswa && l.status === 'REVISION'" class="ml-3 shrink-0">
+            <!-- Mahasiswa: tombol edit & submit ulang jika REVISION -->
+            <div v-if="isMahasiswa && l.status === 'REVISION'" class="flex items-center gap-1 ml-3 shrink-0">
+              <button class="px-2.5 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg" @click="openEditLog(l)">✏️ Edit</button>
               <button class="px-2.5 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg" @click="resubmitLogbook(l)">Submit Ulang</button>
             </div>
           </div>
@@ -320,7 +347,7 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
   </div>
 
   <!-- Modal Logbook -->
-  <BaseModal :open="logModal" title="Tambah Logbook" @close="logModal = false">
+  <BaseModal :open="logModal" :title="editingLogId ? 'Edit Logbook' : 'Tambah Logbook'" @close="logModal = false">
     <form class="space-y-3" @submit.prevent="saveLogbook">
       <div class="grid grid-cols-3 gap-3">
         <div><label class="text-xs text-gray-700">Tanggal <span class="text-red-500">*</span></label><input v-model="logForm.activity_date" type="date" required class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" /></div>

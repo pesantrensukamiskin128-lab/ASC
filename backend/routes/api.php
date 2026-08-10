@@ -619,6 +619,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('practical-programs/{program}/self-register', [PracticalController::class, 'selfRegister']);
         Route::get('practical-participants/{participant}/logbooks', [PracticalController::class, 'logbooks']);
         Route::post('practical-participants/{participant}/logbooks', [PracticalController::class, 'storeLogbook']);
+        Route::put('practical-logbooks/{logbook}', [PracticalController::class, 'updateLogbook']);
         Route::post('practical-logbooks/{logbook}/resubmit', [PracticalController::class, 'resubmitLogbook']);
         Route::get('practical-participants/{participant}/attendances', [PracticalController::class, 'attendances']);
         Route::post('practical-participants/{participant}/attendances', [PracticalController::class, 'storeAttendance']);
