@@ -36,14 +36,14 @@ onMounted(async () => {
 })
 
 async function loadAll() {
-  const [logRes, attRes, assRes] = await Promise.all([
+  const [logRes, attRes, assRes] = await Promise.allSettled([
     api.get(`/practical-participants/${route.params.id}/logbooks`),
     api.get(`/practical-participants/${route.params.id}/attendances`),
     api.get(`/practical-participants/${route.params.id}/assessments`),
   ])
-  logbooks.value = logRes.data
-  attendances.value = attRes.data
-  assessments.value = assRes.data
+  logbooks.value = logRes.status === 'fulfilled' ? logRes.value.data : []
+  attendances.value = attRes.status === 'fulfilled' ? attRes.value.data : []
+  assessments.value = assRes.status === 'fulfilled' ? assRes.value.data : []
   loadReports()
 }
 

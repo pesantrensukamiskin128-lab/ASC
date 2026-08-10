@@ -601,8 +601,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('practical-programs/{program}/participants', [PracticalController::class, 'registerParticipant']);
         Route::put('practical-participants/{participant}', [PracticalController::class, 'updateParticipant']);
         Route::delete('practical-participants/{participant}', [PracticalController::class, 'removeParticipant']);
-        // Assessments
-        Route::get('practical-participants/{participant}/assessments', [PracticalController::class, 'assessments']);
+        // Assessments (create/update/delete - dosen only)
         Route::post('practical-participants/{participant}/assessments', [PracticalController::class, 'storeAssessment']);
         Route::put('practical-assessments/{assessment}', [PracticalController::class, 'updateAssessment']);
         Route::delete('practical-assessments/{assessment}', [PracticalController::class, 'destroyAssessment']);
@@ -623,6 +622,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('practical-logbooks/{logbook}/resubmit', [PracticalController::class, 'resubmitLogbook']);
         Route::get('practical-participants/{participant}/attendances', [PracticalController::class, 'attendances']);
         Route::post('practical-participants/{participant}/attendances', [PracticalController::class, 'storeAttendance']);
+        Route::get('practical-participants/{participant}/assessments', [PracticalController::class, 'assessments']);
         Route::get('practical-participants/{participant}/reports', [PracticalController::class, 'reports']);
         Route::post('practical-participants/{participant}/reports', [PracticalController::class, 'storeReport']);
     });
