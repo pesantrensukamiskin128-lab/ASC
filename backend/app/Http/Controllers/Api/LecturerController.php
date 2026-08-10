@@ -181,8 +181,13 @@ class LecturerController extends Controller
         return response()->json(
             Lecturer::where('status', true)
                 ->when($request->study_program_id, fn($q) => $q->where('study_program_id', $request->study_program_id))
-                ->select('id', 'nidn', 'full_name as name')
+                ->select('id', 'nidn', 'full_name', 'degree_front', 'degree_back')
                 ->get()
+                ->map(fn($l) => [
+                    'id' => $l->id,
+                    'nidn' => $l->nidn,
+                    'name' => $l->name,
+                ])
         );
     }
 }
