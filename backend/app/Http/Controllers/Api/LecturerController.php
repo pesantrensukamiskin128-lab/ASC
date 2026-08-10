@@ -137,6 +137,13 @@ class LecturerController extends Controller
         return response()->json(['message' => 'Data dosen berhasil dihapus.']);
     }
 
+    public function bulkDelete(Request $request): JsonResponse
+    {
+        $request->validate(['ids' => 'required|array|min:1', 'ids.*' => 'exists:lecturers,id']);
+        $count = Lecturer::whereIn('id', $request->ids)->delete();
+        return response()->json(['message' => "{$count} data dosen berhasil dihapus."]);
+    }
+
     public function uploadPhoto(Request $request, Lecturer $lecturer): JsonResponse
     {
         $request->validate(['photo' => 'required|image|mimes:jpeg,png,webp|max:2048']);

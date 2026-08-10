@@ -222,4 +222,31 @@ class EventController extends Controller
             'event'    => $event->only('id', 'title', 'event_date', 'start_time', 'end_time', 'location', 'organizer'),
         ]);
     }
+
+    /** Download daftar hadir sebagai Excel */
+    public function exportExcel(Event $event)
+    {
+        $filename = 'Daftar-Hadir-' . preg_replace('/[^a-zA-Z0-9]/', '-', $event->title) . '.xlsx';
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\EventAttendanceExport($event),
+            $filename
+        );
+    }
+
+    /** Download daftar hadir sebagai PDF */
+    public function exportPdf(Event $event)
+    {
+        $attendances = EventAttendance::where('event_id', $event->id)
+            ->with('user')
+            ->orderBy('attended_at')
+            ->get();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.event-attendance', [
+            'event' => $event,
+            'attendances' => $attendances,
+        ])->setPaper('a4', 'portrait');
+
+        $filename = 'Daftar-Hadir-' . preg_replace('/[^a-zA-Z0-9]/', '-', $event->title) . '.pdf';
+        return $pdf->download($filename);
+    }
 }

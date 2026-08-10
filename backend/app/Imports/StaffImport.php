@@ -28,12 +28,15 @@ class StaffImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnErr
         if ($nip) {
             $email = !empty(trim($row['email'] ?? ''))
                 ? trim($row['email'])
-                : "{$nip}@staff.jawami.ac.id";
+                : "{$nip}@staff.stai-aljawami.ac.id";
 
             $user = User::firstOrCreate(
                 ['username' => $nip],
                 ['name' => $name, 'email' => $email, 'password' => Hash::make($nip)]
             );
+            if ($user->wasRecentlyCreated) {
+                $user->assignRole('ADMIN_UMUM');
+            }
             $userId = $user->id;
         }
 

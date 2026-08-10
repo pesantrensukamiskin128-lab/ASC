@@ -154,6 +154,13 @@ class StudentController extends Controller
         return response()->json(['message' => 'Data mahasiswa berhasil dihapus.']);
     }
 
+    public function bulkDelete(Request $request): JsonResponse
+    {
+        $request->validate(['ids' => 'required|array|min:1', 'ids.*' => 'exists:students,id']);
+        $count = Student::whereIn('id', $request->ids)->delete();
+        return response()->json(['message' => "{$count} data mahasiswa berhasil dihapus."]);
+    }
+
     public function export(Request $request)
     {
         $filename = 'mahasiswa-' . now()->format('Ymd-His') . '.xlsx';

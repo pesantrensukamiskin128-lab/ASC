@@ -24,7 +24,7 @@ defineEmits<{
               :key="col.key"
               :class="['px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider', col.class]"
             >
-              {{ col.label }}
+              <slot :name="`header-${col.key}`">{{ col.label }}</slot>
             </th>
           </tr>
         </thead>

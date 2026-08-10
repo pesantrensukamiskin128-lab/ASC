@@ -90,6 +90,13 @@ class StaffController extends Controller
         return response()->json(['message' => 'Data tenaga kependidikan berhasil dihapus.']);
     }
 
+    public function bulkDelete(Request $request): JsonResponse
+    {
+        $request->validate(['ids' => 'required|array|min:1', 'ids.*' => 'exists:staff,id']);
+        $count = Staff::whereIn('id', $request->ids)->delete();
+        return response()->json(['message' => "{$count} data tenaga kependidikan berhasil dihapus."]);
+    }
+
     public function export(Request $request)
     {
         $filename = 'tenaga-kependidikan-' . now()->format('Ymd-His') . '.xlsx';

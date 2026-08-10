@@ -1,21 +1,39 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import { useCrud } from '@/composables/useCrud'
 import { useExcel } from '@/composables/useExcel'
+import { useToast } from 'vue-toastification'
 import DataTable from '@/components/ui/DataTable.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import ExcelButtons from '@/components/ui/ExcelButtons.vue'
+import api from '@/services/api'
 
 interface Staff {
   id: number; nip: string; name: string; gender: string
   position: string; department: string; employment_status: string; status: boolean
 }
 
+const toast = useToast()
 const { items, pagination, loading, fetchAll, create, update, remove } = useCrud<Staff>('/staff')
 const { exporting, importing, importErrors, exportExcel, importExcel } = useExcel('/staff')
 const search = ref(''); const filterDept = ref('')
 const modalOpen = ref(false); const editingId = ref<number | null>(null); const saving = ref(false)
+
+// Bulk selection
+const selectedIds = ref<number[]>([])
+const bulkDeleting = ref(false)
+const isAllSelected = computed(() => items.value.length > 0 && items.value.every((i: any) => selectedIds.value.includes(i.id)))
+function toggleSelectAll() { if (isAllSelected.value) selectedIds.value = []; else selectedIds.value = items.value.map((i: any) => i.id) }
+function toggleSelect(id: number) { const idx = selectedIds.value.indexOf(id); if (idx >= 0) selectedIds.value.splice(idx, 1); else selectedIds.value.push(id) }
+async function bulkDelete() {
+  if (!selectedIds.value.length) return
+  if (!confirm(`Hapus ${selectedIds.value.length} tenaga kependidikan yang dipilih?`)) return
+  bulkDeleting.value = true
+  try { const { data } = await api.post('/staff/bulk-delete', { ids: selectedIds.value }); toast.success(data.message); selectedIds.value = []; load() }
+  catch (e: any) { toast.error(e?.response?.data?.message ?? 'Gagal.') }
+  finally { bulkDeleting.value = false }
+}
 
 const form = reactive({
   nip: '', name: '', gender: 'L', birth_place: '', birth_date: '',
@@ -26,6 +44,7 @@ const form = reactive({
 const departments = ['Akademik', 'Keuangan', 'SDM', 'IT', 'Umum', 'Perpustakaan', 'Laboratorium', 'Kemahasiswaan', 'Lainnya']
 
 const columns = [
+  { key: 'select', label: '', class: 'w-8' },
   { key: 'nip', label: 'NIP' }, { key: 'name', label: 'Nama' },
   { key: 'position', label: 'Jabatan' }, { key: 'department', label: 'Unit/Bagian' },
   { key: 'employment', label: 'Status Kepegawaian' }, { key: 'aksi', label: 'Aksi', class: 'text-right' },
@@ -85,16 +104,23 @@ async function handleDelete(item: Staff) {
         </button>
       </div>
     </div>
-    <div class="flex flex-wrap gap-3">
+    <div class="flex flex-wrap items-center gap-3">
       <input v-model="search" type="text" placeholder="Cari NIP atau nama..." class="px-3.5 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-64" @input="load()" />
       <select v-model="filterDept" class="px-3.5 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" @change="load()">
         <option value="">Semua Unit</option>
         <option v-for="d in departments" :key="d" :value="d">{{ d }}</option>
       </select>
+      <button v-if="selectedIds.length" :disabled="bulkDeleting" class="ml-auto px-3 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white text-xs font-medium rounded-lg inline-flex items-center gap-1.5" @click="bulkDelete">
+        <TrashIcon class="w-3.5 h-3.5" /> Hapus {{ selectedIds.length }} dipilih
+      </button>
     </div>
 
     <DataTable :columns="columns" :rows="items" :loading="loading" :total="pagination.total" :current-page="pagination.currentPage" :last-page="pagination.lastPage" @page-change="load">
+      <template #header-select>
+        <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll" class="rounded border-gray-300" />
+      </template>
       <template #default="{ row }">
+        <td class="px-4 py-3"><input type="checkbox" :checked="selectedIds.includes(row.id)" @change="toggleSelect(row.id)" class="rounded border-gray-300" /></td>
         <td class="px-4 py-3 font-mono text-xs text-gray-600">{{ row.nip ?? '-' }}</td>
         <td class="px-4 py-3 font-medium text-gray-900">{{ row.name }}</td>
         <td class="px-4 py-3 text-gray-600 text-sm">{{ row.position ?? '-' }}</td>

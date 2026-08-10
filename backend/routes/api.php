@@ -202,6 +202,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:SUPER_ADMIN|ADMIN_AKADEMIK')->group(function () {
         Route::get('staff/export', [StaffController::class, 'export']);
         Route::post('staff/import', [StaffController::class, 'import']);
+        Route::post('staff/bulk-delete', [StaffController::class, 'bulkDelete']);
         Route::apiResource('staff', StaffController::class);
     });
 
@@ -209,6 +210,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:SUPER_ADMIN|ADMIN_AKADEMIK')->group(function () {
         Route::get('lecturers/export', [LecturerController::class, 'export']);
         Route::post('lecturers/import', [LecturerController::class, 'import']);
+        Route::post('lecturers/bulk-delete', [LecturerController::class, 'bulkDelete']);
         Route::post('lecturers/{lecturer}/photo', [LecturerController::class, 'uploadPhoto']);
         Route::apiResource('lecturers', LecturerController::class);
         // Jabatan struktural
@@ -223,6 +225,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:SUPER_ADMIN|ADMIN_AKADEMIK|DOSEN|ADMIN_PMB')->group(function () {
         Route::get('students/export', [StudentController::class, 'export']);
         Route::post('students/import', [StudentController::class, 'import']);
+        Route::post('students/bulk-delete', [StudentController::class, 'bulkDelete']);
         Route::apiResource('students', StudentController::class);
     });
 
@@ -906,6 +909,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('{event}', [EventController::class, 'destroy']);
         Route::post('{event}/toggle-open', [EventController::class, 'toggleOpen']);
         Route::get('{event}/qr-code', [EventController::class, 'qrCode']);
+        Route::get('{event}/export-excel', [EventController::class, 'exportExcel']);
+        Route::get('{event}/export-pdf', [EventController::class, 'exportPdf']);
         // Presensi via app (user login)
         Route::post('attend/{token}', [EventController::class, 'attend']);
     });

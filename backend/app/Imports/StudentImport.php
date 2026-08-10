@@ -34,7 +34,7 @@ class StudentImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnE
         // Buat akun user otomatis
         $email = !empty(trim($row['email'] ?? ''))
             ? trim($row['email'])
-            : "{$nim}@student.jawami.ac.id";
+            : "{$nim}@student.stai-aljawami.ac.id";
 
         $user = User::firstOrCreate(
             ['username' => $nim],

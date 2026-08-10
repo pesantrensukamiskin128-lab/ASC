@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { PlusIcon, PencilIcon, TrashIcon, CameraIcon, EyeIcon } from '@heroicons/vue/24/outline'
 import { useCrud } from '@/composables/useCrud'
@@ -27,9 +27,25 @@ interface Lecturer {
 
 const router = useRouter()
 const auth = useAuthStore()
+const toast = useToast()
 const canCreate = auth.hasPermission('mahasiswa.create') || auth.hasRole('SUPER_ADMIN')
 const { items, pagination, loading, fetchAll, create, update, remove } = useCrud<Lecturer>('/lecturers')
 const { exporting, importing, importErrors, exportExcel, importExcel } = useExcel('/lecturers')
+
+// Bulk selection
+const selectedIds = ref<number[]>([])
+const bulkDeleting = ref(false)
+const isAllSelected = computed(() => items.value.length > 0 && items.value.every((i: any) => selectedIds.value.includes(i.id)))
+function toggleSelectAll() { if (isAllSelected.value) selectedIds.value = []; else selectedIds.value = items.value.map((i: any) => i.id) }
+function toggleSelect(id: number) { const idx = selectedIds.value.indexOf(id); if (idx >= 0) selectedIds.value.splice(idx, 1); else selectedIds.value.push(id) }
+async function bulkDelete() {
+  if (!selectedIds.value.length) return
+  if (!confirm(`Hapus ${selectedIds.value.length} dosen yang dipilih?`)) return
+  bulkDeleting.value = true
+  try { const { data } = await api.post('/lecturers/bulk-delete', { ids: selectedIds.value }); toast.success(data.message); selectedIds.value = []; load() }
+  catch (e: any) { toast.error(e?.response?.data?.message ?? 'Gagal.') }
+  finally { bulkDeleting.value = false }
+}
 
 const programs    = ref<StudyProgram[]>([])
 const search      = ref('')
@@ -47,6 +63,7 @@ const form = reactive({
 })
 
 const columns = [
+  { key: 'select', label: '', class: 'w-8' },
   { key: 'nidn',       label: 'NIDN' },
   { key: 'name',       label: 'Nama Lengkap' },
   { key: 'program',    label: 'Prodi' },
@@ -207,6 +224,7 @@ async function uploadPhoto(file: File) {
 
     <!-- Filter -->
     <div class="flex flex-wrap gap-3">
+    <div class="flex flex-wrap items-center gap-3">
       <input
         v-model="search" type="text" placeholder="Cari NIDN, NUPTK atau nama..."
         class="px-3.5 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
@@ -220,6 +238,9 @@ async function uploadPhoto(file: File) {
         <option value="">Semua Prodi</option>
         <option v-for="p in programs" :key="p.id" :value="p.id">{{ p.code }} - {{ p.name }}</option>
       </select>
+      <button v-if="selectedIds.length" :disabled="bulkDeleting" class="ml-auto px-3 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white text-xs font-medium rounded-lg inline-flex items-center gap-1.5" @click="bulkDelete">
+        <TrashIcon class="w-3.5 h-3.5" /> Hapus {{ selectedIds.length }} dipilih
+      </button>
     </div>
 
     <!-- Tabel -->
@@ -228,7 +249,11 @@ async function uploadPhoto(file: File) {
       :total="pagination.total" :current-page="pagination.currentPage"
       :last-page="pagination.lastPage" @page-change="load"
     >
+      <template #header-select>
+        <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll" class="rounded border-gray-300" />
+      </template>
       <template #default="{ row }">
+        <td class="px-4 py-3"><input type="checkbox" :checked="selectedIds.includes(row.id)" @change="toggleSelect(row.id)" class="rounded border-gray-300" /></td>
         <td class="px-4 py-3 font-mono text-xs text-gray-600">{{ row.nidn ?? '-' }}</td>
         <td class="px-4 py-3">
           <div class="flex items-center gap-2.5">

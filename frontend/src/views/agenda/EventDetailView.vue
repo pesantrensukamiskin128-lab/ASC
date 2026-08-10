@@ -251,6 +251,20 @@ async function downloadPoster() {
 
 function formatDate(d: string) { return new Date(d).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) }
 function formatTime(t: string | null) { return t ? t.slice(0, 5) : '-' }
+
+async function downloadAttendance(format: 'excel' | 'pdf') {
+  try {
+    const url = `/events/${event.value.id}/export-${format}`
+    const res = await api.get(url, { responseType: 'blob' })
+    const blob = new Blob([res.data], { type: format === 'excel' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'application/pdf' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `Daftar-Hadir-${event.value.title.replace(/[^a-zA-Z0-9]/g, '-')}.${format === 'excel' ? 'xlsx' : 'pdf'}`
+    document.body.appendChild(link); link.click(); document.body.removeChild(link)
+    URL.revokeObjectURL(link.href)
+    toast.success(`Daftar hadir berhasil didownload (${format.toUpperCase()}).`)
+  } catch { toast.error('Gagal mengunduh daftar hadir.') }
+}
 </script>
 
 <template>
@@ -336,6 +350,10 @@ function formatTime(t: string | null) { return t ? t.slice(0, 5) : '-' }
               <h2 class="font-semibold text-gray-900 flex items-center gap-2">
                 <UsersIcon class="w-5 h-5 text-blue-600" /> Daftar Hadir
               </h2>
+              <div v-if="canManage && event.attendances?.length" class="flex items-center gap-2">
+                <button class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg" @click="downloadAttendance('excel')">📊 Excel</button>
+                <button class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg" @click="downloadAttendance('pdf')">📄 PDF</button>
+              </div>
             </div>
             <div v-if="!event.attendances?.length" class="py-12 text-center">
               <UsersIcon class="w-10 h-10 text-gray-200 mx-auto mb-3" />
