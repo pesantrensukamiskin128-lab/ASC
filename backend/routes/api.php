@@ -156,6 +156,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // --- User Management ---
     Route::middleware('role:SUPER_ADMIN|ADMIN_AKADEMIK')->group(function () {
+        Route::post('users/bulk-delete', [UserController::class, 'bulkDelete']);
         Route::apiResource('users', UserController::class);
         Route::get('roles', [UserController::class, 'roles']);
     });

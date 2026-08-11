@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import { useCrud } from '@/composables/useCrud'
+import { useToast } from 'vue-toastification'
+import { useAuthStore } from '@/stores/auth'
 import DataTable from '@/components/ui/DataTable.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import api from '@/services/api'
@@ -14,13 +16,31 @@ interface User {
 }
 
 const { items, pagination, loading, fetchAll, create, update, remove } = useCrud<User>('/users')
+const toast = useToast()
+const auth = useAuthStore()
 const rolesList = ref<Role[]>([])
 const search = ref(''); const filterRole = ref('')
 const modalOpen = ref(false); const editingId = ref<number | null>(null); const saving = ref(false)
 
+// Bulk selection
+const selectedIds = ref<number[]>([])
+const bulkDeleting = ref(false)
+const isAllSelected = computed(() => items.value.length > 0 && items.value.every((i: any) => selectedIds.value.includes(i.id)))
+function toggleSelectAll() { if (isAllSelected.value) selectedIds.value = []; else selectedIds.value = items.value.filter((i: any) => i.id !== auth.user?.id).map((i: any) => i.id) }
+function toggleSelect(id: number) { if (id === auth.user?.id) return; const idx = selectedIds.value.indexOf(id); if (idx >= 0) selectedIds.value.splice(idx, 1); else selectedIds.value.push(id) }
+async function bulkDelete() {
+  if (!selectedIds.value.length) return
+  if (!confirm(`Hapus ${selectedIds.value.length} pengguna yang dipilih?`)) return
+  bulkDeleting.value = true
+  try { const { data } = await api.post('/users/bulk-delete', { ids: selectedIds.value }); toast.success(data.message); selectedIds.value = []; load() }
+  catch (e: any) { toast.error(e?.response?.data?.message ?? 'Gagal.') }
+  finally { bulkDeleting.value = false }
+}
+
 const form = reactive({ name: '', email: '', username: '', password: '', role: '', is_active: true })
 
 const columns = [
+  { key: 'select', label: '', class: 'w-8' },
   { key: 'name', label: 'Nama' }, { key: 'email', label: 'Email' },
   { key: 'username', label: 'Username' }, { key: 'role', label: 'Role' },
   { key: 'login', label: 'Login Terakhir' }, { key: 'status', label: 'Status' },
@@ -79,15 +99,25 @@ function formatDate(d: string) {
         <PlusIcon class="w-4 h-4" /> Tambah Pengguna
       </button>
     </div>
-    <div class="flex flex-wrap gap-3">
+    <div class="flex flex-wrap items-center gap-3">
       <input v-model="search" type="text" placeholder="Cari nama atau email..." class="px-3.5 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-64" @input="load()" />
       <select v-model="filterRole" class="px-3.5 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" @change="load()">
         <option value="">Semua Role</option>
         <option v-for="r in rolesList" :key="r.id" :value="r.name">{{ r.name }}</option>
       </select>
+      <button v-if="selectedIds.length" :disabled="bulkDeleting" class="ml-auto px-3 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white text-xs font-medium rounded-lg inline-flex items-center gap-1.5" @click="bulkDelete">
+        <TrashIcon class="w-3.5 h-3.5" /> Hapus {{ selectedIds.length }} dipilih
+      </button>
     </div>
     <DataTable :columns="columns" :rows="items" :loading="loading" :total="pagination.total" :current-page="pagination.currentPage" :last-page="pagination.lastPage" @page-change="load">
+      <template #header-select>
+        <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll" class="rounded border-gray-300" />
+      </template>
       <template #default="{ row }">
+        <td class="px-4 py-3">
+          <input v-if="row.id !== auth.user?.id" type="checkbox" :checked="selectedIds.includes(row.id)" @change="toggleSelect(row.id)" class="rounded border-gray-300" />
+          <span v-else class="text-[10px] text-gray-400">Anda</span>
+        </td>
         <td class="px-4 py-3 font-medium text-gray-900">{{ row.name }}</td>
         <td class="px-4 py-3 text-gray-600 text-sm">{{ row.email }}</td>
         <td class="px-4 py-3 font-mono text-xs text-gray-600">{{ row.username ?? '-' }}</td>

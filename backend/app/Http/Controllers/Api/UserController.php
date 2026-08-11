@@ -85,6 +85,15 @@ class UserController extends Controller
         return response()->json(['message' => 'User berhasil dihapus.']);
     }
 
+    public function bulkDelete(Request $request): JsonResponse
+    {
+        $request->validate(['ids' => 'required|array|min:1', 'ids.*' => 'exists:users,id']);
+        // Jangan hapus diri sendiri
+        $ids = array_filter($request->ids, fn($id) => $id !== auth()->id());
+        $count = User::whereIn('id', $ids)->delete();
+        return response()->json(['message' => "{$count} pengguna berhasil dihapus."]);
+    }
+
     public function roles(): JsonResponse
     {
         // Hanya tampilkan role yang aktif dipakai (role lama sudah dihapus oleh migration)
