@@ -287,7 +287,8 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
           <div class="flex-1 min-w-0">
             <p class="font-medium text-gray-900 text-sm">{{ p.student?.name }}</p>
             <p class="text-xs text-gray-500">{{ p.student?.nim }} · {{ p.group?.name ?? 'Belum dikelompokkan' }} · {{ p.location?.name ?? '-' }}</p>
-            <p v-if="p.supervisor" class="text-xs text-gray-400">Pembimbing: {{ p.supervisor.name }}</p>
+            <p v-if="p.supervisor" class="text-xs text-gray-400">Pembimbing 1: {{ p.supervisor.name }}</p>
+            <p v-if="p.supervisor2" class="text-xs text-gray-400">Pembimbing 2: {{ p.supervisor2.name }}</p>
           </div>
           <span :class="['px-2 py-0.5 rounded-full text-xs font-medium', statusColor[p.status]]">{{ p.status }}</span>
           <div class="flex items-center gap-1">
