@@ -214,6 +214,17 @@ class PracticalController extends Controller
             return response()->json(['message' => 'Mahasiswa sudah terdaftar.'], 422);
         }
         $p = $program->participants()->create(array_merge($validated, ['status' => 'TERDAFTAR']));
+
+        // Notifikasi ke mahasiswa
+        if ($p->student?->user_id) {
+            \App\Models\AppNotification::send(
+                $p->student->user_id,
+                'Terdaftar di Program ' . $program->program_type,
+                "Anda telah didaftarkan ke program \"{$program->name}\".",
+                'info', '/praktikum'
+            );
+        }
+
         return response()->json(['message' => 'Peserta berhasil didaftarkan.', 'data' => $p->load('student')], 201);
     }
 
@@ -320,6 +331,22 @@ class PracticalController extends Controller
             'status' => $request->action === 'approve' ? 'APPROVED' : 'REVISION',
             'approved_by' => auth()->id(), 'notes' => $request->notes ?? $logbook->notes,
         ]);
+
+        // Notifikasi ke mahasiswa
+        $student = $logbook->participant?->student;
+        if ($student?->user_id) {
+            $programName = $logbook->participant?->program?->name ?? 'KKN/Praktikum';
+            if ($request->action === 'approve') {
+                \App\Models\AppNotification::send($student->user_id, 'Logbook Disetujui ✓',
+                    "Logbook tanggal {$logbook->activity_date?->format('d/m/Y')} pada program \"{$programName}\" telah disetujui.",
+                    'success', '/praktikum');
+            } else {
+                \App\Models\AppNotification::send($student->user_id, 'Logbook Perlu Revisi',
+                    "Logbook tanggal {$logbook->activity_date?->format('d/m/Y')} pada program \"{$programName}\" diminta revisi." . ($request->notes ? " Catatan: {$request->notes}" : ''),
+                    'warning', '/praktikum');
+            }
+        }
+
         return response()->json(['message' => 'Logbook berhasil diproses.']);
     }
 
@@ -330,6 +357,18 @@ class PracticalController extends Controller
             return response()->json(['message' => 'Logbook ini tidak dalam status revisi.'], 422);
         }
         $logbook->update(['status' => 'SUBMITTED']);
+
+        // Notifikasi ke dosen pembimbing
+        $participant = $logbook->participant;
+        $supervisorUserId = $participant?->supervisor?->user_id ?? $participant?->group?->supervisor?->user_id;
+        if ($supervisorUserId) {
+            $studentName = $participant?->student?->name ?? 'Mahasiswa';
+            $programName = $participant?->program?->name ?? 'KKN/Praktikum';
+            \App\Models\AppNotification::send($supervisorUserId, 'Logbook Disubmit Ulang',
+                "{$studentName} telah memperbaiki dan mengumpulkan ulang logbook pada program \"{$programName}\".",
+                'info', '/praktikum/' . ($participant?->program_id ?? ''));
+        }
+
         return response()->json(['message' => 'Logbook berhasil disubmit ulang.']);
     }
 
@@ -369,6 +408,14 @@ class PracticalController extends Controller
                 'approved_by' => auth()->id(),
                 'approved_at' => now(),
             ]);
+            // Notif ke mahasiswa
+            $student = $attendance->participant?->student;
+            if ($student?->user_id) {
+                $programName = $attendance->participant?->program?->name ?? 'KKN/Praktikum';
+                \App\Models\AppNotification::send($student->user_id, 'Presensi Diterima ✓',
+                    "Presensi tanggal {$attendance->attendance_date?->format('d/m/Y')} pada program \"{$programName}\" telah diterima.",
+                    'success', '/praktikum');
+            }
             return response()->json(['message' => 'Presensi diterima.']);
         } else {
             $attendance->update([
@@ -377,6 +424,14 @@ class PracticalController extends Controller
                 'approved_by' => auth()->id(),
                 'approved_at' => now(),
             ]);
+            // Notif ke mahasiswa
+            $student = $attendance->participant?->student;
+            if ($student?->user_id) {
+                $programName = $attendance->participant?->program?->name ?? 'KKN/Praktikum';
+                \App\Models\AppNotification::send($student->user_id, 'Presensi Ditolak',
+                    "Presensi tanggal {$attendance->attendance_date?->format('d/m/Y')} pada program \"{$programName}\" ditolak." . ($request->rejection_note ? " Alasan: {$request->rejection_note}" : ''),
+                    'error', '/praktikum');
+            }
             return response()->json(['message' => 'Presensi ditolak.']);
         }
     }
@@ -432,6 +487,18 @@ class PracticalController extends Controller
         }
 
         $r = $participant->reports()->create(array_merge($validated, ['status' => 'SUBMITTED', 'submitted_at' => now()]));
+
+        // Notifikasi ke dosen pembimbing bahwa ada laporan baru
+        $supervisorUserId = $participant?->supervisor?->user_id ?? $participant?->group?->supervisor?->user_id;
+        if ($supervisorUserId) {
+            $studentName = $participant?->student?->name ?? 'Mahasiswa';
+            $programName = $participant?->program?->name ?? 'KKN/Praktikum';
+            $type = $validated['report_type'] === 'KELOMPOK' ? 'Laporan Kelompok' : 'Laporan Individu';
+            \App\Models\AppNotification::send($supervisorUserId, "{$type} Baru",
+                "{$studentName} mengumpulkan {$type} pada program \"{$programName}\": \"{$validated['title']}\".",
+                'info', '/praktikum');
+        }
+
         return response()->json(['message' => 'Laporan berhasil disubmit.', 'data' => $r], 201);
     }
 
@@ -460,6 +527,23 @@ class PracticalController extends Controller
             'reviewer_notes' => $request->notes, 'reviewed_by' => auth()->id(),
             'approved_at' => $request->action === 'approve' ? now() : null,
         ]);
+
+        // Notifikasi ke mahasiswa pemilik laporan
+        $student = $report->participant?->student;
+        if ($student?->user_id) {
+            $programName = $report->participant?->program?->name ?? 'KKN/Praktikum';
+            $type = ($report->report_type === 'KELOMPOK') ? 'Laporan Kelompok' : 'Laporan Individu';
+            if ($request->action === 'approve') {
+                \App\Models\AppNotification::send($student->user_id, "{$type} Disetujui ✓",
+                    "{$type} \"{$report->title}\" pada program \"{$programName}\" telah disetujui.",
+                    'success', '/praktikum');
+            } else {
+                \App\Models\AppNotification::send($student->user_id, "{$type} Perlu Revisi",
+                    "{$type} \"{$report->title}\" pada program \"{$programName}\" diminta revisi." . ($request->notes ? " Catatan: {$request->notes}" : ''),
+                    'warning', '/praktikum');
+            }
+        }
+
         return response()->json(['message' => 'Laporan berhasil diproses.']);
     }
 }
