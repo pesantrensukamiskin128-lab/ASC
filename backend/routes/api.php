@@ -612,6 +612,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('practical-assessments/{assessment}', [PracticalController::class, 'destroyAssessment']);
         // Logbook approval
         Route::post('practical-logbooks/{logbook}/review', [PracticalController::class, 'approveLogbook']);
+        // Attendance approval
+        Route::post('practical-attendances/{attendance}/review', [PracticalController::class, 'reviewAttendance']);
         // Reports
         Route::post('practical-reports/{report}/review', [PracticalController::class, 'reviewReport']);
     });

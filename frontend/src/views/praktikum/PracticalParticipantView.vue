@@ -129,6 +129,33 @@ async function saveAttendance() {
   finally { attSaving.value = false }
 }
 
+// Dosen: terima / tolak presensi
+const rejectNote = ref('')
+const showRejectModal = ref(false)
+const rejectingAttId = ref<number | null>(null)
+
+async function approveAttendance(att: any) {
+  try {
+    await api.post(`/practical-attendances/${att.id}/review`, { action: 'approve' })
+    toast.success('Presensi diterima.')
+    const { data } = await api.get(`/practical-participants/${route.params.id}/attendances`); attendances.value = data
+  } catch (e: any) { toast.error(e?.response?.data?.message ?? 'Gagal.') }
+}
+
+function openRejectAttendance(att: any) {
+  rejectingAttId.value = att.id; rejectNote.value = ''; showRejectModal.value = true
+}
+
+async function submitRejectAttendance() {
+  if (!rejectingAttId.value) return
+  try {
+    await api.post(`/practical-attendances/${rejectingAttId.value}/review`, { action: 'reject', rejection_note: rejectNote.value })
+    toast.success('Presensi ditolak.')
+    showRejectModal.value = false
+    const { data } = await api.get(`/practical-participants/${route.params.id}/attendances`); attendances.value = data
+  } catch (e: any) { toast.error(e?.response?.data?.message ?? 'Gagal.') }
+}
+
 // === PENILAIAN ===
 const assModal = ref(false); const assSaving = ref(false)
 const assForm = reactive({ component: '', score: 0, weight: 1, notes: '' })
@@ -275,11 +302,28 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
       <div v-if="!attendances.length" class="text-center py-8 text-gray-400 text-sm">Belum ada data presensi.</div>
       <div v-else class="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <table class="w-full text-sm">
-          <thead><tr class="bg-gray-50 text-left text-xs text-gray-500"><th class="px-4 py-2">Tanggal</th><th class="px-4 py-2 text-center">Status</th><th class="px-4 py-2">Lokasi</th><th class="px-4 py-2">Bukti</th><th class="px-4 py-2">Catatan</th></tr></thead>
+          <thead><tr class="bg-gray-50 text-left text-xs text-gray-500">
+            <th class="px-4 py-2">Tanggal</th>
+            <th class="px-4 py-2 text-center">Status</th>
+            <th class="px-4 py-2 text-center">Verifikasi</th>
+            <th class="px-4 py-2">Lokasi</th>
+            <th class="px-4 py-2">Bukti</th>
+            <th class="px-4 py-2">Catatan</th>
+            <th v-if="!isMahasiswa" class="px-4 py-2 text-right">Aksi</th>
+          </tr></thead>
           <tbody>
-            <tr v-for="a in attendances" :key="a.id" class="border-t border-gray-100">
+            <tr v-for="a in attendances" :key="a.id" class="border-t border-gray-100" :class="{'bg-yellow-50': a.approval_status === 'MENUNGGU', 'bg-red-50/40': a.approval_status === 'DITOLAK'}">
               <td class="px-4 py-2 text-gray-700">{{ formatDate(a.attendance_date) }}</td>
               <td class="px-4 py-2 text-center"><span :class="['px-2 py-0.5 rounded-full text-xs font-medium', attStatusColor[a.status]]">{{ a.status }}</span></td>
+              <td class="px-4 py-2 text-center">
+                <span :class="['px-2 py-0.5 rounded-full text-xs font-medium',
+                  a.approval_status === 'DITERIMA' ? 'bg-green-100 text-green-700' :
+                  a.approval_status === 'DITOLAK' ? 'bg-red-100 text-red-700' :
+                  'bg-yellow-100 text-yellow-700']">
+                  {{ a.approval_status === 'DITERIMA' ? '✓ Diterima' : a.approval_status === 'DITOLAK' ? '✗ Ditolak' : '⏳ Menunggu' }}
+                </span>
+                <p v-if="a.approval_status === 'DITOLAK' && a.rejection_note" class="text-[10px] text-red-500 mt-0.5">{{ a.rejection_note }}</p>
+              </td>
               <td class="px-4 py-2 text-xs text-gray-500">
                 <a v-if="a.latitude && a.longitude" :href="`https://maps.google.com/?q=${a.latitude},${a.longitude}`" target="_blank" class="text-blue-600 hover:text-blue-800 font-medium">📍 {{ Number(a.latitude).toFixed(5) }}, {{ Number(a.longitude).toFixed(5) }}</a>
                 <span v-else class="text-gray-400">-</span>
@@ -289,9 +333,33 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
                 <span v-else class="text-gray-400">-</span>
               </td>
               <td class="px-4 py-2 text-gray-500 text-xs">{{ a.notes ?? '-' }}</td>
+              <!-- Approve/Reject buttons for dosen -->
+              <td v-if="!isMahasiswa" class="px-4 py-2 text-right">
+                <div class="flex items-center justify-end gap-1">
+                  <button v-if="a.approval_status !== 'DITERIMA'" class="p-1 rounded text-green-600 hover:bg-green-50" title="Terima" @click="approveAttendance(a)">
+                    <CheckCircleIcon class="w-4 h-4" />
+                  </button>
+                  <button v-if="a.approval_status !== 'DITOLAK'" class="p-1 rounded text-red-500 hover:bg-red-50" title="Tolak" @click="openRejectAttendance(a)">
+                    <XCircleIcon class="w-4 h-4" />
+                  </button>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Reject Note Modal -->
+      <div v-if="showRejectModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="showRejectModal = false">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+          <h3 class="text-base font-bold text-gray-900 mb-3">Tolak Presensi</h3>
+          <p class="text-xs text-gray-500 mb-3">Berikan alasan penolakan (opsional):</p>
+          <textarea v-model="rejectNote" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Contoh: Bukti tidak valid..." />
+          <div class="flex justify-end gap-2 mt-4">
+            <button class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg" @click="showRejectModal = false">Batal</button>
+            <button class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg" @click="submitRejectAttendance">Tolak Presensi</button>
+          </div>
+        </div>
       </div>
     </div>
 

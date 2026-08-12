@@ -349,9 +349,36 @@ class PracticalController extends Controller
         ]);
         $att = PracticalAttendance::updateOrCreate(
             ['participant_id' => $participant->id, 'attendance_date' => $validated['attendance_date']],
-            $validated
+            array_merge($validated, ['approval_status' => 'MENUNGGU'])
         );
         return response()->json(['message' => 'Presensi berhasil dicatat.', 'data' => $att]);
+    }
+
+    /** Dosen: terima atau tolak presensi */
+    public function reviewAttendance(Request $request, PracticalAttendance $attendance): JsonResponse
+    {
+        $request->validate([
+            'action' => 'required|in:approve,reject',
+            'rejection_note' => 'nullable|string',
+        ]);
+
+        if ($request->action === 'approve') {
+            $attendance->update([
+                'approval_status' => 'DITERIMA',
+                'rejection_note' => null,
+                'approved_by' => auth()->id(),
+                'approved_at' => now(),
+            ]);
+            return response()->json(['message' => 'Presensi diterima.']);
+        } else {
+            $attendance->update([
+                'approval_status' => 'DITOLAK',
+                'rejection_note' => $request->rejection_note,
+                'approved_by' => auth()->id(),
+                'approved_at' => now(),
+            ]);
+            return response()->json(['message' => 'Presensi ditolak.']);
+        }
     }
 
     // === ASSESSMENTS ===
