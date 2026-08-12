@@ -257,6 +257,38 @@ async function saveReport() {
   finally { repSaving.value = false }
 }
 
+// Dosen: review laporan
+const showReportRejectModal = ref(false)
+const reportRejectNote = ref('')
+const rejectingReportId = ref<number | null>(null)
+
+async function approveReport(r: any) {
+  try {
+    await api.post(`/practical-reports/${r.id}/review`, { action: 'approve' })
+    toast.success('Laporan disetujui.')
+    loadReports()
+  } catch (e: any) { toast.error(e?.response?.data?.message ?? 'Gagal.') }
+}
+
+function openRejectReport(r: any) {
+  rejectingReportId.value = r.id; reportRejectNote.value = ''; showReportRejectModal.value = true
+}
+
+async function submitRejectReport() {
+  if (!rejectingReportId.value) return
+  try {
+    await api.post(`/practical-reports/${rejectingReportId.value}/review`, { action: 'revision', notes: reportRejectNote.value })
+    toast.success('Laporan dikembalikan untuk revisi.')
+    showReportRejectModal.value = false; loadReports()
+  } catch (e: any) { toast.error(e?.response?.data?.message ?? 'Gagal.') }
+}
+
+// Mahasiswa: submit ulang laporan yang ditolak
+async function resubmitReport(r: any) {
+  Object.assign(repForm, { title: r.title, abstract: r.abstract ?? '', file_url: r.file_url ?? '', report_type: r.report_type })
+  repModal.value = true
+}
+
 const logStatusColor: Record<string, string> = { DRAFT: 'bg-gray-100 text-gray-600', SUBMITTED: 'bg-blue-100 text-blue-700', APPROVED: 'bg-green-100 text-green-700', REVISION: 'bg-yellow-100 text-yellow-700' }
 const attStatusColor: Record<string, string> = { HADIR: 'bg-green-100 text-green-700', IZIN: 'bg-blue-100 text-blue-700', SAKIT: 'bg-yellow-100 text-yellow-700', ALPHA: 'bg-red-100 text-red-600' }
 function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-' }
@@ -427,19 +459,51 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
       <div v-if="reportsLoading" class="text-center py-8 text-gray-400 text-sm">Memuat laporan...</div>
       <div v-else-if="!reports.length" class="bg-white rounded-xl border border-gray-200 p-6 text-center text-gray-400 text-sm">Belum ada laporan yang disubmit.</div>
       <div v-else class="space-y-2">
-        <div v-for="r in reports" :key="r.id" class="p-4 bg-white rounded-xl border border-gray-200">
-          <div class="flex items-start justify-between">
+        <div v-for="r in reports" :key="r.id" :class="['p-4 bg-white rounded-xl border', r.status === 'REVISION' ? 'border-yellow-300 bg-yellow-50/30' : r.status === 'APPROVED' ? 'border-green-200' : 'border-gray-200']">
+          <div class="flex items-start justify-between gap-3">
             <div class="flex-1">
-              <div class="flex items-center gap-2 mb-1">
+              <div class="flex items-center gap-2 mb-1 flex-wrap">
                 <span :class="['text-xs px-2 py-0.5 rounded-full font-medium', r.report_type === 'KELOMPOK' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700']">{{ r.report_type === 'KELOMPOK' ? '👥 Kelompok' : '👤 Individu' }}</span>
-                <span :class="['text-xs px-2 py-0.5 rounded-full font-medium', logStatusColor[r.status]]">{{ r.status }}</span>
+                <span :class="['text-xs px-2 py-0.5 rounded-full font-medium', logStatusColor[r.status]]">
+                  {{ r.status === 'APPROVED' ? '✓ Disetujui' : r.status === 'REVISION' ? '↩ Perlu Revisi' : r.status === 'SUBMITTED' ? '⏳ Menunggu Review' : r.status }}
+                </span>
               </div>
               <p class="text-sm font-medium text-gray-900">{{ r.title }}</p>
               <p v-if="r.abstract" class="text-xs text-gray-500 mt-1 line-clamp-2">{{ r.abstract }}</p>
               <a v-if="r.file_url" :href="r.file_url" target="_blank" class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 mt-1 font-medium">📎 Buka File Laporan</a>
-              <p v-if="r.reviewer_notes" class="text-xs text-orange-600 mt-1 italic">Catatan reviewer: {{ r.reviewer_notes }}</p>
+              <!-- Catatan revisi dari dosen -->
+              <div v-if="r.status === 'REVISION' && r.reviewer_notes" class="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p class="text-xs text-yellow-800 font-medium">📝 Catatan Pembimbing:</p>
+                <p class="text-xs text-yellow-700 mt-0.5">{{ r.reviewer_notes }}</p>
+              </div>
               <p class="text-xs text-gray-400 mt-1">Disubmit: {{ r.submitted_at }} {{ r.participant?.student ? '· oleh ' + r.participant.student.name : '' }}</p>
+              <p v-if="r.status === 'APPROVED' && r.approved_at" class="text-xs text-green-600 mt-0.5">✓ Disetujui: {{ r.approved_at }}</p>
             </div>
+            <!-- Actions -->
+            <div class="flex flex-col gap-1.5 shrink-0">
+              <!-- Dosen: approve/reject -->
+              <template v-if="!isMahasiswa && r.status === 'SUBMITTED'">
+                <button class="px-2.5 py-1.5 text-xs bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg" @click="approveReport(r)">✓ Setujui</button>
+                <button class="px-2.5 py-1.5 text-xs bg-yellow-100 hover:bg-yellow-200 text-yellow-800 font-medium rounded-lg border border-yellow-300" @click="openRejectReport(r)">↩ Revisi</button>
+              </template>
+              <!-- Dosen: sudah approved, bisa revisi ulang -->
+              <button v-if="!isMahasiswa && r.status === 'APPROVED'" class="px-2.5 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg" @click="openRejectReport(r)">↩ Revisi Ulang</button>
+              <!-- Mahasiswa: submit ulang jika REVISION -->
+              <button v-if="isMahasiswa && r.status === 'REVISION'" class="px-2.5 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg" @click="resubmitReport(r)">✏️ Revisi & Submit</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Report Reject Modal -->
+      <div v-if="showReportRejectModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="showReportRejectModal = false">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+          <h3 class="text-base font-bold text-gray-900 mb-2">Kembalikan untuk Revisi</h3>
+          <p class="text-xs text-gray-500 mb-3">Berikan catatan perbaikan untuk mahasiswa (opsional):</p>
+          <textarea v-model="reportRejectNote" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-yellow-500" placeholder="Contoh: Analisis kurang mendalam, kesimpulan perlu diperjelas..." />
+          <div class="flex justify-end gap-2 mt-4">
+            <button class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg" @click="showReportRejectModal = false">Batal</button>
+            <button class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium rounded-lg" @click="submitRejectReport">Kembalikan</button>
           </div>
         </div>
       </div>
