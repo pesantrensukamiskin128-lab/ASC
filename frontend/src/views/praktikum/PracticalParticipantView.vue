@@ -87,10 +87,29 @@ async function saveLogbook() {
   finally { logSaving.value = false }
 }
 
+// Dosen: review logbook dengan catatan
+const showLogbookRejectModal = ref(false)
+const logbookRejectNote = ref('')
+const rejectingLogId = ref<number | null>(null)
+
+function openRejectLogbook(log: any) {
+  rejectingLogId.value = log.id; logbookRejectNote.value = ''; showLogbookRejectModal.value = true
+}
+
 async function reviewLogbook(log: any, action: string) {
   try {
     await api.post(`/practical-logbooks/${log.id}/review`, { action })
     toast.success(action === 'approve' ? 'Logbook disetujui.' : 'Logbook perlu revisi.')
+    const { data } = await api.get(`/practical-participants/${route.params.id}/logbooks`); logbooks.value = data
+  } catch (e: any) { toast.error(e?.response?.data?.message ?? 'Gagal.') }
+}
+
+async function submitRejectLogbook() {
+  if (!rejectingLogId.value) return
+  try {
+    await api.post(`/practical-logbooks/${rejectingLogId.value}/review`, { action: 'revision', notes: logbookRejectNote.value })
+    toast.success('Logbook dikembalikan untuk revisi.')
+    showLogbookRejectModal.value = false
     const { data } = await api.get(`/practical-participants/${route.params.id}/logbooks`); logbooks.value = data
   } catch (e: any) { toast.error(e?.response?.data?.message ?? 'Gagal.') }
 }
@@ -283,14 +302,27 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
             </div>
             <!-- Dosen: tombol approve/revisi -->
             <div v-if="!isMahasiswa && (l.status === 'SUBMITTED' || l.status === 'APPROVED')" class="flex items-center gap-1 ml-3 shrink-0">
-              <button v-if="l.status === 'SUBMITTED'" class="p-1 rounded text-green-600 hover:bg-green-50" title="Approve" @click="reviewLogbook(l, 'approve')"><CheckCircleIcon class="w-4 h-4" /></button>
-              <button class="p-1 rounded text-yellow-600 hover:bg-yellow-50" title="Revisi" @click="reviewLogbook(l, 'revision')"><XCircleIcon class="w-4 h-4" /></button>
+              <button v-if="l.status === 'SUBMITTED'" class="p-1 rounded text-green-600 hover:bg-green-50" title="Setujui" @click="reviewLogbook(l, 'approve')"><CheckCircleIcon class="w-4 h-4" /></button>
+              <button class="p-1 rounded text-yellow-600 hover:bg-yellow-50" title="Kembalikan untuk Revisi" @click="openRejectLogbook(l)"><XCircleIcon class="w-4 h-4" /></button>
             </div>
             <!-- Mahasiswa: tombol edit & submit ulang jika REVISION -->
             <div v-if="isMahasiswa && l.status === 'REVISION'" class="flex items-center gap-1 ml-3 shrink-0">
               <button class="px-2.5 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg" @click="openEditLog(l)">✏️ Edit</button>
               <button class="px-2.5 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg" @click="resubmitLogbook(l)">Submit Ulang</button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logbook Reject Modal -->
+      <div v-if="showLogbookRejectModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="showLogbookRejectModal = false">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+          <h3 class="text-base font-bold text-gray-900 mb-2">Kembalikan untuk Revisi</h3>
+          <p class="text-xs text-gray-500 mb-3">Berikan catatan untuk mahasiswa (opsional):</p>
+          <textarea v-model="logbookRejectNote" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-yellow-500" placeholder="Contoh: Isi kegiatan kurang detail, bukti tidak sesuai..." />
+          <div class="flex justify-end gap-2 mt-4">
+            <button class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg" @click="showLogbookRejectModal = false">Batal</button>
+            <button class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium rounded-lg" @click="submitRejectLogbook">Kembalikan</button>
           </div>
         </div>
       </div>
