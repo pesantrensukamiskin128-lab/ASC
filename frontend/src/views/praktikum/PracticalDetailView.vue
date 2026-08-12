@@ -50,14 +50,54 @@ function switchTab(key: string) { activeTab.value = key; loadTab() }
 
 // === PARTICIPANTS ===
 async function loadParticipants(page = 1) {
-  const { data } = await api.get(`/practical-programs/${route.params.id}/participants`, { params: { page } })
+  const { data } = await api.get(`/practical-programs/${route.params.id}/participants`, {
+    params: { page, per_page: 20, search: participantSearch.value, status: participantStatusFilter.value }
+  })
   participants.value = data.data
   participantPagination.value = { total: data.total, currentPage: data.current_page, lastPage: data.last_page }
+}
+
+const participantSearch = ref('')
+const participantStatusFilter = ref('')
+let searchTimeout: any
+
+function onParticipantSearch() {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => loadParticipants(1), 300)
 }
 
 const partModal = ref(false); const partSaving = ref(false)
 const partForm = reactive({ student_id: '', group_id: '', location_id: '', supervisor_id: '', supervisor2_id: '' })
 const searchStudent = ref(''); const studentResults = ref<any[]>([])
+
+// Edit participant
+const editPartModal = ref(false); const editPartSaving = ref(false)
+const editPartId = ref<number | null>(null)
+const editPartForm = reactive({ group_id: '', location_id: '', supervisor_id: '', supervisor2_id: '', status: '' })
+
+function openEditParticipant(p: any) {
+  editPartId.value = p.id
+  Object.assign(editPartForm, {
+    group_id: p.group_id ?? '',
+    location_id: p.location_id ?? '',
+    supervisor_id: p.supervisor_id ?? '',
+    supervisor2_id: p.supervisor2_id ?? '',
+    status: p.status ?? 'TERDAFTAR',
+  })
+  editPartModal.value = true
+}
+
+async function saveEditParticipant() {
+  if (!editPartId.value) return
+  editPartSaving.value = true
+  try {
+    await api.put(`/practical-participants/${editPartId.value}`, editPartForm)
+    toast.success('Data peserta berhasil diupdate.')
+    editPartModal.value = false
+    loadParticipants(participantPagination.value.currentPage)
+  } catch (e: any) { toast.error(e?.response?.data?.message ?? 'Gagal.') }
+  finally { editPartSaving.value = false }
+}
 
 let sTimeout: any
 function onSearchStudent() {
@@ -88,12 +128,40 @@ async function removeParticipant(p: any) {
 // === LOCATIONS ===
 const locModal = ref(false); const locSaving = ref(false)
 const locForm = reactive({ name: '', address: '', city: '', contact_person: '', contact_phone: '', capacity: '', supervisor_id: '', supervisor2_id: '' })
+const editingLocId = ref<number | null>(null)
+
+function openCreateLocation() {
+  editingLocId.value = null
+  Object.assign(locForm, { name: '', address: '', city: '', contact_person: '', contact_phone: '', capacity: '', supervisor_id: '', supervisor2_id: '' })
+  locModal.value = true
+}
+
+function openEditLocation(loc: any) {
+  editingLocId.value = loc.id
+  Object.assign(locForm, {
+    name: loc.name ?? '',
+    address: loc.address ?? '',
+    city: loc.city ?? '',
+    contact_person: loc.contact_person ?? '',
+    contact_phone: loc.contact_phone ?? '',
+    capacity: loc.capacity ?? '',
+    supervisor_id: loc.supervisor_id ?? '',
+    supervisor2_id: loc.supervisor2_id ?? '',
+  })
+  locModal.value = true
+}
 
 async function saveLocation() {
   locSaving.value = true
   try {
-    await api.post(`/practical-programs/${route.params.id}/locations`, locForm)
-    toast.success('Lokasi ditambahkan.'); locModal.value = false
+    if (editingLocId.value) {
+      await api.put(`/practical-programs/${route.params.id}/locations/${editingLocId.value}`, locForm)
+      toast.success('Lokasi berhasil diupdate.')
+    } else {
+      await api.post(`/practical-programs/${route.params.id}/locations`, locForm)
+      toast.success('Lokasi ditambahkan.')
+    }
+    locModal.value = false
     const { data } = await api.get(`/practical-programs/${route.params.id}`); program.value = data
   } catch (e: any) { toast.error(e?.response?.data?.message ?? 'Gagal.') }
   finally { locSaving.value = false }
@@ -187,9 +255,25 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
 
     <!-- TAB: Peserta -->
     <div v-if="activeTab === 'peserta'" class="space-y-4">
-      <div v-if="canManage" class="flex justify-end">
-        <button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="Object.assign(partForm, {student_id:'',group_id:'',location_id:'',supervisor_id:'',supervisor2_id:''}); searchStudent=''; partModal=true"><PlusIcon class="w-3.5 h-3.5" /> Daftarkan Peserta</button>
+      <!-- Header: search + filter + add button -->
+      <div class="flex flex-wrap items-center gap-2">
+        <input v-model="participantSearch" type="text" placeholder="Cari nama / NIM..."
+          class="px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-48"
+          @input="onParticipantSearch()" />
+        <select v-model="participantStatusFilter" class="px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" @change="loadParticipants(1)">
+          <option value="">Semua Status</option>
+          <option value="TERDAFTAR">Terdaftar</option>
+          <option value="AKTIF">Aktif</option>
+          <option value="SELESAI">Selesai</option>
+          <option value="MENGUNDURKAN_DIRI">Mengundurkan Diri</option>
+          <option value="GAGAL">Gagal</option>
+        </select>
+        <span class="text-xs text-gray-500 ml-1">{{ participantPagination.total }} peserta</span>
+        <div v-if="canManage" class="ml-auto">
+          <button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="Object.assign(partForm, {student_id:'',group_id:'',location_id:'',supervisor_id:'',supervisor2_id:''}); searchStudent=''; partModal=true"><PlusIcon class="w-3.5 h-3.5" /> Daftarkan Peserta</button>
+        </div>
       </div>
+
       <div v-if="!participants.length" class="text-center py-8 text-gray-400 text-sm">Belum ada peserta.</div>
       <div v-else class="space-y-2">
         <div v-for="p in participants" :key="p.id" class="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-200">
@@ -197,12 +281,24 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
           <div class="flex-1 min-w-0">
             <p class="font-medium text-gray-900 text-sm">{{ p.student?.name }}</p>
             <p class="text-xs text-gray-500">{{ p.student?.nim }} · {{ p.group?.name ?? 'Belum dikelompokkan' }} · {{ p.location?.name ?? '-' }}</p>
+            <p v-if="p.supervisor" class="text-xs text-gray-400">Pembimbing: {{ p.supervisor.name }}</p>
           </div>
           <span :class="['px-2 py-0.5 rounded-full text-xs font-medium', statusColor[p.status]]">{{ p.status }}</span>
           <div class="flex items-center gap-1">
             <button class="p-1 rounded text-blue-600 hover:bg-blue-50 text-xs font-medium" @click="router.push(`/praktikum/peserta/${p.id}`)">Detail</button>
+            <button v-if="canManage" class="p-1 rounded text-gray-500 hover:bg-gray-100" title="Edit" @click="openEditParticipant(p)"><PencilIcon class="w-4 h-4" /></button>
             <button v-if="canManage" class="p-1 rounded text-red-500 hover:bg-red-50" @click="removeParticipant(p)"><TrashIcon class="w-4 h-4" /></button>
           </div>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div v-if="participantPagination.lastPage > 1" class="flex items-center justify-between pt-2">
+        <p class="text-xs text-gray-500">Halaman {{ participantPagination.currentPage }} dari {{ participantPagination.lastPage }}</p>
+        <div class="flex gap-1">
+          <button v-for="p in participantPagination.lastPage" :key="p"
+            :class="['px-3 py-1 rounded text-xs transition-colors', p === participantPagination.currentPage ? 'bg-blue-600 text-white font-medium' : 'text-gray-600 hover:bg-gray-100']"
+            @click="loadParticipants(p)">{{ p }}</button>
         </div>
       </div>
     </div>
@@ -210,7 +306,7 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
     <!-- TAB: Lokasi -->
     <div v-if="activeTab === 'lokasi'" class="space-y-4">
       <div v-if="canManage" class="flex justify-end">
-        <button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="Object.assign(locForm,{name:'',address:'',city:'',contact_person:'',contact_phone:'',capacity:'',supervisor_id:'',supervisor2_id:''}); locModal=true"><PlusIcon class="w-3.5 h-3.5" /> Tambah Lokasi</button>
+        <button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg" @click="openCreateLocation()"><PlusIcon class="w-3.5 h-3.5" /> Tambah Lokasi</button>
       </div>
       <div v-if="!program.locations?.length" class="text-center py-8 text-gray-400 text-sm">Belum ada lokasi.</div>
       <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -222,7 +318,10 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
               <p v-if="loc.supervisor" class="text-xs text-gray-500 mt-1">Pembimbing 1: {{ loc.supervisor.name }}</p>
               <p v-if="loc.supervisor2" class="text-xs text-gray-500 mt-0.5">Pembimbing 2: {{ loc.supervisor2.name }}</p>
             </div>
-            <button v-if="canManage" class="p-1 rounded text-red-500 hover:bg-red-50" @click="removeLocation(loc)"><TrashIcon class="w-4 h-4" /></button>
+            <div v-if="canManage" class="flex items-center gap-1">
+              <button class="p-1 rounded text-blue-600 hover:bg-blue-50" title="Edit" @click="openEditLocation(loc)"><PencilIcon class="w-4 h-4" /></button>
+              <button class="p-1 rounded text-red-500 hover:bg-red-50" @click="removeLocation(loc)"><TrashIcon class="w-4 h-4" /></button>
+            </div>
           </div>
         </div>
       </div>
@@ -278,7 +377,7 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
   </BaseModal>
 
   <!-- Modal Lokasi -->
-  <BaseModal :open="locModal" title="Tambah Lokasi" @close="locModal = false">
+  <BaseModal :open="locModal" :title="editingLocId ? 'Edit Lokasi' : 'Tambah Lokasi'" @close="locModal = false">
     <form class="space-y-3" @submit.prevent="saveLocation">
       <div><label class="text-xs font-medium text-gray-700">Nama Lokasi <span class="text-red-500">*</span></label><input v-model="locForm.name" required class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" /></div>
       <div><label class="text-xs font-medium text-gray-700">Alamat</label><textarea v-model="locForm.address" rows="2" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" /></div>
@@ -311,6 +410,54 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
     <template #footer>
       <button class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg" @click="grpModal = false">Batal</button>
       <button :disabled="grpSaving" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-lg" @click="saveGroup">Simpan</button>
+    </template>
+  </BaseModal>
+
+  <!-- Modal Edit Peserta -->
+  <BaseModal :open="editPartModal" title="Edit Peserta" @close="editPartModal = false">
+    <form class="space-y-3" @submit.prevent="saveEditParticipant">
+      <div>
+        <label class="text-xs font-medium text-gray-700">Kelompok</label>
+        <select v-model="editPartForm.group_id" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <option value="">-- Belum dikelompokkan --</option>
+          <option v-for="g in program.groups" :key="g.id" :value="g.id">{{ g.name }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs font-medium text-gray-700">Lokasi</label>
+        <select v-model="editPartForm.location_id" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <option value="">-- Belum ada lokasi --</option>
+          <option v-for="l in program.locations" :key="l.id" :value="l.id">{{ l.name }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs font-medium text-gray-700">Dosen Pembimbing 1</label>
+        <select v-model="editPartForm.supervisor_id" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <option value="">-- Tidak ada --</option>
+          <option v-for="l in lecturers" :key="l.id" :value="l.id">{{ l.name }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs font-medium text-gray-700">Dosen Pembimbing 2 <span class="text-xs text-gray-400">(opsional)</span></label>
+        <select v-model="editPartForm.supervisor2_id" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <option value="">-- Tidak ada --</option>
+          <option v-for="l in lecturers" :key="l.id" :value="l.id">{{ l.name }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs font-medium text-gray-700">Status</label>
+        <select v-model="editPartForm.status" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <option value="TERDAFTAR">Terdaftar</option>
+          <option value="AKTIF">Aktif</option>
+          <option value="SELESAI">Selesai</option>
+          <option value="MENGUNDURKAN_DIRI">Mengundurkan Diri</option>
+          <option value="GAGAL">Gagal</option>
+        </select>
+      </div>
+    </form>
+    <template #footer>
+      <button class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg" @click="editPartModal = false">Batal</button>
+      <button :disabled="editPartSaving" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-lg" @click="saveEditParticipant">Simpan</button>
     </template>
   </BaseModal>
 </template>

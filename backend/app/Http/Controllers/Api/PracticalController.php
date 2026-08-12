@@ -129,6 +129,18 @@ class PracticalController extends Controller
         return response()->json(['message' => 'Lokasi berhasil dihapus.']);
     }
 
+    public function updateLocation(Request $request, PracticalProgram $program, PracticalLocation $location): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255', 'address' => 'nullable|string', 'city' => 'nullable|string|max:100',
+            'contact_person' => 'nullable|string', 'contact_phone' => 'nullable|string|max:20',
+            'capacity' => 'nullable|integer', 'supervisor_id' => 'nullable|exists:lecturers,id',
+            'supervisor2_id' => 'nullable|exists:lecturers,id',
+        ]);
+        $location->update($validated);
+        return response()->json(['message' => 'Lokasi berhasil diupdate.', 'data' => $location->fresh()->load(['supervisor', 'supervisor2'])]);
+    }
+
     // === GROUPS ===
     public function storeGroup(Request $request, PracticalProgram $program): JsonResponse
     {
@@ -167,7 +179,11 @@ class PracticalController extends Controller
         $user = auth()->user();
         $query = $program->participants()->with(['student.studyProgram', 'group', 'location', 'supervisor', 'supervisor2'])
             ->withCount(['logbooks', 'attendances', 'assessments'])
-            ->when($request->status, fn($q) => $q->where('status', $request->status));
+            ->when($request->status, fn($q) => $q->where('status', $request->status))
+            ->when($request->search, function ($q) use ($request) {
+                $q->whereHas('student', fn($sub) => $sub->where('name', 'like', "%{$request->search}%")
+                    ->orWhere('nim', 'like', "%{$request->search}%"));
+            });
 
         // Dosen biasa: hanya lihat peserta yang menjadi bimbingannya
         if ($user->hasRole('DOSEN') && !$user->can('kkn.create')) {

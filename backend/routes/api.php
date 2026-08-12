@@ -595,6 +595,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('practical-programs/{program}', [PracticalController::class, 'destroyProgram']);
         // Locations
         Route::post('practical-programs/{program}/locations', [PracticalController::class, 'storeLocation']);
+        Route::put('practical-programs/{program}/locations/{location}', [PracticalController::class, 'updateLocation']);
         Route::delete('practical-programs/{program}/locations/{location}', [PracticalController::class, 'destroyLocation']);
         // Groups
         Route::post('practical-programs/{program}/groups', [PracticalController::class, 'storeGroup']);
