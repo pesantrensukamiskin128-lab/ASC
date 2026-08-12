@@ -27,6 +27,7 @@ const tabs = [
 // Data
 const participants = ref<any[]>([])
 const participantPagination = ref({ total: 0, currentPage: 1, lastPage: 1 })
+const allParticipants = ref<any[]>([]) // full list for dropdowns (leader selection)
 const students = ref<any[]>([])
 const lecturers = ref<any[]>([])
 
@@ -38,6 +39,9 @@ onMounted(async () => {
     ])
     program.value = pRes.data
     lecturers.value = lRes.data
+    // Load all participants (no pagination) for leader/supervisor dropdowns
+    const allRes = await api.get(`/practical-programs/${route.params.id}/participants`, { params: { per_page: 999 } })
+    allParticipants.value = allRes.data?.data ?? allRes.data ?? []
     loadTab()
   } finally { loading.value = false }
 })
@@ -115,6 +119,8 @@ async function saveParticipant() {
   try {
     await api.post(`/practical-programs/${route.params.id}/participants`, partForm)
     toast.success('Peserta berhasil didaftarkan.'); partModal.value = false; loadParticipants()
+    const allRes = await api.get(`/practical-programs/${route.params.id}/participants`, { params: { per_page: 999 } })
+    allParticipants.value = allRes.data?.data ?? allRes.data ?? []
   } catch (e: any) { toast.error(e?.response?.data?.message ?? 'Gagal.') }
   finally { partSaving.value = false }
 }
@@ -405,7 +411,7 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
       <div><label class="text-xs font-medium text-gray-700">Lokasi</label><select v-model="grpForm.location_id" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"><option value="">-- Pilih --</option><option v-for="l in program.locations" :key="l.id" :value="l.id">{{ l.name }}</option></select></div>
       <div><label class="text-xs font-medium text-gray-700">Dosen Pembimbing 1</label><select v-model="grpForm.supervisor_id" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"><option value="">-- Pilih --</option><option v-for="l in lecturers" :key="l.id" :value="l.id">{{ l.name }}</option></select></div>
       <div><label class="text-xs font-medium text-gray-700">Dosen Pembimbing 2 <span class="text-xs text-gray-400">(opsional)</span></label><select v-model="grpForm.supervisor2_id" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"><option value="">-- Tidak ada --</option><option v-for="l in lecturers" :key="l.id" :value="l.id">{{ l.name }}</option></select></div>
-      <div><label class="text-xs font-medium text-gray-700">Ketua Kelompok</label><select v-model="grpForm.leader_id" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"><option value="">-- Belum ditentukan --</option><option v-for="p in participants" :key="p.id" :value="p.id">{{ p.student?.name }} ({{ p.student?.nim }})</option></select></div>
+      <div><label class="text-xs font-medium text-gray-700">Ketua Kelompok</label><select v-model="grpForm.leader_id" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm"><option value="">-- Belum ditentukan --</option><option v-for="p in allParticipants" :key="p.id" :value="p.id">{{ p.student?.name }} ({{ p.student?.nim }})</option></select></div>
     </form>
     <template #footer>
       <button class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg" @click="grpModal = false">Batal</button>
