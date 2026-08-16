@@ -24,10 +24,13 @@ class LecturerWorkController extends Controller
             ->when($request->year, fn($q) => $q->where('year', $request->year));
 
         // Dosen hanya lihat karya miliknya
-        if (!$isAdmin && $user->lecturer) {
-            $query->where('lecturer_id', $user->lecturer->id);
-        } elseif (!$isAdmin) {
-            $query->whereRaw('1 = 0');
+        if (!$isAdmin) {
+            $lecturerId = \App\Models\Lecturer::where('user_id', $user->id)->value('id');
+            if ($lecturerId) {
+                $query->where('lecturer_id', $lecturerId);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
         }
 
         $data = $query->orderByDesc('created_at')->paginate($request->per_page ?? 15);
