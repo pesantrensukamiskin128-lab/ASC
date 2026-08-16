@@ -14,7 +14,6 @@ class LecturerWorkController extends Controller
     {
         $user    = auth()->user();
         $isAdmin = $user->hasRole('SUPER_ADMIN') || $user->hasRole('ADMIN_AKADEMIK')
-                   || $user->hasRole('LP2M')
                    || $user->hasPermission('karya.verify');
 
         $query = LecturerWork::with(['lecturer'])
@@ -136,7 +135,8 @@ class LecturerWorkController extends Controller
     public function destroy(LecturerWork $lecturerWork): JsonResponse
     {
         $user = auth()->user();
-        if ($user->lecturer?->id !== $lecturerWork->lecturer_id) {
+        $lecturerId = \App\Models\Lecturer::where('user_id', $user->id)->value('id');
+        if ($lecturerId !== $lecturerWork->lecturer_id) {
             return response()->json(['message' => 'Akses ditolak.'], 403);
         }
         if (!in_array($lecturerWork->status, ['draft', 'revisi'])) {
@@ -156,7 +156,8 @@ class LecturerWorkController extends Controller
     public function submit(LecturerWork $lecturerWork): JsonResponse
     {
         $user = auth()->user();
-        if ($user->lecturer?->id !== $lecturerWork->lecturer_id) {
+        $lecturerId = \App\Models\Lecturer::where('user_id', $user->id)->value('id');
+        if ($lecturerId !== $lecturerWork->lecturer_id) {
             return response()->json(['message' => 'Akses ditolak.'], 403);
         }
         if (!in_array($lecturerWork->status, ['draft', 'revisi'])) {
@@ -276,12 +277,16 @@ class LecturerWorkController extends Controller
     {
         $user    = auth()->user();
         $isAdmin = $user->hasRole('SUPER_ADMIN') || $user->hasRole('ADMIN_AKADEMIK')
-                   || $user->hasRole('LP2M')
                    || $user->hasPermission('karya.verify');
 
         $query = LecturerWork::query();
-        if (!$isAdmin && $user->lecturer) {
-            $query->where('lecturer_id', $user->lecturer->id);
+        if (!$isAdmin) {
+            $lecturerId = \App\Models\Lecturer::where('user_id', $user->id)->value('id');
+            if ($lecturerId) {
+                $query->where('lecturer_id', $lecturerId);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
         }
 
         return response()->json([
