@@ -10,6 +10,16 @@ use Illuminate\Support\Facades\Storage;
 
 class LecturerWorkController extends Controller
 {
+    /** Resolve lecturer_id dari user yang login */
+    private function resolveLecturerId($user): ?int
+    {
+        $id = \App\Models\Lecturer::where('user_id', $user->id)->value('id');
+        if (!$id && $user->email) {
+            $id = \App\Models\Lecturer::where('email', $user->email)->value('id');
+        }
+        return $id;
+    }
+
     public function index(Request $request): JsonResponse
     {
         $user    = auth()->user();
@@ -24,7 +34,7 @@ class LecturerWorkController extends Controller
 
         // Dosen hanya lihat karya miliknya
         if (!$isAdmin) {
-            $lecturerId = \App\Models\Lecturer::where('user_id', $user->id)->value('id');
+            $lecturerId = $this->resolveLecturerId($user);
             if ($lecturerId) {
                 $query->where('lecturer_id', $lecturerId);
             } else {
@@ -44,7 +54,7 @@ class LecturerWorkController extends Controller
                    || $user->hasPermission('karya.verify');
 
         if (!$isAdmin) {
-            $lecturerId = \App\Models\Lecturer::where('user_id', $user->id)->value('id');
+            $lecturerId = $this->resolveLecturerId($user);
             if ($lecturerId !== $lecturerWork->lecturer_id) {
                 return response()->json(['message' => 'Akses ditolak.'], 403);
             }
@@ -56,7 +66,7 @@ class LecturerWorkController extends Controller
     public function store(Request $request): JsonResponse
     {
         $user = auth()->user();
-        $lecturerId = \App\Models\Lecturer::where('user_id', $user->id)->value('id');
+        $lecturerId = $this->resolveLecturerId($user);
         if (!$lecturerId) {
             return response()->json(['message' => 'Akun bukan dosen.'], 403);
         }
@@ -93,7 +103,7 @@ class LecturerWorkController extends Controller
     public function update(Request $request, LecturerWork $lecturerWork): JsonResponse
     {
         $user = auth()->user();
-        $lecturerId = \App\Models\Lecturer::where('user_id', $user->id)->value('id');
+        $lecturerId = $this->resolveLecturerId($user);
 
         // Hanya pemilik yang bisa edit, dan hanya saat draft atau revisi
         if ($lecturerId !== $lecturerWork->lecturer_id) {
@@ -135,7 +145,7 @@ class LecturerWorkController extends Controller
     public function destroy(LecturerWork $lecturerWork): JsonResponse
     {
         $user = auth()->user();
-        $lecturerId = \App\Models\Lecturer::where('user_id', $user->id)->value('id');
+        $lecturerId = $this->resolveLecturerId($user);
         if ($lecturerId !== $lecturerWork->lecturer_id) {
             return response()->json(['message' => 'Akses ditolak.'], 403);
         }
@@ -156,7 +166,7 @@ class LecturerWorkController extends Controller
     public function submit(LecturerWork $lecturerWork): JsonResponse
     {
         $user = auth()->user();
-        $lecturerId = \App\Models\Lecturer::where('user_id', $user->id)->value('id');
+        $lecturerId = $this->resolveLecturerId($user);
         if ($lecturerId !== $lecturerWork->lecturer_id) {
             return response()->json(['message' => 'Akses ditolak.'], 403);
         }
@@ -281,7 +291,7 @@ class LecturerWorkController extends Controller
 
         $query = LecturerWork::query();
         if (!$isAdmin) {
-            $lecturerId = \App\Models\Lecturer::where('user_id', $user->id)->value('id');
+            $lecturerId = $this->resolveLecturerId($user);
             if ($lecturerId) {
                 $query->where('lecturer_id', $lecturerId);
             } else {
