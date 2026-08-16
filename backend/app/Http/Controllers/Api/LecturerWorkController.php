@@ -42,11 +42,13 @@ class LecturerWorkController extends Controller
     {
         $user    = auth()->user();
         $isAdmin = $user->hasRole('SUPER_ADMIN') || $user->hasRole('ADMIN_AKADEMIK')
-                   || $user->hasRole('LP2M')
                    || $user->hasPermission('karya.verify');
 
-        if (!$isAdmin && $user->lecturer?->id !== $lecturerWork->lecturer_id) {
-            return response()->json(['message' => 'Akses ditolak.'], 403);
+        if (!$isAdmin) {
+            $lecturerId = \App\Models\Lecturer::where('user_id', $user->id)->value('id');
+            if ($lecturerId !== $lecturerWork->lecturer_id) {
+                return response()->json(['message' => 'Akses ditolak.'], 403);
+            }
         }
 
         return response()->json($lecturerWork->load(['lecturer', 'verifiedBy', 'publishedBy']));
@@ -55,7 +57,8 @@ class LecturerWorkController extends Controller
     public function store(Request $request): JsonResponse
     {
         $user = auth()->user();
-        if (!$user->lecturer) {
+        $lecturerId = \App\Models\Lecturer::where('user_id', $user->id)->value('id');
+        if (!$lecturerId) {
             return response()->json(['message' => 'Akun bukan dosen.'], 403);
         }
 
@@ -74,7 +77,7 @@ class LecturerWorkController extends Controller
         ]);
 
         $data = collect($validated)->except(['main_file', 'support_file'])->toArray();
-        $data['lecturer_id'] = $user->lecturer->id;
+        $data['lecturer_id'] = $lecturerId;
         $data['status']      = 'draft';
 
         if ($request->hasFile('main_file')) {
@@ -91,9 +94,10 @@ class LecturerWorkController extends Controller
     public function update(Request $request, LecturerWork $lecturerWork): JsonResponse
     {
         $user = auth()->user();
+        $lecturerId = \App\Models\Lecturer::where('user_id', $user->id)->value('id');
 
         // Hanya pemilik yang bisa edit, dan hanya saat draft atau revisi
-        if ($user->lecturer?->id !== $lecturerWork->lecturer_id) {
+        if ($lecturerId !== $lecturerWork->lecturer_id) {
             return response()->json(['message' => 'Akses ditolak.'], 403);
         }
         if (!in_array($lecturerWork->status, ['draft', 'revisi'])) {
