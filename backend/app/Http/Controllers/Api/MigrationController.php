@@ -22,7 +22,7 @@ class MigrationController extends Controller
     }
 
     /**
-     * Step 1: Upload file SQL dump.
+     * Step 1: Upload file SQL dump dalam satu request.
      * POST /api/migration/upload
      * Header: X-Migration-Key: SIAKAD-MIGRATE-2026-ASC
      * Body: multipart, field "sql_file"
@@ -39,6 +39,74 @@ class MigrationController extends Controller
             'message' => 'File berhasil diupload.',
             'path' => $path,
             'size_mb' => round($request->file('sql_file')->getSize() / 1048576, 2),
+        ]);
+    }
+
+    /**
+     * Step 1b: Upload chunk (untuk file besar > 8MB).
+     * POST /api/migration/upload-chunk
+     * Header: X-Migration-Key, X-Chunk-Number, X-Total-Chunks, X-Total-Size
+     * Body: multipart, field "chunk"
+     */
+    public function uploadChunk(Request $request)
+    {
+        if (!$this->checkKey($request)) return response()->json(['error' => 'Unauthorized'], 401);
+
+        $request->validate(['chunk' => 'required|file']);
+
+        $chunkNum   = (int) $request->header('X-Chunk-Number', 0);
+        $totalChunks = (int) $request->header('X-Total-Chunks', 1);
+
+        $chunkPath = storage_path("app/migration/chunks/chunk_{$chunkNum}.bin");
+        @mkdir(dirname($chunkPath), 0755, true);
+        $request->file('chunk')->move(dirname($chunkPath), basename($chunkPath));
+
+        return response()->json([
+            'success' => true,
+            'message' => "Chunk {$chunkNum}/{$totalChunks} diterima.",
+            'chunk' => $chunkNum,
+        ]);
+    }
+
+    /**
+     * Step 1c: Gabungkan semua chunk menjadi satu file SQL.
+     * POST /api/migration/assemble-chunks
+     * Header: X-Migration-Key, X-Total-Chunks
+     */
+    public function assembleChunks(Request $request)
+    {
+        if (!$this->checkKey($request)) return response()->json(['error' => 'Unauthorized'], 401);
+
+        $totalChunks = (int) $request->header('X-Total-Chunks', 1);
+        $chunkDir = storage_path('app/migration/chunks');
+        $outputPath = storage_path('app/migration/siakad.sql');
+
+        @mkdir(dirname($outputPath), 0755, true);
+
+        $out = fopen($outputPath, 'wb');
+        if (!$out) return response()->json(['error' => 'Tidak bisa membuat file output.'], 500);
+
+        $missing = [];
+        for ($i = 0; $i < $totalChunks; $i++) {
+            $chunkFile = "{$chunkDir}/chunk_{$i}.bin";
+            if (!file_exists($chunkFile)) {
+                $missing[] = $i;
+                continue;
+            }
+            $data = file_get_contents($chunkFile);
+            fwrite($out, $data);
+            unlink($chunkFile);
+        }
+        fclose($out);
+
+        if (!empty($missing)) {
+            return response()->json(['error' => 'Chunk hilang: ' . implode(', ', $missing)], 422);
+        }
+
+        $sizeMb = round(filesize($outputPath) / 1048576, 2);
+        return response()->json([
+            'message' => "File SQL berhasil digabungkan. Ukuran: {$sizeMb} MB",
+            'size_mb' => $sizeMb,
         ]);
     }
 

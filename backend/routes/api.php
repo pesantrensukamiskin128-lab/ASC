@@ -86,10 +86,12 @@ Route::middleware('auth:sanctum')->prefix('auth/2fa')->group(function () {
 // Dilindungi header X-Migration-Key
 // =========================================================
 Route::prefix('migration')->group(function () {
-    Route::post('upload',   [\App\Http\Controllers\Api\MigrationController::class, 'upload']);
-    Route::post('dry-run',  [\App\Http\Controllers\Api\MigrationController::class, 'dryRun']);
-    Route::post('run',      [\App\Http\Controllers\Api\MigrationController::class, 'run']);
-    Route::delete('cleanup',[\App\Http\Controllers\Api\MigrationController::class, 'cleanup']);
+    Route::post('upload',          [\App\Http\Controllers\Api\MigrationController::class, 'upload']);
+    Route::post('upload-chunk',    [\App\Http\Controllers\Api\MigrationController::class, 'uploadChunk']);
+    Route::post('assemble-chunks', [\App\Http\Controllers\Api\MigrationController::class, 'assembleChunks']);
+    Route::post('dry-run',         [\App\Http\Controllers\Api\MigrationController::class, 'dryRun']);
+    Route::post('run',             [\App\Http\Controllers\Api\MigrationController::class, 'run']);
+    Route::delete('cleanup',       [\App\Http\Controllers\Api\MigrationController::class, 'cleanup']);
 });
 
 // Public institution info (untuk halaman login & header)
