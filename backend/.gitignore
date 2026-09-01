@@ -3,6 +3,7 @@
 .env
 .env.backup
 .env.production
+.env.railway-migration
 .phpactor.json
 .phpunit.result.cache
 /.codex

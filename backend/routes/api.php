@@ -81,6 +81,17 @@ Route::middleware('auth:sanctum')->prefix('auth/2fa')->group(function () {
     Route::post('verify', [TwoFactorController::class, 'verify']);
 });
 
+// =========================================================
+// MIGRATION ENDPOINT (SEMENTARA - HAPUS SETELAH MIGRASI!)
+// Dilindungi header X-Migration-Key
+// =========================================================
+Route::prefix('migration')->group(function () {
+    Route::post('upload',   [\App\Http\Controllers\Api\MigrationController::class, 'upload']);
+    Route::post('dry-run',  [\App\Http\Controllers\Api\MigrationController::class, 'dryRun']);
+    Route::post('run',      [\App\Http\Controllers\Api\MigrationController::class, 'run']);
+    Route::delete('cleanup',[\App\Http\Controllers\Api\MigrationController::class, 'cleanup']);
+});
+
 // Public institution info (untuk halaman login & header)
 Route::get('institution/public', [InstitutionController::class, 'public']);
 Route::get('institution/logo', [InstitutionController::class, 'logo']);
