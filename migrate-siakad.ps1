@@ -10,6 +10,23 @@ $SQL_FILE = "$PSScriptRoot\_referensi\siakadstai_siakad.sql"
 
 $headers = @{ "X-Migration-Key" = $API_KEY }
 
+# Fungsi harus didefinisikan di atas sebelum dipakai
+function RunMigration {
+    param([string]$table)
+    Write-Host ""
+    Write-Host ("=== MIGRASI: " + $table + " ===") -ForegroundColor Cyan
+    $jsonBody = '{"table":"' + $table + '"}'
+    $jsonHeaders = $headers.Clone()
+    $jsonHeaders["Content-Type"] = "application/json"
+    try {
+        $resp = Invoke-RestMethod -Uri "$BACKEND_URL/api/migration/run" -Method POST -Headers $jsonHeaders -Body $jsonBody -TimeoutSec 300
+        Write-Host ("Selesai: " + $table) -ForegroundColor Green
+        Write-Host $resp.output
+    } catch {
+        Write-Host ("Gagal " + $table + " : " + $_.Exception.Message) -ForegroundColor Red
+    }
+}
+
 # Cek file SQL
 Write-Host ""
 Write-Host "=== CEK FILE SQL ===" -ForegroundColor Cyan
@@ -122,17 +139,3 @@ try {
     }
 }
 
-function RunMigration($table) {
-    Write-Host ""
-    Write-Host "=== MIGRASI: $table ===" -ForegroundColor Cyan
-    $jsonBody = "{""table"": ""$table""}"
-    $jsonHeaders = $headers.Clone()
-    $jsonHeaders["Content-Type"] = "application/json"
-    try {
-        $resp = Invoke-RestMethod -Uri "$BACKEND_URL/api/migration/run" -Method POST -Headers $jsonHeaders -Body $jsonBody -TimeoutSec 300
-        Write-Host "Selesai: $table" -ForegroundColor Green
-        Write-Host $resp.output
-    } catch {
-        Write-Host "Gagal $table : $($_.Exception.Message)" -ForegroundColor Red
-    }
-}
