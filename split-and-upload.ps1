@@ -3,7 +3,7 @@ $BACKEND_URL = "https://asc-production-9627.up.railway.app"
 $API_KEY = "SIAKAD-MIGRATE-2026-ASC"
 $SQL_FILE = "C:\Users\User\Documents\Aplikasi\ASC\_referensi\siakadstai_siakad.sql"
 $CHUNK_SIZE = 5MB  # 5MB per chunk (aman di bawah 8MB limit)
-$TEMP_DIR = "$env:TEMP\siakad_chunks"
+$TEMP_DIR = [System.IO.Path]::Combine($env:TEMP, "siakad_chunks")
 
 Write-Host "=== SPLIT & UPLOAD SQL ===" -ForegroundColor Cyan
 
@@ -26,10 +26,11 @@ for ($i = 0; $i -lt $numChunks; $i++) {
     $start = $i * $chunkBytes
     $end = [math]::Min($start + $chunkBytes, $totalBytes)
     $chunk = $bytes[$start..($end-1)]
-    $chunkFile = "$TEMP_DIR\chunk_$($i.ToString('000')).bin"
+    $chunkFile = Join-Path $TEMP_DIR ("chunk_" + $i.ToString('000') + ".bin")
     [System.IO.File]::WriteAllBytes($chunkFile, $chunk)
     $sizeMB = [math]::Round($chunk.Length/1MB, 1)
-    Write-Host "  Chunk $($i+1)/$numChunks: $sizeMB MB -> $chunkFile" -ForegroundColor Gray
+    $chunkFileDisplay = $chunkFile
+    Write-Host ("  Chunk " + ($i+1) + "/" + $numChunks + ": " + $sizeMB + " MB")
 }
 
 Write-Host ""
@@ -38,9 +39,9 @@ Write-Host "Mengupload $numChunks chunks ke Railway..." -ForegroundColor Yellow
 # Upload setiap chunk
 $successCount = 0
 for ($i = 0; $i -lt $numChunks; $i++) {
-    $chunkFile = "$TEMP_DIR\chunk_$($i.ToString('000')).bin"
+    $chunkFile = Join-Path $TEMP_DIR ("chunk_" + $i.ToString('000') + ".bin")
     $chunkNum = $i + 1
-    Write-Host "  Upload chunk $chunkNum/$numChunks..." -NoNewline
+    Write-Host ("  Upload chunk " + $chunkNum + "/" + $numChunks + "...") -NoNewline
     
     $result = & curl.exe -X POST "$BACKEND_URL/api/migration/upload-chunk" `
         -H "X-Migration-Key: $API_KEY" `
@@ -66,7 +67,7 @@ for ($i = 0; $i -lt $numChunks; $i++) {
 
 Write-Host ""
 if ($successCount -eq $numChunks) {
-    Write-Host "Semua chunk berhasil diupload! ($successCount/$numChunks)" -ForegroundColor Green
+    Write-Host ("Semua chunk berhasil diupload! (" + $successCount + "/" + $numChunks + ")") -ForegroundColor Green
     Write-Host ""
     Write-Host "Menggabungkan chunks di server..." -ForegroundColor Yellow
     
@@ -82,7 +83,7 @@ if ($successCount -eq $numChunks) {
         Write-Host $json.message -ForegroundColor Green
     }
 } else {
-    Write-Host "Hanya $successCount/$numChunks chunk berhasil. Coba lagi." -ForegroundColor Red
+    Write-Host ("Hanya " + $successCount + "/" + $numChunks + " chunk berhasil. Coba lagi.") -ForegroundColor Red
 }
 
 # Hapus temp files
