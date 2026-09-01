@@ -1,185 +1,138 @@
 # ============================================================
 # Script Migrasi Data SIAKAD ke ASC
-# Jalankan di PowerShell: .\migrate-siakad.ps1
+# Jalankan: .\migrate-siakad.ps1
 # ============================================================
 
-# ============================================================
-# KONFIGURASI — SESUAIKAN INI
-# ============================================================
-$BACKEND_URL = "https://asc-production-9627.up.railway.app/"  # Ganti dengan URL Railway backend Anda
-$API_KEY     = "SIAKAD-MIGRATE-2026-ASC"
-$SQL_FILE    = "$PSScriptRoot\_referensi\siakadstai_siakad.sql"
-# ============================================================
+# KONFIGURASI - SESUAIKAN INI
+$BACKEND_URL = "https://asc-production-9627.up.railway.app"
+$API_KEY = "SIAKAD-MIGRATE-2026-ASC"
+$SQL_FILE = "$PSScriptRoot\_referensi\siakadstai_siakad.sql"
 
 $headers = @{ "X-Migration-Key" = $API_KEY }
 
-function Write-Step($text) {
-    Write-Host "`n========================================" -ForegroundColor Cyan
-    Write-Host " $text" -ForegroundColor Cyan
-    Write-Host "========================================" -ForegroundColor Cyan
-}
-
-function Write-Ok($text)    { Write-Host "  ✓ $text" -ForegroundColor Green }
-function Write-Err($text)   { Write-Host "  ✗ $text" -ForegroundColor Red }
-function Write-Info($text)  { Write-Host "  → $text" -ForegroundColor Yellow }
-
-# ============================================================
-# CEK FILE SQL
-# ============================================================
-Write-Step "CEK FILE SQL"
+# Cek file SQL
+Write-Host ""
+Write-Host "=== CEK FILE SQL ===" -ForegroundColor Cyan
 if (Test-Path $SQL_FILE) {
     $size = [math]::Round((Get-Item $SQL_FILE).Length / 1MB, 1)
-    Write-Ok "File ditemukan: $SQL_FILE ($size MB)"
+    Write-Host "OK - File ditemukan: $SQL_FILE ($size MB)" -ForegroundColor Green
 } else {
-    Write-Err "File tidak ditemukan: $SQL_FILE"
+    Write-Host "ERROR - File tidak ditemukan: $SQL_FILE" -ForegroundColor Red
+    Read-Host "Tekan Enter untuk keluar"
     exit 1
 }
 
-# ============================================================
-# CEK KONEKSI KE BACKEND
-# ============================================================
-Write-Step "CEK KONEKSI BACKEND"
+# Cek koneksi backend
+Write-Host ""
+Write-Host "=== CEK KONEKSI BACKEND ===" -ForegroundColor Cyan
 try {
-    $resp = Invoke-WebRequest -Uri "$BACKEND_URL/api/institution/public" -TimeoutSec 10 -UseBasicParsing
-    Write-Ok "Backend terhubung: $BACKEND_URL"
+    $test = Invoke-WebRequest -Uri "$BACKEND_URL/api/institution/public" -TimeoutSec 10 -UseBasicParsing
+    Write-Host "OK - Backend terhubung: $BACKEND_URL" -ForegroundColor Green
 } catch {
-    Write-Err "Tidak bisa terhubung ke backend: $BACKEND_URL"
-    Write-Info "Pastikan URL sudah benar dan Railway sudah di-deploy."
+    Write-Host "ERROR - Tidak bisa terhubung ke: $BACKEND_URL" -ForegroundColor Red
+    Write-Host "Pastikan URL sudah benar dan Railway sudah deploy." -ForegroundColor Yellow
+    Read-Host "Tekan Enter untuk keluar"
     exit 1
 }
 
-# ============================================================
-# MENU
-# ============================================================
-Write-Host ""
-Write-Host "Pilih aksi:" -ForegroundColor White
-Write-Host "  1. Upload file SQL ke server"
-Write-Host "  2. Dry-run (simulasi, tidak ubah data)"
-Write-Host "  3. Migrasi Fakultas"
-Write-Host "  4. Migrasi Program Studi"
-Write-Host "  5. Migrasi Semester"
-Write-Host "  6. Migrasi Dosen"
-Write-Host "  7. Migrasi Mahasiswa"
-Write-Host "  8. Migrasi SEMUA (urutan otomatis)"
-Write-Host "  9. Cleanup (hapus file SQL dari server)"
-Write-Host "  0. Keluar"
-Write-Host ""
+# Menu
+:mainloop while ($true) {
+    Write-Host ""
+    Write-Host "========== MENU MIGRASI ==========" -ForegroundColor White
+    Write-Host "  1. Upload file SQL ke server"
+    Write-Host "  2. Dry-run (simulasi, tidak ubah data)"
+    Write-Host "  3. Migrasi Fakultas"
+    Write-Host "  4. Migrasi Program Studi"
+    Write-Host "  5. Migrasi Semester"
+    Write-Host "  6. Migrasi Dosen"
+    Write-Host "  7. Migrasi Mahasiswa"
+    Write-Host "  8. Migrasi SEMUA (urutan otomatis)"
+    Write-Host "  9. Cleanup (hapus file SQL dari server)"
+    Write-Host "  0. Keluar"
+    Write-Host "==================================" -ForegroundColor White
+    Write-Host ""
+    $pilihan = Read-Host "Masukkan nomor pilihan"
 
-$pilihan = Read-Host "Masukkan nomor pilihan"
-
-switch ($pilihan) {
-
-    "1" {
-        Write-Step "UPLOAD FILE SQL"
-        Write-Info "Mengupload file... (mungkin butuh 1-5 menit untuk file 22MB)"
+    if ($pilihan -eq "0") {
+        Write-Host "Keluar." -ForegroundColor Gray
+        break mainloop
+    }
+    elseif ($pilihan -eq "1") {
+        Write-Host ""
+        Write-Host "=== UPLOAD FILE SQL ===" -ForegroundColor Cyan
+        Write-Host "Mengupload file... (bisa 1-5 menit untuk file besar)" -ForegroundColor Yellow
         try {
-            # Buat multipart form data
-            $form = @{ sql_file = Get-Item $SQL_FILE }
-            $resp = Invoke-RestMethod -Uri "$BACKEND_URL/api/migration/upload" `
-                -Method POST -Headers $headers -Form $form -TimeoutSec 300
-            Write-Ok "Upload berhasil!"
-            Write-Info "Ukuran: $($resp.size_mb) MB"
-        } catch {
-            Write-Err "Upload gagal: $($_.Exception.Message)"
-            if ($_.Exception.Response) {
-                $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
-                Write-Err $reader.ReadToEnd()
+            # Gunakan curl.exe (built-in Windows 10/11) - lebih reliable untuk file besar
+            $result = & curl.exe -X POST "$BACKEND_URL/api/migration/upload" `
+                -H "X-Migration-Key: $API_KEY" `
+                -F "sql_file=@$SQL_FILE" `
+                --max-time 300 `
+                --silent --show-error
+            Write-Host "Response: $result" -ForegroundColor Gray
+            $json = $result | ConvertFrom-Json
+            if ($json.message) {
+                Write-Host "Upload berhasil! Ukuran: $($json.size_mb) MB" -ForegroundColor Green
+            } else {
+                Write-Host "Cek response di atas." -ForegroundColor Yellow
             }
+        } catch {
+            Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
         }
     }
-
-    "2" {
-        Write-Step "DRY-RUN (SIMULASI)"
-        Write-Info "Menjalankan simulasi..."
+    elseif ($pilihan -eq "2") {
+        Write-Host ""
+        Write-Host "=== DRY-RUN ===" -ForegroundColor Cyan
+        $jsonBody = '{"table":"all"}'
+        $jsonHeaders = $headers.Clone()
+        $jsonHeaders["Content-Type"] = "application/json"
         try {
-            $body = '{"table":"all"}' | ConvertFrom-Json
-            $resp = Invoke-RestMethod -Uri "$BACKEND_URL/api/migration/dry-run" `
-                -Method POST -Headers ($headers + @{"Content-Type"="application/json"}) `
-                -Body '{"table":"all"}' -TimeoutSec 300
-            Write-Ok "Dry-run selesai!"
+            $resp = Invoke-RestMethod -Uri "$BACKEND_URL/api/migration/dry-run" -Method POST -Headers $jsonHeaders -Body $jsonBody -TimeoutSec 300
+            Write-Host "Dry-run selesai!" -ForegroundColor Green
             Write-Host $resp.output
         } catch {
-            Write-Err "Error: $($_.Exception.Message)"
+            Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
         }
     }
-
-    "3" {
-        Write-Step "MIGRASI FAKULTAS"
-        Invoke-Migration "faculties"
-    }
-
-    "4" {
-        Write-Step "MIGRASI PROGRAM STUDI"
-        Invoke-Migration "study_programs"
-    }
-
-    "5" {
-        Write-Step "MIGRASI SEMESTER"
-        Invoke-Migration "semesters"
-    }
-
-    "6" {
-        Write-Step "MIGRASI DOSEN"
-        Invoke-Migration "lecturers"
-    }
-
-    "7" {
-        Write-Step "MIGRASI MAHASISWA"
-        Write-Info "Ini yang paling lama, harap sabar..."
-        Invoke-Migration "students"
-    }
-
-    "8" {
-        Write-Step "MIGRASI SEMUA"
-        $tables = @("faculties", "study_programs", "semesters", "lecturers", "students")
-        foreach ($t in $tables) {
-            Write-Info "Migrasi: $t"
-            Invoke-Migration $t
-            Start-Sleep 2
+    elseif ($pilihan -eq "3") { RunMigration "faculties" }
+    elseif ($pilihan -eq "4") { RunMigration "study_programs" }
+    elseif ($pilihan -eq "5") { RunMigration "semesters" }
+    elseif ($pilihan -eq "6") { RunMigration "lecturers" }
+    elseif ($pilihan -eq "7") { RunMigration "students" }
+    elseif ($pilihan -eq "8") {
+        Write-Host ""
+        Write-Host "=== MIGRASI SEMUA ===" -ForegroundColor Cyan
+        foreach ($tbl in @("faculties","study_programs","semesters","lecturers","students")) {
+            RunMigration $tbl
+            Start-Sleep -Seconds 2
         }
-        Write-Ok "Semua migrasi selesai!"
+        Write-Host "Semua migrasi selesai!" -ForegroundColor Green
     }
-
-    "9" {
-        Write-Step "CLEANUP"
+    elseif ($pilihan -eq "9") {
+        Write-Host ""
+        Write-Host "=== CLEANUP ===" -ForegroundColor Cyan
         try {
-            $resp = Invoke-RestMethod -Uri "$BACKEND_URL/api/migration/cleanup" `
-                -Method DELETE -Headers $headers -TimeoutSec 30
-            Write-Ok $resp.message
+            $resp = Invoke-RestMethod -Uri "$BACKEND_URL/api/migration/cleanup" -Method DELETE -Headers $headers -TimeoutSec 30
+            Write-Host $resp.message -ForegroundColor Green
         } catch {
-            Write-Err "Error: $($_.Exception.Message)"
+            Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
         }
     }
-
-    "0" {
-        Write-Host "Keluar." -ForegroundColor Gray
-        exit 0
-    }
-
-    default {
-        Write-Err "Pilihan tidak valid."
+    else {
+        Write-Host "Pilihan tidak valid." -ForegroundColor Yellow
     }
 }
 
-Write-Host ""
-Write-Host "Selesai." -ForegroundColor Green
-
-function Invoke-Migration($table) {
+function RunMigration($table) {
+    Write-Host ""
+    Write-Host "=== MIGRASI: $table ===" -ForegroundColor Cyan
+    $jsonBody = "{""table"": ""$table""}"
+    $jsonHeaders = $headers.Clone()
+    $jsonHeaders["Content-Type"] = "application/json"
     try {
-        $body = "{`"table`": `"$table`"}"
-        $resp = Invoke-RestMethod -Uri "$BACKEND_URL/api/migration/run" `
-            -Method POST `
-            -Headers ($headers + @{"Content-Type"="application/json"}) `
-            -Body $body -TimeoutSec 300
-        Write-Ok "Migrasi '$table' selesai!"
+        $resp = Invoke-RestMethod -Uri "$BACKEND_URL/api/migration/run" -Method POST -Headers $jsonHeaders -Body $jsonBody -TimeoutSec 300
+        Write-Host "Selesai: $table" -ForegroundColor Green
         Write-Host $resp.output
     } catch {
-        Write-Err "Gagal migrasi '$table': $($_.Exception.Message)"
-        if ($_.Exception.Response) {
-            try {
-                $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
-                Write-Err $reader.ReadToEnd()
-            } catch {}
-        }
+        Write-Host "Gagal $table : $($_.Exception.Message)" -ForegroundColor Red
     }
 }

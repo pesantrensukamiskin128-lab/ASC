@@ -31,7 +31,7 @@ class MigrationController extends Controller
     {
         if (!$this->checkKey($request)) return response()->json(['error' => 'Unauthorized'], 401);
 
-        $request->validate(['sql_file' => 'required|file|max:51200']); // max 50MB
+        $request->validate(['sql_file' => 'required|file|max:102400']); // max 100MB
 
         $path = $request->file('sql_file')->storeAs('migration', 'siakad.sql', 'local');
 
