@@ -77,23 +77,58 @@ try {
     elseif ($pilihan -eq "1") {
         Write-Host ""
         Write-Host "=== UPLOAD FILE SQL ===" -ForegroundColor Cyan
-        Write-Host "Mengupload file... (bisa 1-5 menit untuk file besar)" -ForegroundColor Yellow
-        try {
-            # Gunakan curl.exe (built-in Windows 10/11) - lebih reliable untuk file besar
+        Write-Host "Pilih metode upload:" -ForegroundColor Yellow
+        Write-Host "  A. Download dari URL (Google Drive / Dropbox) - DIREKOMENDASIKAN"
+        Write-Host "  B. Upload langsung dari komputer (max 8MB, tidak cocok file besar)"
+        $metode = Read-Host "Pilih (A/B)"
+
+        if ($metode -eq "A" -or $metode -eq "a") {
+            Write-Host ""
+            Write-Host "Cara upload ke Google Drive:" -ForegroundColor Cyan
+            Write-Host "  1. Upload file SQL ke Google Drive"
+            Write-Host "  2. Klik kanan file -> 'Dapatkan link' -> set ke 'Siapa saja yang memiliki link'"
+            Write-Host "  3. Copy link, contoh: https://drive.google.com/file/d/FILE_ID/view"
+            Write-Host "  4. Ubah URL menjadi: https://drive.google.com/uc?export=download&id=FILE_ID"
+            Write-Host ""
+            $url = Read-Host "Masukkan URL download langsung file SQL"
+            if ($url) {
+                Write-Host "Server Railway akan mendownload file dari URL..." -ForegroundColor Yellow
+                Write-Host "(Proses ini berjalan di server, tunggu hingga selesai...)" -ForegroundColor Gray
+                $jsonHeaders = $headers.Clone()
+                $jsonHeaders["Content-Type"] = "application/json"
+                $body = '{"url":"' + $url + '"}'
+                try {
+                    $resp = Invoke-RestMethod -Uri "$BACKEND_URL/api/migration/download-from-url" -Method POST -Headers $jsonHeaders -Body $body -TimeoutSec 300
+                    Write-Host ("Download selesai! Ukuran: " + $resp.size_mb + " MB") -ForegroundColor Green
+                } catch {
+                    Write-Host ("Error: " + $_.Exception.Message) -ForegroundColor Red
+                }
+            }
+        } else {
+            Write-Host "Mengupload langsung via curl..." -ForegroundColor Yellow
             $result = & curl.exe -X POST "$BACKEND_URL/api/migration/upload" `
                 -H "X-Migration-Key: $API_KEY" `
                 -F "sql_file=@$SQL_FILE" `
-                --max-time 300 `
-                --silent --show-error
-            Write-Host "Response: $result" -ForegroundColor Gray
-            $json = $result | ConvertFrom-Json
-            if ($json.message) {
-                Write-Host "Upload berhasil! Ukuran: $($json.size_mb) MB" -ForegroundColor Green
+                --max-time 300 --silent --show-error
+            Write-Host ("Response: " + $result)
+            try {
+                $json = $result | ConvertFrom-Json
+                if ($json.size_mb) { Write-Host ("Upload berhasil! Ukuran: " + $json.size_mb + " MB") -ForegroundColor Green }
+            } catch {}
+        }
+
+        # Cek status file di server
+        Write-Host ""
+        Write-Host "Cek status file di server..." -ForegroundColor Gray
+        try {
+            $status = Invoke-RestMethod -Uri "$BACKEND_URL/api/migration/status" -Method GET -Headers $headers -TimeoutSec 10
+            if ($status.exists) {
+                Write-Host ("File SQL ada di server: " + $status.size_mb + " MB") -ForegroundColor Green
             } else {
-                Write-Host "Cek response di atas." -ForegroundColor Yellow
+                Write-Host "File SQL belum ada di server." -ForegroundColor Red
             }
         } catch {
-            Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host ("Tidak bisa cek status: " + $_.Exception.Message) -ForegroundColor Yellow
         }
     }
     elseif ($pilihan -eq "2") {

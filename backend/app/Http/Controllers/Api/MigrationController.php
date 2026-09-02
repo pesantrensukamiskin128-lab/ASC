@@ -177,7 +177,69 @@ class MigrationController extends Controller
         if (!$this->checkKey($request)) return response()->json(['error' => 'Unauthorized'], 401);
 
         Storage::disk('local')->delete('migration/siakad.sql');
+        // Hapus juga chunks jika ada
+        $chunkDir = storage_path('app/migration/chunks');
+        if (is_dir($chunkDir)) array_map('unlink', glob("{$chunkDir}/*.bin"));
 
         return response()->json(['message' => 'File SQL berhasil dihapus.']);
+    }
+
+    /**
+     * Download file SQL dari URL eksternal (Google Drive, Dropbox, dll).
+     * POST /api/migration/download-from-url
+     * Header: X-Migration-Key: SIAKAD-MIGRATE-2026-ASC
+     * Body JSON: { "url": "https://..." }
+     */
+    public function downloadFromUrl(Request $request)
+    {
+        if (!$this->checkKey($request)) return response()->json(['error' => 'Unauthorized'], 401);
+
+        $request->validate(['url' => 'required|url']);
+        $url = $request->input('url');
+
+        $outputPath = storage_path('app/migration/siakad.sql');
+        @mkdir(dirname($outputPath), 0755, true);
+
+        // Download dengan stream (hemat memory)
+        $context = stream_context_create([
+            'http' => ['timeout' => 300, 'follow_location' => true],
+            'ssl'  => ['verify_peer' => false, 'verify_peer_name' => false],
+        ]);
+
+        $in  = fopen($url, 'rb', false, $context);
+        if (!$in) return response()->json(['error' => 'Gagal membuka URL. Pastikan URL valid dan public.'], 422);
+
+        $out = fopen($outputPath, 'wb');
+        $bytes = 0;
+        while (!feof($in)) {
+            $chunk = fread($in, 65536); // 64KB chunks
+            fwrite($out, $chunk);
+            $bytes += strlen($chunk);
+        }
+        fclose($in);
+        fclose($out);
+
+        $sizeMb = round($bytes / 1048576, 2);
+        return response()->json([
+            'message' => "File SQL berhasil didownload dari URL.",
+            'size_mb' => $sizeMb,
+            'bytes'   => $bytes,
+        ]);
+    }
+
+    /** Cek apakah file SQL sudah ada di server */
+    public function status(Request $request)
+    {
+        if (!$this->checkKey($request)) return response()->json(['error' => 'Unauthorized'], 401);
+
+        $sqlPath = storage_path('app/migration/siakad.sql');
+        $exists = file_exists($sqlPath);
+        $sizeMb = $exists ? round(filesize($sqlPath) / 1048576, 2) : 0;
+
+        return response()->json([
+            'exists'  => $exists,
+            'size_mb' => $sizeMb,
+            'path'    => $sqlPath,
+        ]);
     }
 }
