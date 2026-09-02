@@ -319,8 +319,8 @@ class MigrateSiakadData extends Command
 
     private function migrateStudents(): void
     {
-        $this->info('👩‍🎓 Migrasi Mahasiswa...');
-        $rows = $this->query('SELECT * FROM "mahasiswa"');
+        $this->info('Migrasi Mahasiswa...');
+        $rows = $this->parseTable('mahasiswa');
         $s = &$this->stats['Mahasiswa'];
         $s = ['total' => count($rows), 'inserted' => 0, 'updated' => 0, 'skipped' => 0];
 
@@ -413,8 +413,8 @@ class MigrateSiakadData extends Command
     private function migrateSemesters(): void
     {
         $this->info('📅 Migrasi Semester...');
-        $rows = $this->query('SELECT * FROM "periode_semester" ORDER BY "thn_akademik" DESC, "kode_jns_smt" ASC');
-        if (empty($rows)) $rows = $this->query('SELECT * FROM "semester" ORDER BY "tahun" DESC');
+        $rows = $this->parseTable('periode_semester');
+        if (empty($rows)) $rows = $this->parseTable('semester');
         $s = &$this->stats['Semester'];
         $s = ['total' => count($rows), 'inserted' => 0, 'updated' => 0, 'skipped' => 0];
 
@@ -452,4 +452,5 @@ class MigrateSiakadData extends Command
         $this->line("  ✓ {$s['inserted']} insert, {$s['updated']} update, {$s['skipped']} skip");
     }
 }
+
 
