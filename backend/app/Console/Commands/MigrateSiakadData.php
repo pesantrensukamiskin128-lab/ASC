@@ -23,7 +23,7 @@ class MigrateSiakadData extends Command
     protected $description = 'Migrasi data dari SQL dump SIAKAD lama ke ASC. Menggunakan UPSERT — data yang sudah ada tidak dihapus.';
 
     private bool $dryRun = false;
-    private \PDO $siakad;
+    private string $sqlPath = '';
     private array $stats = [];
 
     public function handle(): int
@@ -37,22 +37,15 @@ class MigrateSiakadData extends Command
             return 1;
         }
 
+        $this->sqlPath = $source;
+
         if ($this->dryRun) {
-            $this->warn('🔍 MODE DRY-RUN: tidak ada data yang diubah.');
+            $this->warn('MODE DRY-RUN: tidak ada data yang diubah.');
         }
 
-        $this->info("📂 Membaca SQL dump: {$source}");
-
-        // Load SQL into temp SQLite or parse directly
-        try {
-            $this->info('⏳ Parsing SQL dump...');
-            $this->siakad = $this->parseSqlDump($source);
-        } catch (\Exception $e) {
-            $this->error("Gagal parse SQL: " . $e->getMessage());
-            return 1;
-        }
-
-        $this->info('✅ SQL dump berhasil diparse.');
+        $this->info("Membaca SQL dump: {$source}");
+        $sizeMb = round(filesize($source) / 1048576, 1);
+        $this->info("Ukuran file: {$sizeMb} MB");
 
         DB::transaction(function () use ($table) {
             if ($table === 'all' || $table === 'faculties')      $this->migrateFaculties();
@@ -63,7 +56,7 @@ class MigrateSiakadData extends Command
         });
 
         $this->newLine();
-        $this->info('📊 Hasil Migrasi:');
+        $this->info('Hasil Migrasi:');
         $headers = ['Tabel', 'Diproses', 'Diinsert', 'Diupdate', 'Dilewati'];
         $rows = [];
         foreach ($this->stats as $tbl => $s) {
@@ -72,82 +65,111 @@ class MigrateSiakadData extends Command
         $this->table($headers, $rows);
 
         if ($this->dryRun) {
-            $this->warn('DRY-RUN selesai. Tidak ada data yang diubah. Jalankan tanpa --dry-run untuk eksekusi.');
+            $this->warn('DRY-RUN selesai. Jalankan tanpa --dry-run untuk eksekusi nyata.');
         } else {
-            $this->info('✅ Migrasi selesai!');
+            $this->info('Migrasi selesai!');
         }
         return 0;
     }
 
-    private function parseSqlDump(string $path): \PDO
+    /**
+     * Parse INSERT statements dari SQL dump untuk tabel tertentu.
+     * Mengembalikan array of associative arrays.
+     */
+    private function parseTable(string $tableName): array
     {
-        // Buat SQLite in-memory dari SQL dump
-        $pdo = new \PDO('sqlite::memory:');
-        $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $this->line("  Parsing tabel '{$tableName}' dari SQL dump...");
+        $results = [];
+        $handle = fopen($this->sqlPath, 'r');
+        if (!$handle) return [];
 
-        $sql = file_get_contents($path);
+        $columns = [];
+        $inTable = false;
 
-        // Bersihkan MySQL-specific syntax yang tidak kompatibel dengan SQLite
-        $sql = preg_replace('/ENGINE=\w+[^;]*/i', '', $sql);
-        $sql = preg_replace('/DEFAULT CHARSET=\w+[^;]*/i', '', $sql);
-        $sql = preg_replace('/COLLATE[= ]\w+/i', '', $sql);
-        $sql = preg_replace('/AUTO_INCREMENT=\d+/i', '', $sql);
-        $sql = preg_replace('/\bint\(\d+\)/i', 'integer', $sql);
-        $sql = preg_replace('/\bvarchar\(\d+\)/i', 'text', $sql);
-        $sql = preg_replace('/\bdecimal\([^)]+\)/i', 'real', $sql);
-        $sql = preg_replace('/\btinyint\(\d+\)/i', 'integer', $sql);
-        $sql = preg_replace('/\btext\b/i', 'text', $sql);
-        $sql = preg_replace('/\blongtext\b/i', 'text', $sql);
-        $sql = preg_replace('/\bdatetime\b/i', 'text', $sql);
-        $sql = preg_replace('/\btimestamp\b/i', 'text', $sql);
-        $sql = preg_replace('/\bdate\b/i', 'text', $sql);
-        $sql = preg_replace('/UNSIGNED/i', '', $sql);
-        $sql = preg_replace('/NOT NULL DEFAULT \'\'/i', "DEFAULT ''", $sql);
-        $sql = preg_replace('/SET @[^;]+;/i', '', $sql);
-        $sql = preg_replace('/\/\*![^*]+\*\/;?/i', '', $sql);
-        $sql = preg_replace('/DELIMITER \$\$.*?DELIMITER ;/s', '', $sql);
-        $sql = preg_replace('/CREATE (DEFINER|ALGORITHM)[^;]+;/s', '', $sql);
-        $sql = preg_replace('/CREATE\s+(OR REPLACE\s+)?VIEW[^;]+;/si', '', $sql);
-        $sql = preg_replace('/`/i', '"', $sql);
-        $sql = preg_replace('/START TRANSACTION;/i', 'BEGIN;', $sql);
-        $sql = preg_replace('/LOCK TABLES[^;]+;/i', '', $sql);
-        $sql = preg_replace('/UNLOCK TABLES;/i', '', $sql);
-        $sql = preg_replace('/KEY "[^"]*"[^,)]+/i', '', $sql);
-        $sql = preg_replace('/UNIQUE KEY[^,)]+/i', '', $sql);
-        $sql = preg_replace('/PRIMARY KEY\s*\(([^)]+)\)/i', 'PRIMARY KEY ($1)', $sql);
-        $sql = preg_replace('/,\s*\)/i', ')', $sql);
+        while (($line = fgets($handle)) !== false) {
+            $line = rtrim($line);
 
-        // Split dan jalankan per statement
-        $statements = array_filter(array_map('trim', explode(";\n", $sql)));
-        $count = 0;
-        foreach ($statements as $stmt) {
-            if (empty($stmt) || str_starts_with(trim($stmt), '--')) continue;
-            try {
-                $pdo->exec($stmt);
-                $count++;
-            } catch (\Exception $e) {
-                // Skip errors (incompatible statements)
+            // Cari definisi kolom dari CREATE TABLE
+            if (!$inTable && preg_match('/^CREATE TABLE `?' . preg_quote($tableName, '/') . '`?\s*\(/i', $line)) {
+                $inTable = true;
+                continue;
+            }
+
+            if ($inTable) {
+                // Ambil nama kolom
+                if (preg_match('/^\s+`([^`]+)`\s+/i', $line, $m)) {
+                    // Skip KEY dan INDEX lines
+                    if (!preg_match('/^\s+(PRIMARY|UNIQUE|KEY|INDEX)\s/i', $line)) {
+                        $columns[] = $m[1];
+                    }
+                }
+                // Tutup CREATE TABLE
+                if (preg_match('/^\)\s*(ENGINE|;)/i', $line) || $line === ');') {
+                    $inTable = false;
+                }
+                continue;
+            }
+
+            // Parse INSERT INTO `tableName` VALUES (...)
+            if (preg_match('/^INSERT INTO `?' . preg_quote($tableName, '/') . '`?\s*(?:\([^)]+\)\s*)?VALUES\s*/i', $line)) {
+                // Ambil nama kolom dari INSERT jika ada
+                if (preg_match('/INSERT INTO `[^`]+`\s*\(([^)]+)\)\s*VALUES/i', $line, $colMatch)) {
+                    $columns = array_map(fn($c) => trim(trim($c), '`'), explode(',', $colMatch[1]));
+                }
+
+                // Ekstrak semua VALUE tuples dari baris ini (bisa multi-row insert)
+                $valuesPart = preg_replace('/^INSERT INTO[^V]+VALUES\s*/i', '', $line);
+                $tuples = $this->extractTuples($valuesPart);
+
+                foreach ($tuples as $values) {
+                    if (count($values) === count($columns)) {
+                        $results[] = array_combine($columns, $values);
+                    }
+                }
             }
         }
-        $this->line("  → {$count} statements dieksekusi ke SQLite");
-        return $pdo;
+
+        fclose($handle);
+        $this->line("  Ditemukan " . count($results) . " baris dari tabel '{$tableName}'");
+        return $results;
     }
 
-    private function query(string $sql): array
+    /**
+     * Ekstrak array of value tuples dari string VALUES (v1,v2),(v3,v4),...
+     */
+    private function extractTuples(string $valuesStr): array
     {
-        try {
-            $stmt = $this->siakad->query($sql);
-            return $stmt ? $stmt->fetchAll(\PDO::FETCH_ASSOC) : [];
-        } catch (\Exception $e) {
-            $this->warn("Query error: " . $e->getMessage());
-            return [];
+        $tuples = [];
+        $valuesStr = rtrim(trim($valuesStr), ';');
+
+        // Pakai regex untuk ekstrak setiap tuple (...)
+        preg_match_all('/\(([^()]*(?:\([^()]*\)[^()]*)*)\)/s', $valuesStr, $matches);
+
+        foreach ($matches[1] as $tuple) {
+            $values = [];
+            // Parse nilai dengan memperhatikan string quoted
+            $pattern = "/(?:'(?:[^'\\\\]|\\\\.)*'|NULL|\\d+(?:\\.\\d+)?|[^,]+)/";
+            preg_match_all($pattern, $tuple, $valMatches);
+
+            foreach ($valMatches[0] as $val) {
+                $val = trim($val);
+                if (strtoupper($val) === 'NULL') {
+                    $values[] = null;
+                } elseif (str_starts_with($val, "'") && str_ends_with($val, "'")) {
+                    $values[] = stripslashes(substr($val, 1, -1));
+                } else {
+                    $values[] = $val;
+                }
+            }
+            if (!empty($values)) $tuples[] = $values;
         }
+        return $tuples;
     }
 
     private function migrateFaculties(): void
     {
-        $this->info('📚 Migrasi Fakultas...');
-        $rows = $this->query('SELECT * FROM "fakultas"');
+        $this->info('Migrasi Fakultas...');
+        $rows = $this->parseTable('fakultas');
         $s = &$this->stats['Fakultas'];
         $s = ['total' => count($rows), 'inserted' => 0, 'updated' => 0, 'skipped' => 0];
 
@@ -179,8 +201,14 @@ class MigrateSiakadData extends Command
 
     private function migrateStudyPrograms(): void
     {
-        $this->info('🎓 Migrasi Program Studi...');
-        $rows = $this->query('SELECT j.*, f.kode_fak FROM "jurusan" j LEFT JOIN "fakultas" f ON j.fak_kode = f.kode_fak');
+        $this->info('Migrasi Program Studi...');
+        $rows = $this->parseTable('jurusan');
+        $fakultasRows = $this->parseTable('fakultas');
+        // Build lookup kode_jur -> kode_fak
+        $jurFakMap = [];
+        foreach ($rows as $r) {
+            $jurFakMap[trim($r['kode_jur'] ?? '')] = trim($r['fak_kode'] ?? '');
+        }
         $s = &$this->stats['Program Studi'];
         $s = ['total' => count($rows), 'inserted' => 0, 'updated' => 0, 'skipped' => 0];
 
@@ -189,7 +217,7 @@ class MigrateSiakadData extends Command
             $name = trim($r['nama_jur'] ?? '');
             if (!$code || !$name) { $s['skipped']++; continue; }
 
-            $facultyId = Faculty::where('code', $r['kode_fak'] ?? '')->value('id');
+            $facultyId = Faculty::where('code', $r['fak_kode'] ?? '')->value('id');
             $existing = StudyProgram::where('code', $code)->first();
 
             if (!$this->dryRun) {
@@ -217,9 +245,8 @@ class MigrateSiakadData extends Command
 
     private function migrateLecturers(): void
     {
-        $this->info('👨‍🏫 Migrasi Dosen...');
-        $rows = $this->query('SELECT * FROM "dosen" WHERE "aktif" = 1 OR "aktif" = "1"');
-        if (empty($rows)) $rows = $this->query('SELECT * FROM "dosen"');
+        $this->info('Migrasi Dosen...');
+        $rows = $this->parseTable('dosen');
         $s = &$this->stats['Dosen'];
         $s = ['total' => count($rows), 'inserted' => 0, 'updated' => 0, 'skipped' => 0];
 
@@ -425,3 +452,4 @@ class MigrateSiakadData extends Command
         $this->line("  ✓ {$s['inserted']} insert, {$s['updated']} update, {$s['skipped']} skip");
     }
 }
+
