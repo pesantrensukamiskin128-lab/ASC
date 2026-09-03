@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Generator;
 use RuntimeException;
 
 class SqlDumpParser
@@ -13,13 +14,22 @@ class SqlDumpParser
      */
     public function parseTable(string $sqlPath, string $tableName): array
     {
+        return iterator_to_array($this->iterateTable($sqlPath, $tableName), false);
+    }
+
+    /**
+     * Parse INSERT rows one by one so large tables do not have to remain in memory.
+     *
+     * @return Generator<int, array<string, mixed>>
+     */
+    public function iterateTable(string $sqlPath, string $tableName): Generator
+    {
         $handle = fopen($sqlPath, 'rb');
 
         if ($handle === false) {
             throw new RuntimeException("Tidak dapat membuka SQL dump: {$sqlPath}");
         }
 
-        $rows = [];
         $createColumns = [];
         $readingCreate = false;
         $statement = '';
@@ -63,8 +73,8 @@ class SqlDumpParser
                 }
 
                 if ($readingInsert && $this->chunkCompletesStatement($line, $insertQuoted, $insertEscaped)) {
-                    foreach ($this->parseInsertStatement($statement, $tableName, $createColumns) as $row) {
-                        $rows[] = $row;
+                    foreach ($this->iterateInsertStatement($statement, $tableName, $createColumns) as $row) {
+                        yield $row;
                     }
 
                     $statement = '';
@@ -79,7 +89,6 @@ class SqlDumpParser
             fclose($handle);
         }
 
-        return $rows;
     }
 
     /**
@@ -127,7 +136,7 @@ class SqlDumpParser
      * @param  array<int, string>  $fallbackColumns
      * @return array<int, array<string, mixed>>
      */
-    private function parseInsertStatement(string $statement, string $tableName, array $fallbackColumns): array
+    private function iterateInsertStatement(string $statement, string $tableName, array $fallbackColumns): Generator
     {
         if (! preg_match(
             '/^\s*INSERT\s+INTO\s+`?'.preg_quote($tableName, '/').'`?\s*(?:\((.*?)\))?\s*VALUES\s*(.*);\s*$/is',
@@ -148,8 +157,6 @@ class SqlDumpParser
             throw new RuntimeException("Kolom tabel '{$tableName}' tidak ditemukan.");
         }
 
-        $rows = [];
-
         foreach ($this->extractTuples($match[2]) as $tupleNumber => $values) {
             if (count($values) !== count($columns)) {
                 throw new RuntimeException(sprintf(
@@ -161,18 +168,15 @@ class SqlDumpParser
                 ));
             }
 
-            $rows[] = array_combine($columns, $values);
+            yield array_combine($columns, $values);
         }
-
-        return $rows;
     }
 
     /**
      * @return array<int, array<int, mixed>>
      */
-    private function extractTuples(string $valuesSql): array
+    private function extractTuples(string $valuesSql): Generator
     {
-        $tuples = [];
         $values = [];
         $token = '';
         $depth = 0;
@@ -233,7 +237,7 @@ class SqlDumpParser
 
                     if ($depth === 0) {
                         $values[] = $this->decodeValue($token);
-                        $tuples[] = $values;
+                        yield $values;
                         $token = '';
 
                         continue;
@@ -258,8 +262,6 @@ class SqlDumpParser
         if ($quoted || $depth !== 0) {
             throw new RuntimeException('Tuple SQL tidak lengkap atau string tidak ditutup.');
         }
-
-        return $tuples;
     }
 
     private function decodeValue(string $rawValue): mixed

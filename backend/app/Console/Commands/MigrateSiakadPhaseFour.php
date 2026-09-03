@@ -97,10 +97,14 @@ class MigrateSiakadPhaseFour extends Command
 
         $this->info("Membaca SQL dump: {$this->sqlPath}");
         $this->info('Ukuran file: '.round(filesize($this->sqlPath) / 1048576, 1).' MB');
-        $rows = $this->loadSourceRows();
         $this->loadTargetReferences();
-        $this->indexComponents($rows);
-        $this->buildPlans($rows['krs_detail']);
+        $this->line("  Parsing tabel 'krs_detail' secara streaming...");
+        $sourceRows = $this->buildPlans($this->parser->iterateTable($this->sqlPath, 'krs_detail'));
+        $this->line("  Ditemukan {$sourceRows} baris; ".count($this->attemptPlans).' entitas unik.');
+
+        if (in_array($table, ['all', 'grades'], true)) {
+            $this->indexComponents();
+        }
 
         DB::transaction(function () use ($table): void {
             if (in_array($table, ['all', 'enrollments'], true)) {
@@ -112,7 +116,7 @@ class MigrateSiakadPhaseFour extends Command
         });
 
         $reportPath = $this->writeReport();
-        $this->displaySummary($reportPath, count($rows['krs_detail']));
+        $this->displaySummary($reportPath, $sourceRows);
 
         return self::SUCCESS;
     }
@@ -131,19 +135,6 @@ class MigrateSiakadPhaseFour extends Command
         $this->classMap = [];
         $this->targetClasses = [];
         $this->courseCredits = [];
-    }
-
-    /** @return array<string, array<int, array<string, mixed>>> */
-    private function loadSourceRows(): array
-    {
-        $result = [];
-        foreach (['krs_detail', 'krs_penilaian', 'kelas_penilaian', 'komponen_nilai'] as $table) {
-            $this->line("  Parsing tabel '{$table}'...");
-            $result[$table] = $this->parser->parseTable($this->sqlPath, $table);
-            $this->line('  Ditemukan '.count($result[$table]).' baris.');
-        }
-
-        return $result;
     }
 
     private function loadTargetReferences(): void
@@ -174,34 +165,46 @@ class MigrateSiakadPhaseFour extends Command
             ->all();
     }
 
-    /** @param array<string, array<int, array<string, mixed>>> $rows */
-    private function indexComponents(array $rows): void
+    private function indexComponents(): void
     {
-        foreach ($rows['komponen_nilai'] as $row) {
-            $this->componentNames[trim((string) ($row['id'] ?? ''))] = trim((string) ($row['nama_komponen'] ?? ''));
-        }
-        foreach ($rows['kelas_penilaian'] as $row) {
-            $classId = trim((string) ($row['id_kelas'] ?? ''));
-            $componentId = trim((string) ($row['id_komponen'] ?? ''));
-            if (is_numeric($row['nilai'] ?? null)) {
-                $this->componentWeights[$classId][$componentId] = (float) $row['nilai'];
+        $counts = [];
+        foreach (['komponen_nilai', 'kelas_penilaian', 'krs_penilaian'] as $table) {
+            $this->line("  Parsing tabel '{$table}' secara streaming...");
+            $counts[$table] = 0;
+            foreach ($this->parser->iterateTable($this->sqlPath, $table) as $row) {
+                $counts[$table]++;
+                if ($table === 'komponen_nilai') {
+                    $this->componentNames[trim((string) ($row['id'] ?? ''))] = trim((string) ($row['nama_komponen'] ?? ''));
+
+                    continue;
+                }
+                if ($table === 'kelas_penilaian') {
+                    $classId = trim((string) ($row['id_kelas'] ?? ''));
+                    $componentId = trim((string) ($row['id_komponen'] ?? ''));
+                    if (is_numeric($row['nilai'] ?? null)) {
+                        $this->componentWeights[$classId][$componentId] = (float) $row['nilai'];
+                    }
+
+                    continue;
+                }
+                $detailId = trim((string) ($row['id_krs_detail'] ?? ''));
+                $componentId = trim((string) ($row['id_komponen'] ?? ''));
+                $score = trim((string) ($row['nilai_angka'] ?? ''));
+                if ($score !== '' && is_numeric($score) && (float) $score >= 0 && (float) $score <= 100) {
+                    $this->componentScores[$detailId][$componentId] = (float) $score;
+                }
             }
-        }
-        foreach ($rows['krs_penilaian'] as $row) {
-            $detailId = trim((string) ($row['id_krs_detail'] ?? ''));
-            $componentId = trim((string) ($row['id_komponen'] ?? ''));
-            $score = trim((string) ($row['nilai_angka'] ?? ''));
-            if ($score !== '' && is_numeric($score) && (float) $score >= 0 && (float) $score <= 100) {
-                $this->componentScores[$detailId][$componentId] = (float) $score;
-            }
+            $this->line("  Ditemukan {$counts[$table]} baris.");
         }
     }
 
-    /** @param array<int, array<string, mixed>> $rows */
-    private function buildPlans(array $rows): void
+    /** @param iterable<int, array<string, mixed>> $rows */
+    private function buildPlans(iterable $rows): int
     {
         $groups = [];
+        $sourceRows = 0;
         foreach ($rows as $row) {
+            $sourceRows++;
             $sourceId = trim((string) ($row['id_krs_detail'] ?? ''));
             $nim = trim((string) ($row['nim'] ?? ''));
             $classSourceId = trim((string) ($row['id_kelas'] ?? ''));
@@ -217,26 +220,37 @@ class MigrateSiakadPhaseFour extends Command
             }
 
             $key = $studentId.'|'.$class['semester_id'].'|'.$class['course_id'];
-            $row['_source_id'] = $sourceId;
-            $row['_nim'] = $nim;
-            $row['_student_id'] = $studentId;
-            $row['_class_source_id'] = $classSourceId;
-            $row['_class_id'] = $class['id'];
-            $row['_course_id'] = $class['course_id'];
-            $row['_semester_id'] = $class['semester_id'];
-            $groups[$key][] = $row;
+            $prepared = array_intersect_key($row, array_flip([
+                'id_krs_detail', 'disetujui', 'batal', 'presensi', 'mandiri', 'terstruktur',
+                'lain_lain', 'uts', 'uas', 'bobot', 'nilai_huruf', 'nilai_angka', 'tgl_perubahan',
+            ]));
+            $prepared += [
+                '_source_id' => $sourceId, '_nim' => $nim, '_student_id' => $studentId,
+                '_class_source_id' => $classSourceId, '_class_id' => $class['id'],
+                '_course_id' => $class['course_id'], '_semester_id' => $class['semester_id'],
+            ];
+            if (! isset($groups[$key])) {
+                $groups[$key] = ['row' => $prepared, 'source_ids' => [$sourceId]];
+            } else {
+                $groups[$key]['source_ids'][] = $sourceId;
+                if ($this->rowRank($prepared) > $this->rowRank($groups[$key]['row'])) {
+                    $groups[$key]['row'] = $prepared;
+                }
+            }
         }
 
         foreach ($groups as $key => $group) {
-            usort($group, fn (array $left, array $right): int => $this->rowRank($right) <=> $this->rowRank($left));
-            $canonical = $group[0];
-            $sourceIds = array_column($group, '_source_id');
-            if (count($group) > 1) {
-                foreach (array_slice($group, 1) as $duplicate) {
+            $canonical = $group['row'];
+            $sourceIds = $group['source_ids'];
+            if (count($sourceIds) > 1) {
+                foreach ($sourceIds as $duplicateSourceId) {
+                    if ($duplicateSourceId === $canonical['_source_id']) {
+                        continue;
+                    }
                     $this->report(
                         'DUPLICATE_ATTEMPT_MERGED',
                         'krs_detail',
-                        $duplicate['_source_id'],
+                        $duplicateSourceId,
                         $canonical['_source_id'],
                         'Mahasiswa, semester, dan mata kuliah sama; baris terbaik/terbaru dipakai.'
                     );
@@ -277,6 +291,8 @@ class MigrateSiakadPhaseFour extends Command
                 $this->krsPlans[$krsKey]['credits'] += $this->courseCredits[$canonical['_course_id']] ?? 0;
             }
         }
+
+        return $sourceRows;
     }
 
     private function migrateEnrollments(): void
