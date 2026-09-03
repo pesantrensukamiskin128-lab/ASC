@@ -4,11 +4,8 @@ namespace App\Console\Commands;
 
 use App\Models\ClassModel;
 use App\Models\Course;
-use App\Models\Krs;
-use App\Models\KrsDetail;
 use App\Models\LegacyMigrationMap;
 use App\Models\Student;
-use App\Models\StudentGrade;
 use App\Services\SqlDumpParser;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -297,8 +294,10 @@ class MigrateSiakadPhaseFour extends Command
 
     private function migrateEnrollments(): void
     {
+        $this->info('  Memproses header KRS...');
         $now = now();
-        $existingKrs = Krs::query()->get()->keyBy(fn (Krs $krs): string => $krs->student_id.'|'.$krs->semester_id);
+        $existingKrs = DB::table('krs')->get(['id', 'student_id', 'semester_id'])
+            ->keyBy(fn ($krs): string => $krs->student_id.'|'.$krs->semester_id);
         $stats = $this->blankStats(count($this->krsPlans));
         $insertRows = [];
         foreach ($this->krsPlans as $key => $plan) {
@@ -323,9 +322,13 @@ class MigrateSiakadPhaseFour extends Command
             $this->insertChunks('krs', $insertRows);
         }
         $this->stats['KRS'] = $stats;
+        unset($insertRows, $existingKrs);
 
-        $krsRecords = Krs::query()->get()->keyBy(fn (Krs $krs): string => $krs->student_id.'|'.$krs->semester_id);
-        $existingDetails = KrsDetail::query()->get()->keyBy(fn (KrsDetail $detail): string => $detail->krs_id.'|'.$detail->course_id);
+        $this->info('  Memproses detail KRS...');
+        $krsRecords = DB::table('krs')->get(['id', 'student_id', 'semester_id'])
+            ->keyBy(fn ($krs): string => $krs->student_id.'|'.$krs->semester_id);
+        $existingDetails = DB::table('krs_details')->get(['id', 'krs_id', 'course_id'])
+            ->keyBy(fn ($detail): string => $detail->krs_id.'|'.$detail->course_id);
         $detailStats = $this->blankStats(count($this->attemptPlans));
         $detailRows = [];
         $memberKeys = [];
@@ -359,7 +362,9 @@ class MigrateSiakadPhaseFour extends Command
             $this->insertChunks('krs_details', $detailRows);
         }
         $this->stats['Detail KRS'] = $detailStats;
+        unset($detailRows, $existingDetails, $krsRecords);
 
+        $this->info('  Memproses anggota kelas...');
         $existingMembers = DB::table('class_members')->get(['class_id', 'student_id'])
             ->keyBy(fn ($row): string => $row->class_id.'|'.$row->student_id);
         $memberStats = $this->blankStats(count($memberKeys));
@@ -374,6 +379,8 @@ class MigrateSiakadPhaseFour extends Command
         }
         if (! $this->dryRun) {
             $this->insertChunks('class_members', $memberRows);
+            unset($memberRows, $existingMembers, $memberKeys);
+            $this->info('  Menyimpan pemetaan legacy KRS...');
             $this->saveEnrollmentMaps();
         }
         $this->stats['Anggota Kelas'] = $memberStats;
@@ -381,12 +388,12 @@ class MigrateSiakadPhaseFour extends Command
 
     private function migrateGrades(): void
     {
-        $existing = StudentGrade::query()->get()->keyBy(
-            fn (StudentGrade $grade): string => $grade->student_id.'|'.$grade->semester_id.'|'.$grade->course_id
-        );
+        $this->info('  Memproses nilai historis...');
+        $existing = DB::table('student_grades')->get(['id', 'student_id', 'course_id', 'semester_id'])
+            ->keyBy(fn ($grade): string => $grade->student_id.'|'.$grade->semester_id.'|'.$grade->course_id);
         $stats = $this->blankStats(count($this->attemptPlans));
         $rows = [];
-        $gradePlans = [];
+        $gradedKeys = [];
         $now = now();
 
         foreach ($this->attemptPlans as $key => $plan) {
@@ -396,7 +403,7 @@ class MigrateSiakadPhaseFour extends Command
 
                 continue;
             }
-            $gradePlans[$key] = $grade;
+            $gradedKeys[$key] = true;
             if ($existing->has($key)) {
                 $stats['updated']++;
 
@@ -421,7 +428,9 @@ class MigrateSiakadPhaseFour extends Command
         }
         if (! $this->dryRun) {
             $this->insertChunks('student_grades', $rows);
-            $this->saveGradeMaps($gradePlans);
+            unset($rows, $existing);
+            $this->info('  Menyimpan pemetaan legacy nilai...');
+            $this->saveGradeMaps($gradedKeys);
         }
         $this->stats['Nilai'] = $stats;
     }
@@ -506,13 +515,17 @@ class MigrateSiakadPhaseFour extends Command
 
     private function saveEnrollmentMaps(): void
     {
-        $krsRecords = Krs::query()->get()->keyBy(fn (Krs $krs): string => $krs->student_id.'|'.$krs->semester_id);
-        $details = KrsDetail::query()->get()->keyBy(fn (KrsDetail $detail): string => $detail->krs_id.'|'.$detail->course_id);
-        $members = DB::table('class_members')->get()->keyBy(fn ($row): string => $row->class_id.'|'.$row->student_id);
+        $krsRecords = DB::table('krs')->get(['id', 'student_id', 'semester_id'])
+            ->keyBy(fn ($krs): string => $krs->student_id.'|'.$krs->semester_id);
+        $details = DB::table('krs_details')->get(['id', 'krs_id', 'course_id'])
+            ->keyBy(fn ($detail): string => $detail->krs_id.'|'.$detail->course_id);
+        $members = DB::table('class_members')->get(['id', 'class_id', 'student_id'])
+            ->keyBy(fn ($row): string => $row->class_id.'|'.$row->student_id);
         $maps = [];
         foreach ($this->krsPlans as $key => $plan) {
             if ($krs = $krsRecords->get($key)) {
                 $maps[] = $this->mapRow('krs', $key, 'krs', $krs->id);
+                $this->flushMapBuffer($maps);
             }
         }
         foreach ($this->attemptPlans as $plan) {
@@ -522,32 +535,44 @@ class MigrateSiakadPhaseFour extends Command
             foreach ($plan['source_ids'] as $sourceId) {
                 if ($detail) {
                     $maps[] = $this->mapRow('krs_detail', $sourceId, 'krs_details', $detail->id);
+                    $this->flushMapBuffer($maps);
                 }
                 if ($member) {
                     $maps[] = $this->mapRow('class_member', $sourceId, 'class_members', $member->id);
+                    $this->flushMapBuffer($maps);
                 }
             }
         }
         $this->upsertMaps($maps);
     }
 
-    /** @param array<string, array<string, mixed>> $gradePlans */
-    private function saveGradeMaps(array $gradePlans): void
+    /** @param array<string, bool> $gradedKeys */
+    private function saveGradeMaps(array $gradedKeys): void
     {
-        $grades = StudentGrade::query()->get()->keyBy(
-            fn (StudentGrade $grade): string => $grade->student_id.'|'.$grade->semester_id.'|'.$grade->course_id
-        );
+        $grades = DB::table('student_grades')->get(['id', 'student_id', 'course_id', 'semester_id'])
+            ->keyBy(fn ($grade): string => $grade->student_id.'|'.$grade->semester_id.'|'.$grade->course_id);
         $maps = [];
-        foreach ($gradePlans as $key => $gradePlan) {
+        foreach (array_keys($gradedKeys) as $key) {
             $grade = $grades->get($key);
             if (! $grade) {
                 continue;
             }
             foreach ($this->attemptPlans[$key]['source_ids'] as $sourceId) {
                 $maps[] = $this->mapRow('student_grade', $sourceId, 'student_grades', $grade->id);
+                $this->flushMapBuffer($maps);
             }
         }
         $this->upsertMaps($maps);
+    }
+
+    /** @param array<int, array<string, mixed>> $maps */
+    private function flushMapBuffer(array &$maps): void
+    {
+        if (count($maps) < 500) {
+            return;
+        }
+        $this->upsertMaps($maps);
+        $maps = [];
     }
 
     /** @return array<string, mixed> */
