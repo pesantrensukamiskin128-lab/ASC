@@ -147,6 +147,64 @@ php artisan siakad:migrate-phase3 --source=storage/app/migration/siakad.sql --ta
 Perintah fase ketiga aman dijalankan ulang. Gunakan `--institution-id=ID` jika
 database ASC mempunyai lebih dari satu institusi.
 
+### Fase 4 — KRS, Anggota Kelas, dan Nilai Historis
+
+Fase ini membutuhkan pemetaan kelas dari fase 3. Tidak ada tabel baru yang
+dibuat, tetapi kode fase 4 harus sudah ter-deploy sebelum perintah dijalankan.
+
+Mulai dengan dry-run:
+
+```bash
+php artisan siakad:migrate-phase4 \
+  --source=storage/app/migration/siakad.sql \
+  --dry-run \
+  --table=all
+```
+
+Laporan pemeriksaan ditulis ke:
+
+```text
+storage/app/migration/phase4-migration-report.csv
+```
+
+Aturan migrasi fase keempat:
+
+- KRS dibentuk dari kombinasi mahasiswa dan semester karena tabel header KRS
+  pada dump lama tidak berisi data;
+- peserta KRS ditambahkan ke `class_members` sesuai kelas sumber;
+- kombinasi mahasiswa, mata kuliah, dan semester yang sama digabung agar sesuai
+  batas unik ASC; baris yang paling lengkap, disetujui, dan terbaru dipakai;
+- nilai akhir, huruf, bobot, tanggal penilaian, serta komponen yang tersedia
+  dipindahkan ke `student_grades`;
+- nilai yang seluruh kolom nilainya kosong tidak dimasukkan ke transkrip;
+- nilai angka di luar 0–100 atau huruf yang tidak valid diabaikan pada kolom
+  tersebut, tetapi data nilai lain yang valid tetap dipertahankan;
+- konflik nilai huruf dan bobot tidak dikoreksi otomatis dan dicatat untuk
+  pemeriksaan manual;
+- data ASC yang sudah ada tidak diperbarui atau dihapus;
+- proses insert dilakukan dalam satu transaksi dan perintah aman dijalankan
+  ulang.
+
+Kategori penting dalam laporan:
+
+- `DUPLICATE_ATTEMPT_MERGED`: baris sumber duplikat digabung;
+- `MISSING_STUDENT` atau `MISSING_CLASS_MAP`: dependensi ASC belum tersedia;
+- `GRADE_EMPTY`: tidak dibuat sebagai nilai agar tidak menurunkan IPK;
+- `INVALID_FINAL_SCORE`, `INVALID_LETTER`, atau `INVALID_GRADE_POINT`: salah
+  satu bagian nilai tidak valid;
+- `LETTER_POINT_CONFLICT`: huruf dan bobot sumber berbeda dan perlu diperiksa.
+
+Setelah laporan dry-run diperiksa dan backup tersedia, eksekusi nyata:
+
+```bash
+php artisan siakad:migrate-phase4 \
+  --source=storage/app/migration/siakad.sql \
+  --table=all
+```
+
+Jika proses perlu dipisah, jalankan `--table=enrollments` terlebih dahulu dan
+kemudian `--table=grades`.
+
 ---
 
 ## TAHAP 1: Master Data
