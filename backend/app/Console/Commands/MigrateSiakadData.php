@@ -2,29 +2,44 @@
 
 namespace App\Console\Commands;
 
+use App\Models\AcademicYear;
+use App\Models\Faculty;
+use App\Models\Institution;
+use App\Models\Lecturer;
+use App\Models\Semester;
+use App\Models\Student;
+use App\Models\StudentAddress;
+use App\Models\StudentProfile;
+use App\Models\StudyProgram;
+use App\Models\User;
+use App\Services\SqlDumpParser;
 use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use App\Models\Faculty;
-use App\Models\StudyProgram;
-use App\Models\Lecturer;
-use App\Models\Student;
-use App\Models\User;
-use App\Models\AcademicYear;
-use App\Models\Semester;
 
 class MigrateSiakadData extends Command
 {
     protected $signature = 'siakad:migrate
         {--source= : Path ke file SQL dump SIAKAD}
         {--dry-run : Simulasi saja, tidak ubah data}
-        {--table=all : Tabel yang dimigrasi: all, faculties, study_programs, lecturers, students, semesters, courses}';
+        {--institution-id= : ID institusi tujuan (wajib jika database memiliki lebih dari satu institusi)}
+        {--table=all : Tabel yang dimigrasi: all, faculties, study_programs, semesters, lecturers, students}';
 
     protected $description = 'Migrasi data dari SQL dump SIAKAD lama ke ASC. Menggunakan UPSERT — data yang sudah ada tidak dihapus.';
 
     private bool $dryRun = false;
+
     private string $sqlPath = '';
+
     private array $stats = [];
+
+    private ?int $institutionId = null;
+
+    public function __construct(private readonly SqlDumpParser $parser)
+    {
+        parent::__construct();
+    }
 
     public function handle(): int
     {
@@ -32,12 +47,17 @@ class MigrateSiakadData extends Command
         $source = $this->option('source') ?? base_path('../_referensi/siakadstai_siakad.sql');
         $table = $this->option('table');
 
-        if (!file_exists($source)) {
+        if (! file_exists($source)) {
             $this->error("File tidak ditemukan: {$source}");
+
             return 1;
         }
 
         $this->sqlPath = $source;
+
+        if ($table === 'all' || in_array($table, ['faculties', 'study_programs'], true)) {
+            $this->institutionId = $this->resolveInstitutionId();
+        }
 
         if ($this->dryRun) {
             $this->warn('MODE DRY-RUN: tidak ada data yang diubah.');
@@ -48,11 +68,21 @@ class MigrateSiakadData extends Command
         $this->info("Ukuran file: {$sizeMb} MB");
 
         DB::transaction(function () use ($table) {
-            if ($table === 'all' || $table === 'faculties')      $this->migrateFaculties();
-            if ($table === 'all' || $table === 'study_programs') $this->migrateStudyPrograms();
-            if ($table === 'all' || $table === 'lecturers')      $this->migrateLecturers();
-            if ($table === 'all' || $table === 'students')       $this->migrateStudents();
-            if ($table === 'all' || $table === 'semesters')      $this->migrateSemesters();
+            if ($table === 'all' || $table === 'faculties') {
+                $this->migrateFaculties();
+            }
+            if ($table === 'all' || $table === 'study_programs') {
+                $this->migrateStudyPrograms();
+            }
+            if ($table === 'all' || $table === 'semesters') {
+                $this->migrateSemesters();
+            }
+            if ($table === 'all' || $table === 'lecturers') {
+                $this->migrateLecturers();
+            }
+            if ($table === 'all' || $table === 'students') {
+                $this->migrateStudents();
+            }
         });
 
         $this->newLine();
@@ -69,6 +99,7 @@ class MigrateSiakadData extends Command
         } else {
             $this->info('Migrasi selesai!');
         }
+
         return 0;
     }
 
@@ -79,91 +110,35 @@ class MigrateSiakadData extends Command
     private function parseTable(string $tableName): array
     {
         $this->line("  Parsing tabel '{$tableName}' dari SQL dump...");
-        $results = [];
-        $handle = fopen($this->sqlPath, 'r');
-        if (!$handle) return [];
+        $results = $this->parser->parseTable($this->sqlPath, $tableName);
+        $this->line('  Ditemukan '.count($results)." baris dari tabel '{$tableName}'");
 
-        $columns = [];
-        $inTable = false;
-
-        while (($line = fgets($handle)) !== false) {
-            $line = rtrim($line);
-
-            // Cari definisi kolom dari CREATE TABLE
-            if (!$inTable && preg_match('/^CREATE TABLE `?' . preg_quote($tableName, '/') . '`?\s*\(/i', $line)) {
-                $inTable = true;
-                continue;
-            }
-
-            if ($inTable) {
-                // Ambil nama kolom
-                if (preg_match('/^\s+`([^`]+)`\s+/i', $line, $m)) {
-                    // Skip KEY dan INDEX lines
-                    if (!preg_match('/^\s+(PRIMARY|UNIQUE|KEY|INDEX)\s/i', $line)) {
-                        $columns[] = $m[1];
-                    }
-                }
-                // Tutup CREATE TABLE
-                if (preg_match('/^\)\s*(ENGINE|;)/i', $line) || $line === ');') {
-                    $inTable = false;
-                }
-                continue;
-            }
-
-            // Parse INSERT INTO `tableName` VALUES (...)
-            if (preg_match('/^INSERT INTO `?' . preg_quote($tableName, '/') . '`?\s*(?:\([^)]+\)\s*)?VALUES\s*/i', $line)) {
-                // Ambil nama kolom dari INSERT jika ada
-                if (preg_match('/INSERT INTO `[^`]+`\s*\(([^)]+)\)\s*VALUES/i', $line, $colMatch)) {
-                    $columns = array_map(fn($c) => trim(trim($c), '`'), explode(',', $colMatch[1]));
-                }
-
-                // Ekstrak semua VALUE tuples dari baris ini (bisa multi-row insert)
-                $valuesPart = preg_replace('/^INSERT INTO[^V]+VALUES\s*/i', '', $line);
-                $tuples = $this->extractTuples($valuesPart);
-
-                foreach ($tuples as $values) {
-                    if (count($values) === count($columns)) {
-                        $results[] = array_combine($columns, $values);
-                    }
-                }
-            }
-        }
-
-        fclose($handle);
-        $this->line("  Ditemukan " . count($results) . " baris dari tabel '{$tableName}'");
         return $results;
     }
 
-    /**
-     * Ekstrak array of value tuples dari string VALUES (v1,v2),(v3,v4),...
-     */
-    private function extractTuples(string $valuesStr): array
+    private function resolveInstitutionId(): int
     {
-        $tuples = [];
-        $valuesStr = rtrim(trim($valuesStr), ';');
+        $requestedId = $this->option('institution-id');
 
-        // Pakai regex untuk ekstrak setiap tuple (...)
-        preg_match_all('/\(([^()]*(?:\([^()]*\)[^()]*)*)\)/s', $valuesStr, $matches);
+        if ($requestedId !== null) {
+            $institution = Institution::find($requestedId);
 
-        foreach ($matches[1] as $tuple) {
-            $values = [];
-            // Parse nilai dengan memperhatikan string quoted
-            $pattern = "/(?:'(?:[^'\\\\]|\\\\.)*'|NULL|\\d+(?:\\.\\d+)?|[^,]+)/";
-            preg_match_all($pattern, $tuple, $valMatches);
-
-            foreach ($valMatches[0] as $val) {
-                $val = trim($val);
-                if (strtoupper($val) === 'NULL') {
-                    $values[] = null;
-                } elseif (str_starts_with($val, "'") && str_ends_with($val, "'")) {
-                    $values[] = stripslashes(substr($val, 1, -1));
-                } else {
-                    $values[] = $val;
-                }
+            if (! $institution) {
+                throw new \RuntimeException("Institusi dengan ID {$requestedId} tidak ditemukan.");
             }
-            if (!empty($values)) $tuples[] = $values;
+
+            return $institution->id;
         }
-        return $tuples;
+
+        $institutionIds = Institution::query()->limit(2)->pluck('id');
+
+        if ($institutionIds->count() !== 1) {
+            throw new \RuntimeException(
+                'Gunakan --institution-id karena database harus memiliki tepat satu institusi tujuan.'
+            );
+        }
+
+        return (int) $institutionIds->first();
     }
 
     private function migrateFaculties(): void
@@ -176,23 +151,32 @@ class MigrateSiakadData extends Command
         foreach ($rows as $r) {
             $code = trim($r['kode_fak'] ?? '');
             $name = trim($r['nama_resmi'] ?? $r['nama_singkat'] ?? '');
-            if (!$code || !$name) { $s['skipped']++; continue; }
+            if (! $code || ! $name) {
+                $s['skipped']++;
+
+                continue;
+            }
 
             $existing = Faculty::where('code', $code)->first();
-            if (!$this->dryRun) {
+            $data = [
+                'institution_id' => $this->institutionId,
+                'code' => $code,
+                'name' => $name,
+                'dean_name' => $this->nullableString($r['dekan'] ?? null),
+                'status' => true,
+            ];
+
+            if (! $this->dryRun) {
                 if ($existing) {
                     // Update hanya field yang kosong di ASC
-                    $existing->update(array_filter([
-                        'name' => $existing->name ?: $name,
-                        'short_name' => $existing->short_name ?: ($r['nama_singkat'] ?? null),
-                    ]));
+                    $existing->update($this->onlyEmptyFields($existing, $data));
                     $s['updated']++;
                 } else {
-                    Faculty::create(['code' => $code, 'name' => $name, 'short_name' => $r['nama_singkat'] ?? null, 'status' => true]);
+                    Faculty::create($data);
                     $s['inserted']++;
                 }
             } else {
-                $this->line("  [DRY] Fakultas: {$code} - {$name} → " . ($existing ? 'UPDATE' : 'INSERT'));
+                $this->line("  [DRY] Fakultas: {$code} - {$name} → ".($existing ? 'UPDATE' : 'INSERT'));
                 $existing ? $s['updated']++ : $s['inserted']++;
             }
         }
@@ -203,40 +187,47 @@ class MigrateSiakadData extends Command
     {
         $this->info('Migrasi Program Studi...');
         $rows = $this->parseTable('jurusan');
-        $fakultasRows = $this->parseTable('fakultas');
-        // Build lookup kode_jur -> kode_fak
-        $jurFakMap = [];
-        foreach ($rows as $r) {
-            $jurFakMap[trim($r['kode_jur'] ?? '')] = trim($r['fak_kode'] ?? '');
-        }
+        $levels = collect($this->parseTable('jenjang'))
+            ->mapWithKeys(fn (array $row) => [(string) ($row['idjenjang'] ?? '') => $row['jenjang'] ?? null]);
         $s = &$this->stats['Program Studi'];
         $s = ['total' => count($rows), 'inserted' => 0, 'updated' => 0, 'skipped' => 0];
 
         foreach ($rows as $r) {
             $code = trim($r['kode_jur'] ?? '');
             $name = trim($r['nama_jur'] ?? '');
-            if (!$code || !$name) { $s['skipped']++; continue; }
+            if (! $code || ! $name) {
+                $s['skipped']++;
 
-            $facultyId = Faculty::where('code', $r['fak_kode'] ?? '')->value('id');
+                continue;
+            }
+
+            $facultyId = Faculty::where('code', trim($r['fak_kode'] ?? ''))->value('id');
+            if (! $facultyId) {
+                $this->warn("  Lewati prodi {$code}: fakultas sumber tidak ditemukan di ASC.");
+                $s['skipped']++;
+
+                continue;
+            }
+
             $existing = StudyProgram::where('code', $code)->first();
+            $data = [
+                'faculty_id' => $facultyId,
+                'code' => $code,
+                'name' => $name,
+                'level' => $this->nullableString($levels[(string) ($r['id_jenjang'] ?? '')] ?? null),
+                'status' => $this->toBoolean($r['status'] ?? null, true),
+            ];
 
-            if (!$this->dryRun) {
+            if (! $this->dryRun) {
                 if ($existing) {
-                    $existing->update(array_filter([
-                        'name' => $existing->name ?: $name,
-                        'faculty_id' => $existing->faculty_id ?: $facultyId,
-                    ]));
+                    $existing->update($this->onlyEmptyFields($existing, $data));
                     $s['updated']++;
                 } else {
-                    StudyProgram::create([
-                        'code' => $code, 'name' => $name,
-                        'faculty_id' => $facultyId,
-                        'status' => ($r['status'] ?? '1') == '1',
-                    ]);
+                    StudyProgram::create($data);
                     $s['inserted']++;
                 }
             } else {
-                $this->line("  [DRY] Prodi: {$code} - {$name} → " . ($existing ? 'UPDATE' : 'INSERT'));
+                $this->line("  [DRY] Prodi: {$code} - {$name} → ".($existing ? 'UPDATE' : 'INSERT'));
                 $existing ? $s['updated']++ : $s['inserted']++;
             }
         }
@@ -253,64 +244,72 @@ class MigrateSiakadData extends Command
         foreach ($rows as $r) {
             $nidn = trim($r['nidn'] ?? '');
             $name = trim($r['nama_dosen'] ?? '');
-            if (!$name) { $s['skipped']++; continue; }
+            if (! $name) {
+                $s['skipped']++;
 
-            $email = trim($r['email'] ?? '') ?: ($nidn ? "{$nidn}@dosen.stai-aljawami.ac.id" : null);
+                continue;
+            }
+
+            $legacyId = trim((string) ($r['id_dosen'] ?? ''));
+            $accountId = $nidn ?: (trim($r['nip'] ?? '') ?: "dosen-{$legacyId}");
+            $email = $this->normalizeEmail(
+                $r['email'] ?? null,
+                "dosen-{$accountId}@stai-aljawami.ac.id"
+            );
             $prodiCode = trim($r['kode_jur'] ?? '');
             $prodiId = $prodiCode ? StudyProgram::where('code', $prodiCode)->value('id') : null;
 
             // Find existing by nidn or nip
             $existing = null;
-            if ($nidn) $existing = Lecturer::where('nidn', $nidn)->first();
-            if (!$existing && ($r['nip'] ?? '')) $existing = Lecturer::where('nip', $r['nip'])->first();
-
-            $genderMap = ['L' => 'L', 'P' => 'P', 'l' => 'L', 'p' => 'P', '1' => 'L', '2' => 'P'];
-            $gender = $genderMap[strtolower(trim($r['jk'] ?? ''))] ?? null;
-
-            $birthDate = null;
-            if (!empty($r['tgl_lahir'])) {
-                try { $birthDate = \Carbon\Carbon::parse($r['tgl_lahir'])->format('Y-m-d'); } catch (\Exception) {}
+            if ($nidn) {
+                $existing = Lecturer::where('nidn', $nidn)->first();
             }
+            if (! $existing && ($r['nip'] ?? '')) {
+                $existing = Lecturer::where('nip', $r['nip'])->first();
+            }
+            if (! $existing && $email) {
+                $existing = Lecturer::where('email', $email)->first();
+            }
+
+            $gender = $this->normalizeGender($r['jk'] ?? null);
+            $birthDate = $this->validDate($r['tgl_lahir'] ?? null);
 
             $lecturerData = array_filter([
                 'study_program_id' => $prodiId,
                 'nidn' => $nidn ?: null,
-                'nip' => trim($r['nip'] ?? '') ?: null,
+                'nip' => $this->nullableString($r['nip'] ?? null),
                 'full_name' => $name,
-                'degree_front' => trim($r['gelar_depan'] ?? '') ?: null,
-                'degree_back' => trim($r['gelar_belakang'] ?? '') ?: null,
+                'degree_front' => $this->nullableString($r['gelar_depan'] ?? null),
+                'degree_back' => $this->nullableString($r['gelar_belakang'] ?? null),
                 'gender' => $gender,
-                'birth_place' => trim($r['tmpt_lahir'] ?? '') ?: null,
+                'birth_place' => $this->nullableString($r['tmpt_lahir'] ?? null),
                 'birth_date' => $birthDate,
                 'email' => $email,
-                'phone' => trim($r['no_hp'] ?? '') ?: null,
-                'address' => trim($r['alamat'] ?? '') ?: null,
-                'status' => true,
-            ], fn($v) => $v !== null && $v !== '');
+                'phone' => $this->nullableString($r['no_hp'] ?? null),
+                'address' => $this->nullableString($r['alamat'] ?? null),
+                'status' => $this->toBoolean($r['aktif'] ?? null, true),
+            ], fn ($v) => $v !== null && $v !== '');
 
-            if (!$this->dryRun) {
+            if (! $this->dryRun) {
                 if ($existing) {
                     // Only fill empty fields
-                    $fillable = [];
-                    foreach ($lecturerData as $key => $val) {
-                        if (empty($existing->{$key})) $fillable[$key] = $val;
+                    $fillable = $this->onlyEmptyFields($existing, $lecturerData);
+                    if ($fillable) {
+                        $existing->update($fillable);
                     }
-                    if ($fillable) $existing->update($fillable);
+                    if (! $existing->user_id) {
+                        $user = $this->ensureUser($accountId, $name, $email, 'DOSEN');
+                        $existing->update(['user_id' => $user->id]);
+                    }
                     $s['updated']++;
                 } else {
                     $lecturer = Lecturer::create($lecturerData);
-                    // Buat akun user
-                    $username = $nidn ?: ('dosen-' . $lecturer->id);
-                    $user = User::firstOrCreate(
-                        ['username' => $username],
-                        ['name' => $name, 'email' => $email ?? "{$username}@dosen.stai-aljawami.ac.id", 'password' => Hash::make($username)]
-                    );
-                    if ($user->wasRecentlyCreated) $user->assignRole('DOSEN');
+                    $user = $this->ensureUser($accountId, $name, $email, 'DOSEN');
                     $lecturer->update(['user_id' => $user->id]);
                     $s['inserted']++;
                 }
             } else {
-                $this->line("  [DRY] Dosen: {$nidn} - {$name} → " . ($existing ? 'UPDATE' : 'INSERT'));
+                $this->line("  [DRY] Dosen: {$nidn} - {$name} → ".($existing ? 'UPDATE' : 'INSERT'));
                 $existing ? $s['updated']++ : $s['inserted']++;
             }
         }
@@ -321,136 +320,409 @@ class MigrateSiakadData extends Command
     {
         $this->info('Migrasi Mahasiswa...');
         $rows = $this->parseTable('mahasiswa');
+        $sourceLecturers = collect($this->parseTable('dosen'))
+            ->keyBy(fn (array $row) => (string) ($row['id_dosen'] ?? ''));
+        $religions = collect($this->parseTable('agama'))
+            ->mapWithKeys(fn (array $row) => [(string) ($row['id_agama'] ?? '') => $row['nm_agama'] ?? null]);
         $s = &$this->stats['Mahasiswa'];
         $s = ['total' => count($rows), 'inserted' => 0, 'updated' => 0, 'skipped' => 0];
 
         // Status mapping dari SIAKAD ke ASC
         $statusMap = [
-            'A' => 'Aktif', '1' => 'Aktif', 'Aktif' => 'Aktif',
+            'A' => 'Aktif', '1' => 'Aktif', 'AKTIF' => 'Aktif',
             'C' => 'Cuti', 'D' => 'DO', 'L' => 'Lulus',
-            'K' => 'Mengundurkan Diri', 'N' => 'Lulus',
+            'K' => 'Mengundurkan Diri', 'N' => 'Nonaktif',
+            'G' => 'Aktif', 'X' => 'Aktif',
         ];
 
         foreach ($rows as $r) {
             $nim = trim($r['nim'] ?? '');
             $name = trim($r['nama'] ?? '');
-            if (!$nim || !$name) { $s['skipped']++; continue; }
+            if (! $nim || ! $name) {
+                $s['skipped']++;
 
-            $email = trim($r['email'] ?? '') ?: "{$nim}@student.stai-aljawami.ac.id";
+                continue;
+            }
+
+            $email = $this->normalizeEmail($r['email'] ?? null, "{$nim}@student.stai-aljawami.ac.id");
             $prodiCode = trim($r['jur_kode'] ?? '');
             $prodiId = $prodiCode ? StudyProgram::where('code', $prodiCode)->value('id') : null;
+            if (! $prodiId) {
+                $this->warn("  Lewati mahasiswa {$nim}: prodi {$prodiCode} tidak ditemukan di ASC.");
+                $s['skipped']++;
 
-            // Advisor by nidn
-            $advisorNidn = trim($r['nird'] ?? $r['nidn'] ?? '');
-            $advisorId = $advisorNidn ? Lecturer::where('nidn', $advisorNidn)->value('id') : null;
-
-            $genderMap = ['L' => 'L', 'P' => 'P', 'l' => 'L', 'p' => 'P', '1' => 'L', '2' => 'P'];
-            $gender = $genderMap[strtolower(trim($r['jk'] ?? ''))] ?? null;
-
-            $birthDate = null;
-            if (!empty($r['tgl_lahir'])) {
-                try { $birthDate = \Carbon\Carbon::parse($r['tgl_lahir'])->format('Y-m-d'); } catch (\Exception) {}
+                continue;
             }
+
+            // dosen_pemb menyimpan id_dosen lama, bukan NIDN.
+            $advisorId = null;
+            $advisorReference = trim((string) ($r['dosen_pemb'] ?? ''));
+            if ($advisorReference !== '') {
+                $sourceAdvisor = $sourceLecturers->get($advisorReference);
+                $advisorId = $this->findLecturerId($sourceAdvisor, $advisorReference);
+            }
+
+            $gender = $this->normalizeGender($r['jk'] ?? null);
+            $birthDate = $this->validDate($r['tgl_lahir'] ?? null);
 
             // Entry year from mulai_smt (e.g. 20201 → 2020)
             $entryYear = null;
-            if (!empty($r['mulai_smt'])) {
-                $entryYear = (int) substr((string)$r['mulai_smt'], 0, 4);
+            if (! empty($r['mulai_smt'])) {
+                $entryYear = (int) substr((string) $r['mulai_smt'], 0, 4);
             }
+            $academicYearId = $entryYear
+                ? AcademicYear::whereIn('name', [
+                    "Tahun Akademik {$entryYear}/".($entryYear + 1),
+                    "{$entryYear}/".($entryYear + 1),
+                ])->value('id')
+                : null;
 
             $rawStatus = strtoupper(trim($r['stat_pd'] ?? 'A'));
             $status = $statusMap[$rawStatus] ?? 'Aktif';
 
             $studentData = array_filter([
                 'study_program_id' => $prodiId,
+                'academic_year_id' => $academicYearId,
                 'advisor_id' => $advisorId,
                 'nim' => $nim,
                 'name' => $name,
                 'gender' => $gender,
-                'birth_place' => trim($r['tmpt_lahir'] ?? '') ?: null,
+                'birth_place' => $this->nullableString($r['tmpt_lahir'] ?? null),
                 'birth_date' => $birthDate,
                 'email' => $email,
-                'phone' => trim($r['telepon_seluler'] ?? '') ?: null,
-                'address' => trim($r['jln'] ?? '') ?: null,
+                'phone' => $this->nullableString($r['telepon_seluler'] ?? null),
                 'entry_year' => $entryYear,
                 'status' => $status,
-            ], fn($v) => $v !== null && $v !== '');
+            ], fn ($v) => $v !== null && $v !== '');
 
             $existing = Student::where('nim', $nim)->first();
 
-            if (!$this->dryRun) {
+            if (! $this->dryRun) {
                 if ($existing) {
                     // Only fill empty fields
-                    $fillable = [];
-                    foreach ($studentData as $key => $val) {
-                        if (empty($existing->{$key})) $fillable[$key] = $val;
+                    $fillable = $this->onlyEmptyFields($existing, $studentData);
+                    if ($fillable) {
+                        $existing->update($fillable);
                     }
-                    if ($fillable) $existing->update($fillable);
-                    // Link user if not linked
-                    if (!$existing->user_id) {
-                        $user = User::where('username', $nim)->first();
-                        if ($user) $existing->update(['user_id' => $user->id]);
-                    }
+                    $student = $existing;
                     $s['updated']++;
                 } else {
                     $student = Student::create($studentData);
-                    $user = User::firstOrCreate(
-                        ['username' => $nim],
-                        ['name' => $name, 'email' => $email, 'password' => Hash::make($nim)]
-                    );
-                    if ($user->wasRecentlyCreated) $user->assignRole('MAHASISWA');
-                    $student->update(['user_id' => $user->id]);
                     $s['inserted']++;
                 }
+
+                if (! $student->user_id) {
+                    $user = $this->ensureUser(
+                        $nim,
+                        $name,
+                        $studentData['email'],
+                        'MAHASISWA'
+                    );
+                    $student->update(['user_id' => $user->id]);
+                }
+
+                $this->syncStudentDetails($student, $r, $religions->all());
             } else {
-                $this->line("  [DRY] Mahasiswa: {$nim} - {$name} → " . ($existing ? 'UPDATE' : 'INSERT'));
+                $this->line("  [DRY] Mahasiswa: {$nim} - {$name} → ".($existing ? 'UPDATE' : 'INSERT'));
                 $existing ? $s['updated']++ : $s['inserted']++;
             }
         }
         $this->line("  ✓ {$s['inserted']} insert, {$s['updated']} update, {$s['skipped']} skip");
+    }
+
+    private function findLecturerId(?array $sourceLecturer, string $fallbackReference): ?int
+    {
+        if ($sourceLecturer) {
+            $nidn = $this->nullableString($sourceLecturer['nidn'] ?? null);
+            if ($nidn && ($id = Lecturer::where('nidn', $nidn)->value('id'))) {
+                return (int) $id;
+            }
+
+            $nip = $this->nullableString($sourceLecturer['nip'] ?? null);
+            if ($nip && ($id = Lecturer::where('nip', $nip)->value('id'))) {
+                return (int) $id;
+            }
+
+            $email = $this->nullableString($sourceLecturer['email'] ?? null);
+            if ($email && ($id = Lecturer::where('email', $email)->value('id'))) {
+                return (int) $id;
+            }
+        }
+
+        $id = Lecturer::where('nidn', $fallbackReference)->value('id')
+            ?? Lecturer::where('nip', $fallbackReference)->value('id');
+
+        return $id === null ? null : (int) $id;
+    }
+
+    /** @param array<string, string|null> $religions */
+    private function syncStudentDetails(Student $student, array $source, array $religions): void
+    {
+        $profileData = array_filter([
+            'religion' => $this->nullableString($religions[(string) ($source['id_agama'] ?? '')] ?? null),
+            'nik' => $this->nullableString($source['nik'] ?? null),
+            'nisn' => $this->nullableString($source['nisn'] ?? null),
+        ], fn (mixed $value): bool => $value !== null && $value !== '');
+
+        if ($profileData !== []) {
+            $profile = StudentProfile::firstOrNew(['student_id' => $student->id]);
+            $profile->fill($profile->exists ? $this->onlyEmptyFields($profile, $profileData) : $profileData);
+            $profile->save();
+        }
+
+        $street = $this->nullableString($source['jln'] ?? null);
+        $rt = $this->nullableString($source['rt'] ?? null);
+        $rw = $this->nullableString($source['rw'] ?? null);
+        if ($street && ($rt || $rw)) {
+            $street .= sprintf(' RT %s/RW %s', $rt ?: '-', $rw ?: '-');
+        }
+
+        $addressData = array_filter([
+            'address' => $street,
+            'village' => $this->nullableString($source['ds_kel'] ?? null),
+            'postal_code' => $this->nullableString($source['kode_pos'] ?? null),
+        ], fn (mixed $value): bool => $value !== null && $value !== '');
+
+        if ($addressData !== []) {
+            $address = StudentAddress::firstOrNew([
+                'student_id' => $student->id,
+                'type' => 'Domisili',
+            ]);
+            $address->fill($address->exists ? $this->onlyEmptyFields($address, $addressData) : $addressData);
+            $address->save();
+        }
+    }
+
+    private function ensureUser(string $username, string $name, string $email, string $role): User
+    {
+        $user = User::where('username', $username)->first();
+
+        if (! $user) {
+            $userEmail = $email;
+            if (User::where('email', $userEmail)->exists()) {
+                $userEmail = 'migration-'.sha1($username).'@stai-aljawami.ac.id';
+            }
+
+            $user = User::create([
+                'username' => $username,
+                'name' => $name,
+                'email' => $userEmail,
+                'password' => Hash::make($username),
+                'is_active' => true,
+            ]);
+        }
+
+        if (! $user->hasRole($role)) {
+            $user->assignRole($role);
+        }
+
+        return $user;
+    }
+
+    /** @return array<string, mixed> */
+    private function onlyEmptyFields(Model $model, array $data): array
+    {
+        return array_filter(
+            $data,
+            fn (mixed $value, string $key): bool => ($model->getAttribute($key) === null || $model->getAttribute($key) === '')
+                && $value !== null
+                && $value !== '',
+            ARRAY_FILTER_USE_BOTH
+        );
+    }
+
+    private function nullableString(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $value = trim((string) $value);
+
+        return $value === '' ? null : $value;
+    }
+
+    private function normalizeEmail(mixed $value, string $fallback): string
+    {
+        $email = $this->nullableString($value);
+
+        return $email && filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : $fallback;
+    }
+
+    private function normalizeGender(mixed $value): ?string
+    {
+        return match (strtoupper(trim((string) $value))) {
+            'L', '1' => 'L',
+            'P', '2' => 'P',
+            default => null,
+        };
+    }
+
+    private function toBoolean(mixed $value, bool $default): bool
+    {
+        if ($value === null || trim((string) $value) === '') {
+            return $default;
+        }
+
+        return in_array(strtoupper(trim((string) $value)), ['1', 'Y', 'YES', 'TRUE', 'A', 'AKTIF'], true);
+    }
+
+    private function validDate(mixed $value): ?string
+    {
+        $date = $this->nullableString($value);
+        if (! $date || $date === '0000-00-00') {
+            return null;
+        }
+
+        $parsed = \DateTimeImmutable::createFromFormat('!Y-m-d', $date);
+        $errors = \DateTimeImmutable::getLastErrors();
+
+        if (! $parsed || ($errors !== false && ($errors['warning_count'] > 0 || $errors['error_count'] > 0))) {
+            return null;
+        }
+
+        return $parsed->format('Y-m-d') === $date ? $date : null;
     }
 
     private function migrateSemesters(): void
     {
-        $this->info('📅 Migrasi Semester...');
-        $rows = $this->parseTable('periode_semester');
-        if (empty($rows)) $rows = $this->parseTable('semester');
+        $this->info('Migrasi Tahun Akademik & Semester...');
+        $rows = $this->parseTable('semester');
+
+        // Tabel semester lama berisi satu baris per prodi. ASC menyimpan satu
+        // semester global, sehingga data dideduplikasi berdasarkan id_semester.
+        $periods = [];
+        foreach ($rows as $row) {
+            $code = trim((string) ($row['id_semester'] ?? ''));
+            if ($code === '') {
+                continue;
+            }
+
+            if (! isset($periods[$code])) {
+                $periods[$code] = $row;
+
+                continue;
+            }
+
+            if ($this->toBoolean($row['is_aktif'] ?? null, false)) {
+                $periods[$code]['is_aktif'] = '1';
+            }
+        }
+
+        ksort($periods);
+
+        $academicYearStats = &$this->stats['Tahun Akademik'];
+        $academicYearStats = ['total' => 0, 'inserted' => 0, 'updated' => 0, 'skipped' => 0];
         $s = &$this->stats['Semester'];
-        $s = ['total' => count($rows), 'inserted' => 0, 'updated' => 0, 'skipped' => 0];
+        $s = ['total' => count($periods), 'inserted' => 0, 'updated' => 0, 'skipped' => 0];
+        $seenAcademicYears = [];
 
-        foreach ($rows as $r) {
-            // Try to build semester name
-            $year = $r['thn_akademik'] ?? $r['tahun'] ?? null;
-            $type = $r['kode_jns_smt'] ?? $r['jenis'] ?? null;
-            if (!$year) { $s['skipped']++; continue; }
+        foreach ($periods as $code => $r) {
+            $period = $this->decodeSemesterCode($code);
+            if ($period === null) {
+                $this->warn("  Lewati semester dengan kode tidak valid: {$code}");
+                $s['skipped']++;
 
-            $typeName = ($type == '1' || $type == 'Ganjil') ? 'Ganjil' : 'Genap';
-            $yearParts = explode('/', (string) $year);
-            $yearEnd = count($yearParts) > 1 ? $yearParts[1] : (((int) $yearParts[0]) + 1);
-            $yearStart = $yearParts[0];
-            $semName = "Semester {$typeName} {$yearStart}/{$yearEnd}";
+                continue;
+            }
 
-            // Check academic year
-            $ayName = "{$yearStart}/{$yearEnd}";
-            $ay = AcademicYear::firstOrCreate(['name' => $ayName], ['start_year' => (int)$yearStart, 'end_year' => (int)$yearEnd, 'is_active' => false]);
+            [$yearStart, $typeName] = $period;
+            $yearEnd = $yearStart + 1;
+            $academicYearName = "Tahun Akademik {$yearStart}/{$yearEnd}";
+            $semesterName = "{$typeName} {$yearStart}/{$yearEnd}";
 
-            $existing = Semester::where('name', $semName)->first();
-            $isActive = ($r['status'] ?? $r['aktif'] ?? '0') == '1';
+            $academicYear = AcademicYear::whereIn('name', [
+                $academicYearName,
+                "{$yearStart}/{$yearEnd}",
+            ])->first();
+            if (! isset($seenAcademicYears[$academicYearName])) {
+                $seenAcademicYears[$academicYearName] = true;
+                $academicYearStats['total']++;
+                $academicYear ? $academicYearStats['updated']++ : $academicYearStats['inserted']++;
+            }
 
-            if (!$this->dryRun) {
-                if (!$existing) {
-                    Semester::create(['name' => $semName, 'academic_year_id' => $ay->id, 'type' => $typeName, 'is_active' => $isActive]);
-                    $s['inserted']++;
-                } else {
+            if (! $this->dryRun && ! $academicYear) {
+                $academicYear = AcademicYear::create([
+                    'name' => $academicYearName,
+                    'start_date' => "{$yearStart}-09-01",
+                    'end_date' => "{$yearEnd}-08-31",
+                    'is_active' => false,
+                ]);
+            }
+
+            [$defaultStart, $defaultEnd] = $this->defaultSemesterDates($yearStart, $yearEnd, $typeName);
+            $startDate = $this->dateWithinAcademicYear($r['tgl_mulai'] ?? null, $yearStart, $yearEnd)
+                ?? $defaultStart;
+            $endDate = $this->dateWithinAcademicYear($r['tgl_selesai'] ?? null, $yearStart, $yearEnd)
+                ?? $defaultEnd;
+            if ($endDate < $startDate) {
+                [$startDate, $endDate] = [$defaultStart, $defaultEnd];
+            }
+
+            $existing = Semester::whereIn('name', [
+                $semesterName,
+                "Semester {$semesterName}",
+            ])->first();
+            $semesterData = [
+                'academic_year_id' => $academicYear?->id,
+                'name' => $semesterName,
+                'type' => $typeName,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'krs_start' => $this->dateWithinAcademicYear($r['tgl_mulai_krs'] ?? null, $yearStart, $yearEnd),
+                'krs_end' => $this->dateWithinAcademicYear($r['tgl_selesai_krs'] ?? null, $yearStart, $yearEnd),
+                'is_active' => $this->toBoolean($r['is_aktif'] ?? null, false),
+            ];
+
+            if (! $this->dryRun) {
+                if ($existing) {
+                    $existing->update($this->onlyEmptyFields($existing, $semesterData));
                     $s['updated']++;
+                } else {
+                    Semester::create($semesterData);
+                    $s['inserted']++;
                 }
             } else {
-                $this->line("  [DRY] Semester: {$semName} → " . ($existing ? 'UPDATE' : 'INSERT'));
+                $this->line("  [DRY] Semester: {$semesterName} → ".($existing ? 'UPDATE' : 'INSERT'));
                 $existing ? $s['updated']++ : $s['inserted']++;
             }
         }
         $this->line("  ✓ {$s['inserted']} insert, {$s['updated']} update, {$s['skipped']} skip");
     }
+
+    /** @return array{int, string}|null */
+    private function decodeSemesterCode(string $code): ?array
+    {
+        if (! preg_match('/^(\d{4})([123])$/', $code, $match)) {
+            return null;
+        }
+
+        $type = match ($match[2]) {
+            '1' => 'Ganjil',
+            '2' => 'Genap',
+            '3' => 'Pendek',
+        };
+
+        return [(int) $match[1], $type];
+    }
+
+    /** @return array{string, string} */
+    private function defaultSemesterDates(int $yearStart, int $yearEnd, string $type): array
+    {
+        return match ($type) {
+            'Ganjil' => ["{$yearStart}-09-01", "{$yearEnd}-01-31"],
+            'Genap' => ["{$yearEnd}-02-01", "{$yearEnd}-08-31"],
+            'Pendek' => ["{$yearEnd}-07-01", "{$yearEnd}-08-31"],
+        };
+    }
+
+    private function dateWithinAcademicYear(mixed $value, int $yearStart, int $yearEnd): ?string
+    {
+        $date = $this->validDate($value);
+        if (! $date) {
+            return null;
+        }
+
+        return $date >= "{$yearStart}-07-01" && $date <= "{$yearEnd}-09-30" ? $date : null;
+    }
 }
-
-

@@ -67,10 +67,12 @@ const form = reactive({
   address: '', origin_school: '', entry_year: new Date().getFullYear(), status: 'Aktif',
 })
 
+const studentStatuses = ['Aktif', 'Nonaktif', 'Cuti', 'Lulus', 'DO', 'Mengundurkan Diri']
+
 const statusColor: Record<string, string> = {
   Aktif: 'bg-green-100 text-green-700', Cuti: 'bg-yellow-100 text-yellow-700',
   Lulus: 'bg-blue-100 text-blue-700', DO: 'bg-red-100 text-red-700',
-  'Mengundurkan Diri': 'bg-gray-100 text-gray-600',
+  Nonaktif: 'bg-slate-100 text-slate-700', 'Mengundurkan Diri': 'bg-gray-100 text-gray-600',
 }
 
 const columns = [
@@ -151,7 +153,7 @@ async function handleDelete(item: Student) {
       </select>
       <select v-model="filterStatus" class="px-3.5 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" @change="load()">
         <option value="">Semua Status</option>
-        <option v-for="s in ['Aktif','Cuti','Lulus','DO','Mengundurkan Diri']" :key="s" :value="s">{{ s }}</option>
+        <option v-for="s in studentStatuses" :key="s" :value="s">{{ s }}</option>
       </select>
       <!-- Bulk delete -->
       <button v-if="selectedIds.length" :disabled="bulkDeleting" class="ml-auto px-3 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white text-xs font-medium rounded-lg inline-flex items-center gap-1.5" @click="bulkDelete">
@@ -224,7 +226,7 @@ async function handleDelete(item: Student) {
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
           <select v-model="form.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option v-for="s in ['Aktif','Cuti','Lulus','DO','Mengundurkan Diri']" :key="s" :value="s">{{ s }}</option>
+            <option v-for="s in studentStatuses" :key="s" :value="s">{{ s }}</option>
           </select>
         </div>
         <div>

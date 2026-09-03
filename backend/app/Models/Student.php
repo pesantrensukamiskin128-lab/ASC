@@ -11,6 +11,16 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Student extends Model
 {
     use HasFiles;
+
+    public const STATUSES = [
+        'Aktif',
+        'Nonaktif',
+        'Cuti',
+        'Lulus',
+        'DO',
+        'Mengundurkan Diri',
+    ];
+
     protected $fillable = [
         'user_id', 'study_program_id', 'academic_year_id', 'advisor_id',
         'nim', 'name', 'gender', 'birth_place', 'birth_date',
@@ -125,12 +135,12 @@ class Student extends Model
 
         // Buat record baru
         $history = $this->statusHistories()->create([
-            'semester_id'    => $semesterId,
-            'status'         => $status,
-            'start_date'     => now(),
-            'reason'         => $reason,
-            'decree_number'  => $decreeNumber,
-            'created_by'     => auth()->id(),
+            'semester_id' => $semesterId,
+            'status' => $status,
+            'start_date' => now(),
+            'reason' => $reason,
+            'decree_number' => $decreeNumber,
+            'created_by' => auth()->id(),
         ]);
 
         // Update status di tabel utama (untuk query cepat)

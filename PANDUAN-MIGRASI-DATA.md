@@ -77,7 +77,7 @@ Format Excel:
 - Role MAHASISWA
 - Email default jika kosong: `{nim}@student.jawami.ac.id`
 
-**Status yang valid**: `Aktif`, `Cuti`, `Lulus`, `DO`, `Mengundurkan Diri`
+**Status yang valid**: `Aktif`, `Nonaktif`, `Cuti`, `Lulus`, `DO`, `Mengundurkan Diri`
 
 ### Cara 2: Via Artisan Command (Untuk Data Besar)
 

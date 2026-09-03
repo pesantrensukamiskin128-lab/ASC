@@ -17,7 +17,7 @@ onMounted(async () => {
 
 const statusColors: Record<string, string> = {
   Aktif: 'bg-green-500', Cuti: 'bg-yellow-500', Lulus: 'bg-blue-500',
-  DO: 'bg-red-500', 'Mengundurkan Diri': 'bg-gray-500',
+  Nonaktif: 'bg-slate-500', DO: 'bg-red-500', 'Mengundurkan Diri': 'bg-gray-500',
 }
 </script>
 
@@ -37,7 +37,7 @@ const statusColors: Record<string, string> = {
       <!-- Per Status -->
       <div class="bg-white rounded-xl border border-gray-200 p-5">
         <h2 class="text-sm font-semibold text-gray-800 mb-4">Mahasiswa Per Status</h2>
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <div v-for="item in data.by_status" :key="item.status" class="text-center p-3 bg-gray-50 rounded-lg">
             <div :class="['w-3 h-3 rounded-full mx-auto mb-2', statusColors[item.status] ?? 'bg-gray-400']" />
             <p class="text-xl font-bold text-gray-900">{{ item.count }}</p>
