@@ -111,6 +111,7 @@ class StudentController extends Controller
             'documents',
             'educationHistories',
             'statusHistories.semester',
+            'semesterSummaries.semester',
             'financialRecords.semester',
             'pmbRegistrant.period',
             'pmbRegistrant.path',

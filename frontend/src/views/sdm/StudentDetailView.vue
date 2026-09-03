@@ -23,10 +23,21 @@ function formatDate(d: string) {
   return d ? new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'
 }
 
+function formatAcademicNumber(value: string | number | null | undefined, decimals = 0) {
+  if (value === null || value === undefined || value === '') return '-'
+  return Number(value).toLocaleString('id-ID', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  })
+}
+
 const statusColor: Record<string, string> = {
   Aktif: 'bg-green-100 text-green-700', Cuti: 'bg-yellow-100 text-yellow-700',
   Lulus: 'bg-blue-100 text-blue-700', DO: 'bg-red-100 text-red-700',
   'Mengundurkan Diri': 'bg-gray-100 text-gray-600', Nonaktif: 'bg-gray-100 text-gray-600',
+  AKTIF: 'bg-green-100 text-green-700', CUTI: 'bg-yellow-100 text-yellow-700',
+  LULUS: 'bg-blue-100 text-blue-700', NONAKTIF: 'bg-gray-100 text-gray-600',
+  KELUAR: 'bg-gray-100 text-gray-600', UNKNOWN: 'bg-gray-100 text-gray-600',
 }
 
 const photoUrl = computed(() => {
@@ -134,6 +145,47 @@ const pmb = computed(() => data.value?.pmb_registrant)
             {{ edu.diploma_number ? ` · No. Ijazah: ${edu.diploma_number}` : '' }}
           </p>
         </div>
+      </div>
+    </div>
+
+    <!-- Ringkasan Akademik per Semester -->
+    <div v-if="data.semester_summaries?.length" class="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
+      <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wide flex items-center gap-2">
+        <AcademicCapIcon class="w-4 h-4" /> Riwayat Akademik per Semester
+      </h2>
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[850px] text-sm">
+          <thead>
+            <tr class="text-left text-xs text-gray-400 border-b">
+              <th class="pb-2">Semester</th>
+              <th class="pb-2">Status</th>
+              <th class="pb-2 text-right">IP</th>
+              <th class="pb-2 text-right">IPK</th>
+              <th class="pb-2 text-right">Batas SKS</th>
+              <th class="pb-2 text-right">Diambil</th>
+              <th class="pb-2 text-right">Wajib</th>
+              <th class="pb-2 text-right">Pilihan</th>
+              <th class="pb-2 text-right">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="summary in data.semester_summaries" :key="summary.id" class="border-b border-gray-50">
+              <td class="py-2 text-gray-700 whitespace-nowrap">{{ summary.semester?.name ?? '-' }}</td>
+              <td class="py-2">
+                <span :class="['inline-flex px-2 py-0.5 rounded-full text-xs font-medium', statusColor[summary.status] ?? 'bg-gray-100 text-gray-600']">
+                  {{ summary.status }}
+                </span>
+              </td>
+              <td class="py-2 text-right font-mono">{{ formatAcademicNumber(summary.semester_gpa, 2) }}</td>
+              <td class="py-2 text-right font-mono font-semibold">{{ formatAcademicNumber(summary.cumulative_gpa, 2) }}</td>
+              <td class="py-2 text-right">{{ formatAcademicNumber(summary.credit_limit) }}</td>
+              <td class="py-2 text-right">{{ formatAcademicNumber(summary.credits_taken) }}</td>
+              <td class="py-2 text-right">{{ formatAcademicNumber(summary.required_credits) }}</td>
+              <td class="py-2 text-right">{{ formatAcademicNumber(summary.elective_credits) }}</td>
+              <td class="py-2 text-right font-semibold">{{ formatAcademicNumber(summary.total_credits) }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 

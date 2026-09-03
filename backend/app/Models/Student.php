@@ -91,6 +91,11 @@ class Student extends Model
         return $this->hasMany(StudentStatusHistory::class)->orderByDesc('start_date');
     }
 
+    public function semesterSummaries(): HasMany
+    {
+        return $this->hasMany(StudentSemesterSummary::class)->orderByDesc('semester_id');
+    }
+
     public function latestStatusHistory(): HasOne
     {
         return $this->hasOne(StudentStatusHistory::class)->latestOfMany('start_date');
