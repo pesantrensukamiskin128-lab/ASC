@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ClassModel;
+use App\Models\Lecturer;
+use App\Models\LecturerPosition;
 use App\Models\Schedule;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
@@ -18,21 +20,21 @@ class ClassController extends Controller
 
         $data = ClassModel::with(['course.studyProgram', 'lecturer', 'room', 'semester.academicYear', 'schedules.room'])
             ->withCount('members')
-            ->when($request->semester_id, fn($q) => $q->where('semester_id', $request->semester_id))
-            ->when($request->study_program_id, fn($q) => $q->where('study_program_id', $request->study_program_id))
-            ->when($request->course_id, fn($q) => $q->where('course_id', $request->course_id))
-            ->when($request->search, fn($q) => $q->where('name', 'like', "%{$request->search}%")
-                ->orWhereHas('course', fn($q2) => $q2->where('name', 'like', "%{$request->search}%")))
+            ->when($request->semester_id, fn ($q) => $q->where('semester_id', $request->semester_id))
+            ->when($request->study_program_id, fn ($q) => $q->where('study_program_id', $request->study_program_id))
+            ->when($request->course_id, fn ($q) => $q->where('course_id', $request->course_id))
+            ->when($request->search, fn ($q) => $q->where('name', 'like', "%{$request->search}%")
+                ->orWhereHas('course', fn ($q2) => $q2->where('name', 'like', "%{$request->search}%")))
             // Dosen biasa hanya lihat kelas yang diampu
-            ->when($user->hasRole('DOSEN') && !$user->hasRole('SUPER_ADMIN') && !$user->hasRole('ADMIN_AKADEMIK'), function ($q) use ($user) {
-                $lecturer = \App\Models\Lecturer::where('user_id', $user->id)->first();
+            ->when($user->hasRole('DOSEN') && ! $user->hasRole('SUPER_ADMIN') && ! $user->hasRole('ADMIN_AKADEMIK'), function ($q) use ($user) {
+                $lecturer = Lecturer::where('user_id', $user->id)->first();
                 if ($lecturer) {
                     // Cek apakah Kaprodi
-                    $isKaprodi = \App\Models\LecturerPosition::where('lecturer_id', $lecturer->id)
+                    $isKaprodi = LecturerPosition::where('lecturer_id', $lecturer->id)
                         ->where('is_active', true)
                         ->whereIn('position_code', ['KAPRODI', 'SEKPRODI'])
                         ->exists();
-                    if (!$isKaprodi) {
+                    if (! $isKaprodi) {
                         $q->where('lecturer_id', $lecturer->id);
                     }
                 } else {
@@ -48,22 +50,22 @@ class ClassController extends Controller
     {
         $validated = $request->validate([
             'study_program_id' => 'required|exists:study_programs,id',
-            'semester_id'      => 'required|exists:semesters,id',
-            'course_id'        => 'required|exists:courses,id',
-            'lecturer_id'      => 'required|exists:lecturers,id',
-            'room_id'          => 'nullable|exists:rooms,id',
-            'name'             => 'required|string|max:50',
-            'capacity'         => 'nullable|integer|min:1',
-            'academic_level'   => 'nullable|integer|min:1|max:8',
-            'is_active'        => 'boolean',
+            'semester_id' => 'required|exists:semesters,id',
+            'course_id' => 'required|exists:courses,id',
+            'lecturer_id' => 'required|exists:lecturers,id',
+            'room_id' => 'nullable|exists:rooms,id',
+            'name' => 'required|string|max:50',
+            'capacity' => 'nullable|integer|min:1',
+            'academic_level' => 'nullable|integer|min:1|max:8',
+            'is_active' => 'boolean',
             // Jadwal (opsional, buat schedule sekaligus)
-            'day'              => 'nullable|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu',
-            'start_time'       => 'nullable|date_format:H:i',
-            'end_time'         => 'nullable|date_format:H:i|after:start_time',
+            'day' => 'nullable|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu,Minggu',
+            'start_time' => 'nullable|date_format:H:i',
+            'end_time' => 'nullable|date_format:H:i|after:start_time',
         ]);
 
         // Deteksi konflik jadwal
-        if (!empty($validated['day']) && !empty($validated['start_time']) && !empty($validated['end_time'])) {
+        if (! empty($validated['day']) && ! empty($validated['start_time']) && ! empty($validated['end_time'])) {
             $conflicts = Schedule::hasConflict(
                 $validated['semester_id'],
                 $validated['day'],
@@ -72,7 +74,7 @@ class ClassController extends Controller
                 $validated['lecturer_id'],
                 $validated['room_id'] ?? null
             );
-            if (!empty($conflicts)) {
+            if (! empty($conflicts)) {
                 return response()->json(['message' => 'Jadwal bentrok!', 'conflicts' => $conflicts], 422);
             }
         }
@@ -84,13 +86,13 @@ class ClassController extends Controller
             ])->toArray());
 
             // Buat jadwal jika disertakan
-            if (!empty($validated['day']) && !empty($validated['start_time'])) {
+            if (! empty($validated['day']) && ! empty($validated['start_time'])) {
                 Schedule::create([
-                    'class_id'    => $class->id,
-                    'day'         => $validated['day'],
-                    'start_time'  => $validated['start_time'],
-                    'end_time'    => $validated['end_time'],
-                    'room_id'     => $validated['room_id'] ?? null,
+                    'class_id' => $class->id,
+                    'day' => $validated['day'],
+                    'start_time' => $validated['start_time'],
+                    'end_time' => $validated['end_time'],
+                    'room_id' => $validated['room_id'] ?? null,
                     'lecturer_id' => $validated['lecturer_id'],
                 ]);
             }
@@ -103,7 +105,7 @@ class ClassController extends Controller
 
         return response()->json([
             'message' => 'Kelas berhasil ditambahkan.',
-            'data'    => $class->load(['course', 'lecturer', 'room', 'schedules']),
+            'data' => $class->load(['course', 'lecturer', 'room', 'schedules']),
         ], 201);
     }
 
@@ -122,13 +124,13 @@ class ClassController extends Controller
     public function show(ClassModel $class): JsonResponse
     {
         $user = auth()->user();
-        if ($user->hasRole('DOSEN') && !$user->hasRole('SUPER_ADMIN') && !$user->hasRole('ADMIN_AKADEMIK')) {
-            $lecturer = \App\Models\Lecturer::where('user_id', $user->id)->first();
-            $isKaprodi = $lecturer ? \App\Models\LecturerPosition::where('lecturer_id', $lecturer->id)
+        if ($user->hasRole('DOSEN') && ! $user->hasRole('SUPER_ADMIN') && ! $user->hasRole('ADMIN_AKADEMIK')) {
+            $lecturer = Lecturer::where('user_id', $user->id)->first();
+            $isKaprodi = $lecturer ? LecturerPosition::where('lecturer_id', $lecturer->id)
                 ->where('is_active', true)
                 ->whereIn('position_code', ['KAPRODI', 'SEKPRODI'])
                 ->exists() : false;
-            if (!$isKaprodi && (!$lecturer || $class->lecturer_id !== $lecturer->id)) {
+            if (! $isKaprodi && (! $lecturer || $class->lecturer_id !== $lecturer->id)) {
                 return response()->json(['message' => 'Anda bukan pengampu kelas ini.'], 403);
             }
         }
@@ -141,15 +143,16 @@ class ClassController extends Controller
     public function update(Request $request, ClassModel $class): JsonResponse
     {
         $validated = $request->validate([
-            'lecturer_id'    => 'sometimes|exists:lecturers,id',
-            'room_id'        => 'nullable|exists:rooms,id',
-            'name'           => 'sometimes|string|max:50',
-            'capacity'       => 'nullable|integer|min:1',
+            'lecturer_id' => 'sometimes|exists:lecturers,id',
+            'room_id' => 'nullable|exists:rooms,id',
+            'name' => 'sometimes|string|max:50',
+            'capacity' => 'nullable|integer|min:1',
             'academic_level' => 'nullable|integer|min:1|max:8',
-            'is_active'      => 'boolean',
+            'is_active' => 'boolean',
         ]);
 
         $class->update($validated);
+
         return response()->json(['message' => 'Kelas berhasil diupdate.', 'data' => $class->fresh(['course', 'lecturer', 'room', 'schedules'])]);
     }
 
@@ -159,6 +162,7 @@ class ClassController extends Controller
             return response()->json(['message' => 'Tidak dapat menghapus kelas yang sudah ada mahasiswa.'], 422);
         }
         $class->delete();
+
         return response()->json(['message' => 'Kelas berhasil dihapus.']);
     }
 
@@ -167,12 +171,12 @@ class ClassController extends Controller
     public function addSchedule(Request $request, ClassModel $class): JsonResponse
     {
         $validated = $request->validate([
-            'day'         => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu',
-            'start_time'  => 'required|date_format:H:i',
-            'end_time'    => 'required|date_format:H:i|after:start_time',
-            'room_id'     => 'nullable|exists:rooms,id',
+            'day' => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu,Minggu',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
+            'room_id' => 'nullable|exists:rooms,id',
             'lecturer_id' => 'nullable|exists:lecturers,id',
-            'note'        => 'nullable|string|max:100',
+            'note' => 'nullable|string|max:100',
         ]);
 
         $conflicts = Schedule::hasConflict(
@@ -184,7 +188,7 @@ class ClassController extends Controller
             $validated['room_id'] ?? $class->room_id
         );
 
-        if (!empty($conflicts)) {
+        if (! empty($conflicts)) {
             return response()->json(['message' => 'Jadwal bentrok!', 'conflicts' => $conflicts], 422);
         }
 
@@ -198,6 +202,7 @@ class ClassController extends Controller
     public function removeSchedule(ClassModel $class, Schedule $schedule): JsonResponse
     {
         $schedule->delete();
+
         return response()->json(['message' => 'Jadwal berhasil dihapus.']);
     }
 
@@ -208,8 +213,8 @@ class ClassController extends Controller
             ClassModel::with(['course:id,code,name,credits', 'schedules'])
                 ->withCount('members')
                 ->where('is_active', true)
-                ->when($request->semester_id, fn($q) => $q->where('semester_id', $request->semester_id))
-                ->when($request->study_program_id, fn($q) => $q->where('study_program_id', $request->study_program_id))
+                ->when($request->semester_id, fn ($q) => $q->where('semester_id', $request->semester_id))
+                ->when($request->study_program_id, fn ($q) => $q->where('study_program_id', $request->study_program_id))
                 ->get()
         );
     }

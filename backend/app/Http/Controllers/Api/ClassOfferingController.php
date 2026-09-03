@@ -12,11 +12,11 @@ class ClassOfferingController extends Controller
     public function index(Request $request): JsonResponse
     {
         $data = ClassOffering::with(['course.studyProgram', 'lecturer', 'room.building', 'academicYear'])
-            ->when($request->academic_year_id, fn($q) => $q->where('academic_year_id', $request->academic_year_id))
-            ->when($request->study_program_id, fn($q) => $q->whereHas('course', fn($q2) => $q2->where('study_program_id', $request->study_program_id)))
-            ->when($request->course_id, fn($q) => $q->where('course_id', $request->course_id))
-            ->when($request->search, fn($q) => $q->where('class_code', 'like', "%{$request->search}%")
-                ->orWhereHas('course', fn($q2) => $q2->where('name', 'like', "%{$request->search}%")))
+            ->when($request->academic_year_id, fn ($q) => $q->where('academic_year_id', $request->academic_year_id))
+            ->when($request->study_program_id, fn ($q) => $q->whereHas('course', fn ($q2) => $q2->where('study_program_id', $request->study_program_id)))
+            ->when($request->course_id, fn ($q) => $q->where('course_id', $request->course_id))
+            ->when($request->search, fn ($q) => $q->where('class_code', 'like', "%{$request->search}%")
+                ->orWhereHas('course', fn ($q2) => $q2->where('name', 'like', "%{$request->search}%")))
             ->paginate($request->per_page ?? 20);
 
         return response()->json($data);
@@ -25,16 +25,16 @@ class ClassOfferingController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'course_id'        => 'required|exists:courses,id',
+            'course_id' => 'required|exists:courses,id',
             'academic_year_id' => 'required|exists:academic_years,id',
-            'lecturer_id'      => 'required|exists:lecturers,id',
-            'room_id'          => 'nullable|exists:rooms,id',
-            'class_code'       => 'required|string|max:20',
-            'max_students'     => 'nullable|integer|min:1',
-            'day'              => 'nullable|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu',
-            'start_time'       => 'nullable|date_format:H:i',
-            'end_time'         => 'nullable|date_format:H:i',
-            'is_active'        => 'boolean',
+            'lecturer_id' => 'required|exists:lecturers,id',
+            'room_id' => 'nullable|exists:rooms,id',
+            'class_code' => 'required|string|max:20',
+            'max_students' => 'nullable|integer|min:1',
+            'day' => 'nullable|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu,Minggu',
+            'start_time' => 'nullable|date_format:H:i',
+            'end_time' => 'nullable|date_format:H:i',
+            'is_active' => 'boolean',
         ]);
 
         // Cek duplikat
@@ -51,7 +51,7 @@ class ClassOfferingController extends Controller
 
         return response()->json([
             'message' => 'Kelas berhasil ditambahkan.',
-            'data'    => $offering->load(['course', 'lecturer', 'room']),
+            'data' => $offering->load(['course', 'lecturer', 'room']),
         ], 201);
     }
 
@@ -63,13 +63,13 @@ class ClassOfferingController extends Controller
     public function update(Request $request, ClassOffering $classOffering): JsonResponse
     {
         $validated = $request->validate([
-            'lecturer_id'  => 'sometimes|exists:lecturers,id',
-            'room_id'      => 'nullable|exists:rooms,id',
+            'lecturer_id' => 'sometimes|exists:lecturers,id',
+            'room_id' => 'nullable|exists:rooms,id',
             'max_students' => 'nullable|integer|min:1',
-            'day'          => 'nullable|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu',
-            'start_time'   => 'nullable|date_format:H:i',
-            'end_time'     => 'nullable|date_format:H:i',
-            'is_active'    => 'boolean',
+            'day' => 'nullable|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu,Minggu',
+            'start_time' => 'nullable|date_format:H:i',
+            'end_time' => 'nullable|date_format:H:i',
+            'is_active' => 'boolean',
         ]);
 
         $classOffering->update($validated);
@@ -84,6 +84,7 @@ class ClassOfferingController extends Controller
         }
 
         $classOffering->delete();
+
         return response()->json(['message' => 'Kelas berhasil dihapus.']);
     }
 
@@ -92,8 +93,8 @@ class ClassOfferingController extends Controller
         return response()->json(
             ClassOffering::with(['course:id,code,name,credits', 'lecturer:id,name'])
                 ->where('is_active', true)
-                ->when($request->academic_year_id, fn($q) => $q->where('academic_year_id', $request->academic_year_id))
-                ->when($request->study_program_id, fn($q) => $q->whereHas('course', fn($q2) => $q2->where('study_program_id', $request->study_program_id)))
+                ->when($request->academic_year_id, fn ($q) => $q->where('academic_year_id', $request->academic_year_id))
+                ->when($request->study_program_id, fn ($q) => $q->whereHas('course', fn ($q2) => $q2->where('study_program_id', $request->study_program_id)))
                 ->get(['id', 'class_code', 'course_id', 'lecturer_id', 'max_students', 'enrolled_count', 'day', 'start_time', 'end_time'])
         );
     }

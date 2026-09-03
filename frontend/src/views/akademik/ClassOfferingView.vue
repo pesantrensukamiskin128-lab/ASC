@@ -47,7 +47,7 @@ const form = reactive({
   day: '', start_time: '', end_time: '', is_active: true,
 })
 
-const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
+const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
 
 const columns = [
   { key: 'name', label: 'Kelas' }, { key: 'course', label: 'Mata Kuliah' },

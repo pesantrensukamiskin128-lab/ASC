@@ -24,6 +24,8 @@ class SqlDumpParser
         $readingCreate = false;
         $statement = '';
         $readingInsert = false;
+        $insertQuoted = false;
+        $insertEscaped = false;
 
         try {
             while (($line = fgets($handle)) !== false) {
@@ -54,11 +56,13 @@ class SqlDumpParser
                 )) {
                     $readingInsert = true;
                     $statement = $line;
+                    $insertQuoted = false;
+                    $insertEscaped = false;
                 } elseif ($readingInsert) {
                     $statement .= $line;
                 }
 
-                if ($readingInsert && $this->statementIsComplete($statement)) {
+                if ($readingInsert && $this->chunkCompletesStatement($line, $insertQuoted, $insertEscaped)) {
                     foreach ($this->parseInsertStatement($statement, $tableName, $createColumns) as $row) {
                         $rows[] = $row;
                     }
@@ -78,13 +82,14 @@ class SqlDumpParser
         return $rows;
     }
 
-    private function statementIsComplete(string $statement): bool
+    /**
+     * Memeriksa hanya potongan yang baru dibaca sambil mempertahankan status
+     * quote. Ini menghindari pemindaian ulang statement besar pada setiap baris.
+     */
+    private function chunkCompletesStatement(string $chunk, bool &$quoted, bool &$escaped): bool
     {
-        $quoted = false;
-        $escaped = false;
-
-        for ($i = 0, $length = strlen($statement); $i < $length; $i++) {
-            $char = $statement[$i];
+        for ($i = 0, $length = strlen($chunk); $i < $length; $i++) {
+            $char = $chunk[$i];
 
             if ($escaped) {
                 $escaped = false;
@@ -99,7 +104,7 @@ class SqlDumpParser
             }
 
             if ($char === "'") {
-                if ($quoted && ($statement[$i + 1] ?? null) === "'") {
+                if ($quoted && ($chunk[$i + 1] ?? null) === "'") {
                     $i++;
 
                     continue;

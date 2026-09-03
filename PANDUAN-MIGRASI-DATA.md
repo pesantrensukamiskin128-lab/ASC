@@ -72,6 +72,81 @@ Perintah aman dijalankan ulang karena menggunakan pemetaan ID lama dan operasi
 idempoten. Opsi `--table=curriculums` dan `--table=courses` tersedia apabila
 proses perlu dipisah; Kurikulum wajib dijalankan lebih dahulu.
 
+### Fase 3 — Gedung, Ruang, Kelas, Dosen Pengampu, dan Jadwal
+
+Fase ini membutuhkan fase 2 karena setiap kelas lama dihubungkan ke mata kuliah
+melalui tabel `legacy_migration_maps`. Deploy kode dan jalankan migration database
+lebih dahulu:
+
+```bash
+php artisan migrate --force
+```
+
+Migration ini membuat tabel `class_lecturers`, mengizinkan kelas historis tanpa
+dosen utama, dan menambahkan hari Minggu sebagai pilihan jadwal.
+
+Selalu mulai dengan dry-run:
+
+```bash
+php artisan siakad:migrate-phase3 \
+  --source=storage/app/migration/siakad.sql \
+  --dry-run \
+  --table=all
+```
+
+Laporan pemeriksaan ditulis ke:
+
+```text
+storage/app/migration/phase3-migration-report.csv
+```
+
+Kategori penting dalam laporan:
+
+- `DUPLICATE_CODE_ALIASED`: kode ruang sudah dipakai sehingga dibuat kode
+  turunan yang unik;
+- `DUPLICATE_CLASS_ALIASED`: terdapat kelas dengan semester, mata kuliah, dan
+  nama sama sehingga nama target diberi akhiran unik;
+- `SYNTHETIC_PARENT`: ruang menunjuk gedung lama yang tidak terdapat pada tabel
+  sumber sehingga dibuat gedung penampung nonaktif;
+- `CLASS_WITHOUT_LECTURER`: kelas historis tetap dibuat tanpa dosen utama;
+- `UNRESOLVED_LECTURER`: penugasan dosen tidak dapat dicocokkan;
+- `SKIPPED`: baris tidak ditulis karena dependensi, hari, atau jam tidak valid.
+
+Aturan keamanan fase ketiga:
+
+- tidak menghapus data ASC;
+- entitas yang sudah memiliki pemetaan legacy tidak dibuat ulang;
+- kolom yang sudah berisi atau telah diperbaiki manual di ASC tidak ditimpa;
+- seluruh dosen pengampu disimpan di `class_lecturers`, sedangkan dosen urutan
+  pertama menjadi dosen utama kelas;
+- kelas tanpa dosen tetap dimigrasikan agar riwayat akademik berikutnya tidak
+  kehilangan kelas;
+- `Ahad` dan `Minggu` dinormalisasi menjadi `Minggu`, sedangkan `Jum'at`
+  dinormalisasi menjadi `Jumat`;
+- jadwal dengan hari/jam kosong, jam tidak valid, atau jam selesai tidak lebih
+  besar dari jam mulai dilewati dan dicatat dalam laporan;
+- kelas dan jadwal historis hanya aktif apabila semester tujuan aktif dan kelas
+  sumber masih terbuka.
+
+Setelah laporan dry-run diperiksa dan backup Railway tersedia, jalankan:
+
+```bash
+php artisan siakad:migrate-phase3 \
+  --source=storage/app/migration/siakad.sql \
+  --table=all
+```
+
+Apabila perlu dilakukan bertahap, urutannya wajib seperti berikut:
+
+```bash
+php artisan siakad:migrate-phase3 --source=storage/app/migration/siakad.sql --table=facilities
+php artisan siakad:migrate-phase3 --source=storage/app/migration/siakad.sql --table=classes
+php artisan siakad:migrate-phase3 --source=storage/app/migration/siakad.sql --table=schedules
+```
+
+Perintah fase ketiga aman dijalankan ulang. Gunakan `--institution-id=ID` jika
+database ASC mempunyai lebih dari satu institusi.
+
 ---
 
 ## TAHAP 1: Master Data
