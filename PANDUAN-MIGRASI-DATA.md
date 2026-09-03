@@ -22,6 +22,56 @@ Dokumen ini menjelaskan cara memasukkan data mahasiswa eksisting (berbagai angka
 
 ⚠️ **PENTING**: Urutan ini WAJIB diikuti karena ada dependensi foreign key.
 
+## Migrasi Langsung dari Dump SIAKAD Lama
+
+Migrasi dump SQL dilakukan bertahap. Fase pertama menangani Fakultas, Program
+Studi, Semester, Dosen, dan Mahasiswa. Fase kedua menangani Kurikulum, Mata
+Kuliah, serta relasi Mata Kuliah di setiap Kurikulum.
+
+### Fase 2 — Kurikulum dan Mata Kuliah
+
+Jalankan dry-run terlebih dahulu:
+
+```bash
+php artisan siakad:migrate-phase2 \
+  --source=storage/app/migration/siakad.sql \
+  --dry-run \
+  --table=all
+```
+
+Laporan lengkap duplikasi ditulis ke:
+
+```text
+storage/app/migration/phase2-course-duplicates.csv
+```
+
+Aturan migrasi fase kedua:
+
+- tidak menghapus data ASC;
+- kolom ASC yang sudah berisi tidak ditimpa;
+- kurikulum sumber diberi kode stabil `SIAKAD-KUR-{kur_id}` dan berstatus
+  `Nonaktif` sampai diaktifkan manual;
+- kode Mata Kuliah yang identik digabung menjadi satu Mata Kuliah dan tetap
+  ditautkan ke seluruh Kurikulum sumber;
+- kode yang sama tetapi nama atau Program Studinya berbeda dipisahkan memakai
+  kode turunan maksimal 20 karakter;
+- setiap `kur_id` dan `id_matkul` dicatat di `legacy_migration_maps` agar fase
+  Kelas, KRS, dan Nilai dapat memakai relasi yang tepat;
+- laporan CSV mencatat setiap baris duplikat, keputusan penggabungan, dan kode
+  tujuan yang direncanakan.
+
+Setelah laporan diperiksa dan backup database tersedia, eksekusi nyata:
+
+```bash
+php artisan siakad:migrate-phase2 \
+  --source=storage/app/migration/siakad.sql \
+  --table=all
+```
+
+Perintah aman dijalankan ulang karena menggunakan pemetaan ID lama dan operasi
+idempoten. Opsi `--table=curriculums` dan `--table=courses` tersedia apabila
+proses perlu dipisah; Kurikulum wajib dijalankan lebih dahulu.
+
 ---
 
 ## TAHAP 1: Master Data
