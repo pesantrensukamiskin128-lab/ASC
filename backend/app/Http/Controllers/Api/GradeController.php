@@ -7,6 +7,7 @@ use App\Imports\GradeImport;
 use App\Imports\GradeClassImport;
 use App\Models\ClassModel;
 use App\Models\GradeSchema;
+use App\Models\Student;
 use App\Models\StudentGrade;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -110,43 +111,82 @@ class GradeController extends Controller
     /** KHS Mahasiswa (per semester) */
     public function khs(Request $request): JsonResponse
     {
-        $request->validate(['student_id' => 'required', 'semester_id' => 'required']);
+        $request->validate([
+            'student_id' => 'nullable|exists:students,id',
+            'semester_id' => 'required|exists:semesters,id',
+        ]);
+        $studentId = $this->requestedStudentId($request);
 
         $grades = StudentGrade::with(['course:id,code,name,credits'])
-            ->where('student_id', $request->student_id)
+            ->where('student_id', $studentId)
             ->where('semester_id', $request->semester_id)
             ->get();
 
-        $totalCredits = $grades->sum(fn($g) => $g->course->credits);
-        $totalPoints  = $grades->sum(fn($g) => $g->course->credits * ($g->grade_point ?? 0));
-        $ips = $totalCredits > 0 ? round($totalPoints / $totalCredits, 2) : 0;
+        $totalCredits = $grades->sum(fn ($g) => $g->course->credits);
+        $totalPoints = $grades->sum(fn ($g) => $g->course->credits * ($g->grade_point ?? 0));
+        $calculatedIps = $totalCredits > 0 ? round($totalPoints / $totalCredits, 2) : 0;
+        $summary = DB::table('student_semester_summaries')
+            ->where(['student_id' => $studentId, 'semester_id' => $request->semester_id])
+            ->first();
 
         return response()->json([
-            'grades'        => $grades,
+            'grades' => $grades,
             'total_credits' => $totalCredits,
-            'ips'           => $ips,
+            'ips' => $summary?->semester_gpa ?? $calculatedIps,
+            'calculated_ips' => $calculatedIps,
+            'summary' => $summary,
         ]);
     }
 
     /** Transkrip (semua semester) */
     public function transcript(Request $request): JsonResponse
     {
-        $request->validate(['student_id' => 'required']);
+        $request->validate(['student_id' => 'nullable|exists:students,id']);
+        $studentId = $this->requestedStudentId($request);
 
-        $grades = StudentGrade::with(['course:id,code,name,credits', 'semester:id,name'])
-            ->where('student_id', $request->student_id)
-            ->orderBy('semester_id')
-            ->get();
+        $grades = StudentGrade::with(['course:id,code,name,credits', 'semester:id,name,start_date'])
+            ->where('student_id', $studentId)
+            ->get()
+            ->sortBy(fn ($grade) => $grade->semester?->start_date?->timestamp ?? 0)
+            ->values();
 
-        $totalCredits = $grades->sum(fn($g) => $g->course->credits);
-        $totalPoints  = $grades->sum(fn($g) => $g->course->credits * ($g->grade_point ?? 0));
-        $ipk = $totalCredits > 0 ? round($totalPoints / $totalCredits, 2) : 0;
+        $totalCredits = $grades->sum(fn ($g) => $g->course->credits);
+        $totalPoints = $grades->sum(fn ($g) => $g->course->credits * ($g->grade_point ?? 0));
+        $calculatedIpk = $totalCredits > 0 ? round($totalPoints / $totalCredits, 2) : 0;
+        $latestSummary = DB::table('student_semester_summaries as summaries')
+            ->join('semesters', 'semesters.id', '=', 'summaries.semester_id')
+            ->where('summaries.student_id', $studentId)
+            ->orderByDesc('semesters.start_date')
+            ->select('summaries.*')
+            ->first();
 
         return response()->json([
-            'grades'        => $grades,
+            'grades' => $grades,
             'total_credits' => $totalCredits,
-            'ipk'           => $ipk,
+            'ipk' => $latestSummary?->cumulative_gpa ?? $calculatedIpk,
+            'calculated_ipk' => $calculatedIpk,
+            'summary' => $latestSummary,
         ]);
+    }
+
+    /**
+     * Mahasiswa hanya boleh membaca nilainya sendiri. Pengguna akademik tetap
+     * dapat memilih mahasiswa melalui student_id pada endpoint yang sama.
+     */
+    private function requestedStudentId(Request $request): int
+    {
+        $user = $request->user();
+        if ($user?->hasRole('MAHASISWA')) {
+            $student = $user->student;
+            abort_if(! $student, 404, 'Akun ini belum terhubung dengan data mahasiswa.');
+
+            return (int) $student->id;
+        }
+
+        $studentId = $request->integer('student_id');
+        abort_if(! $studentId || ! Student::whereKey($studentId)->exists(), 422, 'Mahasiswa wajib dipilih.');
+
+        return $studentId;
     }
 
     /** Skema nilai aktif */

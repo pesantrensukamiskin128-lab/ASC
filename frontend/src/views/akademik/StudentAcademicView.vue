@@ -16,6 +16,11 @@ const loading = ref(true)
 // Data
 const myClasses = ref<any[]>([])
 const myRps = ref<any[]>([])
+const academicHistory = ref<any>(null)
+const transcriptData = ref<any>(null)
+const khsData = ref<any>(null)
+const selectedSemester = ref('')
+const khsLoading = ref(false)
 
 // KKN data
 const kknLoading = ref(true)
@@ -38,6 +43,9 @@ onMounted(async () => {
       const { data } = await api.get('/practical-my-programs')
       myKknPrograms.value = data ?? []
       kknLoading.value = false
+    }
+    if (props.section === 'khs') {
+      await loadAcademicHistory()
     }
   } catch { /* silent */ }
   finally { loading.value = false; kknLoading.value = false }
@@ -70,19 +78,47 @@ function downloadBlob(blobData: any, filename: string) {
   URL.revokeObjectURL(url)
 }
 
-async function downloadKhs() {
+async function loadAcademicHistory() {
   try {
-    const { data } = await api.get('/grades/khs', { params: { student_id: 'self' }, responseType: 'blob' as any })
-    // KHS is JSON, not PDF yet — show info
-    toast.info('Fitur cetak KHS PDF sedang dalam pengembangan. Data KHS tersedia di sistem.')
-  } catch { toast.error('Gagal memuat KHS.') }
+    const [historyResponse, transcriptResponse] = await Promise.all([
+      api.get('/students/me/academic-history'),
+      api.get('/grades/transcript'),
+    ])
+    academicHistory.value = historyResponse.data
+    transcriptData.value = transcriptResponse.data
+    const summaries = historyResponse.data?.summaries ?? []
+    if (summaries.length) {
+      selectedSemester.value = String(summaries[0].semester_id)
+      await loadKhs()
+    }
+  } catch {
+    toast.error('Gagal memuat riwayat akademik.')
+  }
 }
 
-async function downloadTranskrip() {
+async function loadKhs() {
+  if (!selectedSemester.value) {
+    khsData.value = null
+    return
+  }
+  khsLoading.value = true
   try {
-    const { data } = await api.get('/grades/transcript', { params: { student_id: 'self' }, responseType: 'blob' as any })
-    toast.info('Fitur cetak Transkrip PDF sedang dalam pengembangan. Data transkrip tersedia di sistem.')
-  } catch { toast.error('Gagal memuat transkrip.') }
+    const { data } = await api.get('/grades/khs', { params: { semester_id: selectedSemester.value } })
+    khsData.value = data
+  } catch {
+    khsData.value = null
+    toast.error('Gagal memuat KHS semester.')
+  } finally {
+    khsLoading.value = false
+  }
+}
+
+function formatNumber(value: string | number | null | undefined, decimals = 0) {
+  if (value === null || value === undefined || value === '') return '-'
+  return Number(value).toLocaleString('id-ID', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  })
 }
 </script>
 
@@ -148,23 +184,74 @@ async function downloadTranskrip() {
     <!-- KHS / Transkrip -->
     <template v-else-if="section === 'khs'">
       <div>
-        <h1 class="text-xl font-bold text-gray-900">KHS & Transkrip Nilai</h1>
-        <p class="text-sm text-gray-500 mt-0.5">Lihat dan cetak Kartu Hasil Studi dan Transkrip Akademik</p>
+        <h1 class="text-xl font-bold text-gray-900">Riwayat Akademik, KHS & Transkrip</h1>
+        <p class="text-sm text-gray-500 mt-0.5">Lihat perkembangan IP, IPK, SKS, dan nilai setiap semester</p>
       </div>
       <div v-if="loading" class="text-center text-gray-400 py-12">Memuat...</div>
-      <div v-else class="space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="bg-white rounded-xl border border-gray-200 p-5 text-center hover:shadow-md transition-shadow">
-            <BookOpenIcon class="w-10 h-10 text-blue-500 mx-auto mb-3" />
-            <h3 class="font-semibold text-gray-900">KHS Semester Ini</h3>
-            <p class="text-xs text-gray-500 mt-1 mb-3">Kartu Hasil Studi semester berjalan</p>
-            <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg" @click="downloadKhs">Download KHS (PDF)</button>
+      <div v-else-if="!academicHistory" class="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400">
+        Riwayat akademik belum dapat dimuat.
+      </div>
+      <div v-else class="space-y-6">
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+            <div>
+              <p class="text-lg font-semibold text-gray-900">{{ academicHistory.student?.name }}</p>
+              <p class="text-xs text-gray-500 font-mono">{{ academicHistory.student?.nim }} · {{ academicHistory.study_program?.name ?? '-' }}</p>
+            </div>
+            <span class="self-start md:self-auto px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">{{ academicHistory.student?.status }}</span>
           </div>
-          <div class="bg-white rounded-xl border border-gray-200 p-5 text-center hover:shadow-md transition-shadow">
-            <DocumentTextIcon class="w-10 h-10 text-green-500 mx-auto mb-3" />
-            <h3 class="font-semibold text-gray-900">Transkrip Nilai</h3>
-            <p class="text-xs text-gray-500 mt-1 mb-3">Transkrip lengkap semua semester</p>
-            <button class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg" @click="downloadTranskrip">Download Transkrip (PDF)</button>
+        </div>
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="bg-blue-50 border border-blue-100 rounded-xl p-4"><p class="text-xs text-blue-600">IP Semester Terakhir</p><p class="text-2xl font-bold text-blue-800 mt-1">{{ formatNumber(academicHistory.summaries?.[0]?.semester_gpa, 2) }}</p></div>
+          <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4"><p class="text-xs text-indigo-600">IPK Terakhir</p><p class="text-2xl font-bold text-indigo-800 mt-1">{{ formatNumber(academicHistory.summaries?.[0]?.cumulative_gpa, 2) }}</p></div>
+          <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-4"><p class="text-xs text-emerald-600">Total SKS</p><p class="text-2xl font-bold text-emerald-800 mt-1">{{ formatNumber(academicHistory.summaries?.[0]?.total_credits) }}</p></div>
+          <div class="bg-amber-50 border border-amber-100 rounded-xl p-4"><p class="text-xs text-amber-600">Semester Tercatat</p><p class="text-2xl font-bold text-amber-800 mt-1">{{ academicHistory.summaries?.length ?? 0 }}</p></div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
+          <h2 class="font-semibold text-gray-900 flex items-center gap-2"><AcademicCapIcon class="w-5 h-5 text-blue-600" /> Riwayat Akademik per Semester</h2>
+          <div v-if="!academicHistory.summaries?.length" class="text-sm text-center text-gray-400 py-6">Belum ada riwayat akademik.</div>
+          <div v-else class="overflow-x-auto">
+            <table class="w-full min-w-[850px] text-sm">
+              <thead><tr class="text-left text-xs text-gray-400 border-b"><th class="pb-2">Semester</th><th class="pb-2">Status</th><th class="pb-2 text-right">IP</th><th class="pb-2 text-right">IPK</th><th class="pb-2 text-right">Batas SKS</th><th class="pb-2 text-right">Diambil</th><th class="pb-2 text-right">Wajib</th><th class="pb-2 text-right">Pilihan</th><th class="pb-2 text-right">Total</th></tr></thead>
+              <tbody>
+                <tr v-for="summary in academicHistory.summaries" :key="summary.id" class="border-b border-gray-50">
+                  <td class="py-2.5 whitespace-nowrap text-gray-700">{{ summary.semester?.name ?? '-' }}</td><td class="py-2.5"><span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs">{{ summary.status }}</span></td>
+                  <td class="py-2.5 text-right font-mono">{{ formatNumber(summary.semester_gpa, 2) }}</td><td class="py-2.5 text-right font-mono font-semibold">{{ formatNumber(summary.cumulative_gpa, 2) }}</td>
+                  <td class="py-2.5 text-right">{{ formatNumber(summary.credit_limit) }}</td><td class="py-2.5 text-right">{{ formatNumber(summary.credits_taken) }}</td><td class="py-2.5 text-right">{{ formatNumber(summary.required_credits) }}</td><td class="py-2.5 text-right">{{ formatNumber(summary.elective_credits) }}</td><td class="py-2.5 text-right font-semibold">{{ formatNumber(summary.total_credits) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div><h2 class="font-semibold text-gray-900 flex items-center gap-2"><BookOpenIcon class="w-5 h-5 text-blue-600" /> Kartu Hasil Studi</h2><p class="text-xs text-gray-500 mt-0.5">Pilih semester untuk melihat nilai mata kuliah</p></div>
+            <select v-model="selectedSemester" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" @change="loadKhs">
+              <option v-for="summary in academicHistory.summaries" :key="summary.semester_id" :value="String(summary.semester_id)">{{ summary.semester?.name }}</option>
+            </select>
+          </div>
+          <div v-if="khsLoading" class="text-center text-gray-400 py-6">Memuat KHS...</div>
+          <div v-else-if="!khsData?.grades?.length" class="text-center text-gray-400 py-6">Belum ada nilai pada semester ini.</div>
+          <div v-else class="overflow-x-auto">
+            <table class="w-full min-w-[650px] text-sm">
+              <thead><tr class="text-left text-xs text-gray-400 border-b"><th class="pb-2">Kode</th><th class="pb-2">Mata Kuliah</th><th class="pb-2 text-center">SKS</th><th class="pb-2 text-center">Nilai</th><th class="pb-2 text-center">Bobot</th></tr></thead>
+              <tbody><tr v-for="grade in khsData.grades" :key="grade.id" class="border-b border-gray-50"><td class="py-2.5 font-mono text-xs">{{ grade.course?.code }}</td><td class="py-2.5">{{ grade.course?.name }}</td><td class="py-2.5 text-center">{{ grade.course?.credits }}</td><td class="py-2.5 text-center font-bold">{{ grade.letter_grade ?? '-' }}</td><td class="py-2.5 text-center">{{ formatNumber(grade.grade_point, 2) }}</td></tr></tbody>
+              <tfoot><tr class="bg-blue-50 font-semibold"><td colspan="2" class="px-3 py-2.5">Ringkasan KHS</td><td class="px-3 py-2.5 text-center">{{ khsData.total_credits }} SKS</td><td colspan="2" class="px-3 py-2.5 text-right">IP: {{ formatNumber(khsData.ips, 2) }}</td></tr></tfoot>
+            </table>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
+          <div class="flex items-center justify-between"><h2 class="font-semibold text-gray-900 flex items-center gap-2"><DocumentTextIcon class="w-5 h-5 text-green-600" /> Transkrip Nilai</h2><div class="text-right"><p class="text-xl font-bold text-green-700">{{ formatNumber(transcriptData?.ipk, 2) }}</p><p class="text-[10px] text-gray-500">IPK · {{ transcriptData?.total_credits ?? 0 }} SKS bernilai</p></div></div>
+          <div v-if="!transcriptData?.grades?.length" class="text-center text-gray-400 py-6">Belum ada data transkrip.</div>
+          <div v-else class="overflow-x-auto">
+            <table class="w-full min-w-[750px] text-sm">
+              <thead><tr class="text-left text-xs text-gray-400 border-b"><th class="pb-2">Semester</th><th class="pb-2">Kode</th><th class="pb-2">Mata Kuliah</th><th class="pb-2 text-center">SKS</th><th class="pb-2 text-center">Nilai</th><th class="pb-2 text-center">Bobot</th></tr></thead>
+              <tbody><tr v-for="grade in transcriptData.grades" :key="grade.id" class="border-b border-gray-50"><td class="py-2.5 text-xs whitespace-nowrap">{{ grade.semester?.name }}</td><td class="py-2.5 font-mono text-xs">{{ grade.course?.code }}</td><td class="py-2.5">{{ grade.course?.name }}</td><td class="py-2.5 text-center">{{ grade.course?.credits }}</td><td class="py-2.5 text-center font-bold">{{ grade.letter_grade ?? '-' }}</td><td class="py-2.5 text-center">{{ formatNumber(grade.grade_point, 2) }}</td></tr></tbody>
+            </table>
           </div>
         </div>
       </div>

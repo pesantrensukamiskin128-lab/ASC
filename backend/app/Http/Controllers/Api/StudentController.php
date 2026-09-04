@@ -17,6 +17,35 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class StudentController extends Controller
 {
+    /** Riwayat akademik milik mahasiswa yang sedang login. */
+    public function myAcademicHistory(Request $request): JsonResponse
+    {
+        $student = $request->user()?->student;
+        if (! $student) {
+            return response()->json(['message' => 'Akun ini belum terhubung dengan data mahasiswa.'], 404);
+        }
+
+        $student->load([
+            'studyProgram:id,code,name',
+            'semesterSummaries.semester:id,name,type,start_date,end_date',
+            'statusHistories.semester:id,name,type,start_date,end_date',
+        ]);
+
+        $summaries = $student->semesterSummaries
+            ->sortByDesc(fn ($summary) => $summary->semester?->start_date?->timestamp ?? 0)
+            ->values();
+        $statusHistories = $student->statusHistories
+            ->sortByDesc(fn ($history) => $history->semester?->start_date?->timestamp ?? 0)
+            ->values();
+
+        return response()->json([
+            'student' => $student->only(['id', 'nim', 'name', 'status', 'current_semester']),
+            'study_program' => $student->studyProgram,
+            'summaries' => $summaries,
+            'status_histories' => $statusHistories,
+        ]);
+    }
+
     public function index(Request $request): JsonResponse
     {
         // Jika user adalah Kaprodi, filter hanya mahasiswa prodi-nya

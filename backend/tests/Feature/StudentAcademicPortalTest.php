@@ -1,0 +1,187 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Http\Controllers\Api\GradeController;
+use App\Http\Controllers\Api\StudentController;
+use App\Models\User;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Spatie\Permission\PermissionRegistrar;
+use Tests\TestCase;
+
+class StudentAcademicPortalTest extends TestCase
+{
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->createMinimalSchema();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        DB::table('roles')->insert(['id' => 1, 'name' => 'MAHASISWA', 'guard_name' => 'web']);
+        DB::table('users')->insert([
+            'id' => 1, 'name' => 'Mahasiswa Satu', 'username' => 'M001',
+            'email' => 'm001@example.test', 'password' => bcrypt('secret'), 'is_active' => true,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        DB::table('model_has_roles')->insert([
+            'role_id' => 1, 'model_type' => User::class, 'model_id' => 1,
+        ]);
+        DB::table('study_programs')->insert(['id' => 1, 'code' => 'P1', 'name' => 'Program Studi Satu']);
+        DB::table('students')->insert([
+            [
+                'id' => 1, 'user_id' => 1, 'study_program_id' => 1, 'nim' => 'M001',
+                'name' => 'Mahasiswa Satu', 'status' => 'Aktif', 'created_at' => now(), 'updated_at' => now(),
+            ],
+            [
+                'id' => 2, 'user_id' => null, 'study_program_id' => 1, 'nim' => 'M002',
+                'name' => 'Mahasiswa Dua', 'status' => 'Aktif', 'created_at' => now(), 'updated_at' => now(),
+            ],
+        ]);
+        DB::table('semesters')->insert([
+            'id' => 1, 'name' => 'Ganjil 2020/2021', 'type' => 'Ganjil',
+            'start_date' => '2020-09-01', 'end_date' => '2021-01-31',
+        ]);
+        DB::table('student_semester_summaries')->insert([
+            'student_id' => 1, 'semester_id' => 1, 'status' => 'AKTIF',
+            'semester_gpa' => 3.50, 'cumulative_gpa' => 3.25,
+            'credits_taken' => 20, 'total_credits' => 40,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        DB::table('courses')->insert(['id' => 1, 'code' => 'MK1', 'name' => 'Mata Kuliah 1', 'credits' => 2]);
+        DB::table('student_grades')->insert([
+            [
+                'student_id' => 1, 'course_id' => 1, 'semester_id' => 1,
+                'letter_grade' => 'A', 'grade_point' => 4, 'created_at' => now(), 'updated_at' => now(),
+            ],
+            [
+                'student_id' => 2, 'course_id' => 1, 'semester_id' => 1,
+                'letter_grade' => 'E', 'grade_point' => 0, 'created_at' => now(), 'updated_at' => now(),
+            ],
+        ]);
+    }
+
+    public function test_portal_returns_authenticated_students_history_and_grades_only(): void
+    {
+        $user = User::findOrFail(1);
+
+        $historyRequest = Request::create('/api/students/me/academic-history', 'GET');
+        $historyRequest->setUserResolver(fn () => $user);
+        $history = app(StudentController::class)->myAcademicHistory($historyRequest)->getData(true);
+
+        $this->assertSame('M001', $history['student']['nim']);
+        $this->assertCount(1, $history['summaries']);
+        $this->assertSame('3.50', $history['summaries'][0]['semester_gpa']);
+        $this->assertSame(20, $history['summaries'][0]['credits_taken']);
+
+        // Meskipun ID mahasiswa lain dikirim, akun mahasiswa tetap menerima nilainya sendiri.
+        $khsRequest = Request::create('/api/grades/khs', 'GET', [
+            'student_id' => 2,
+            'semester_id' => 1,
+        ]);
+        $khsRequest->setUserResolver(fn () => $user);
+        $khs = app(GradeController::class)->khs($khsRequest)->getData(true);
+
+        $this->assertCount(1, $khs['grades']);
+        $this->assertSame('A', $khs['grades'][0]['letter_grade']);
+        $this->assertEquals(3.50, $khs['ips']);
+
+        $transcriptRequest = Request::create('/api/grades/transcript', 'GET', ['student_id' => 2]);
+        $transcriptRequest->setUserResolver(fn () => $user);
+        $transcript = app(GradeController::class)->transcript($transcriptRequest)->getData(true);
+
+        $this->assertCount(1, $transcript['grades']);
+        $this->assertSame('A', $transcript['grades'][0]['letter_grade']);
+        $this->assertEquals(3.25, $transcript['ipk']);
+    }
+
+    private function createMinimalSchema(): void
+    {
+        Schema::create('users', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
+            $table->string('username')->unique();
+            $table->string('email')->nullable();
+            $table->string('password');
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+        Schema::create('roles', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
+            $table->string('guard_name');
+            $table->unique(['name', 'guard_name']);
+        });
+        Schema::create('model_has_roles', function (Blueprint $table): void {
+            $table->unsignedBigInteger('role_id');
+            $table->string('model_type');
+            $table->unsignedBigInteger('model_id');
+            $table->primary(['role_id', 'model_id', 'model_type']);
+        });
+        Schema::create('study_programs', function (Blueprint $table): void {
+            $table->id();
+            $table->string('code');
+            $table->string('name');
+        });
+        Schema::create('students', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->unsignedBigInteger('study_program_id');
+            $table->string('nim')->unique();
+            $table->string('name');
+            $table->string('status');
+            $table->unsignedInteger('current_semester')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('semesters', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
+            $table->string('type');
+            $table->date('start_date');
+            $table->date('end_date');
+        });
+        Schema::create('student_semester_summaries', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('student_id');
+            $table->unsignedBigInteger('semester_id');
+            $table->string('status');
+            $table->decimal('semester_gpa', 4, 2)->nullable();
+            $table->decimal('cumulative_gpa', 4, 2)->nullable();
+            $table->unsignedSmallInteger('credit_limit')->nullable();
+            $table->unsignedSmallInteger('credits_taken')->nullable();
+            $table->unsignedSmallInteger('required_credits')->nullable();
+            $table->unsignedSmallInteger('elective_credits')->nullable();
+            $table->unsignedSmallInteger('total_credits')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('student_status_histories', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('student_id');
+            $table->unsignedBigInteger('semester_id')->nullable();
+            $table->string('status');
+            $table->date('start_date');
+            $table->date('end_date')->nullable();
+            $table->text('reason')->nullable();
+            $table->string('decree_number')->nullable();
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('courses', function (Blueprint $table): void {
+            $table->id();
+            $table->string('code');
+            $table->string('name');
+            $table->unsignedInteger('credits');
+        });
+        Schema::create('student_grades', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('student_id');
+            $table->unsignedBigInteger('course_id');
+            $table->unsignedBigInteger('semester_id');
+            $table->string('letter_grade')->nullable();
+            $table->decimal('grade_point', 3, 2)->nullable();
+            $table->timestamps();
+        });
+    }
+}

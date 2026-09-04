@@ -238,6 +238,10 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // --- Mahasiswa ---
+    Route::middleware('role:MAHASISWA')->group(function () {
+        Route::get('students/me/academic-history', [StudentController::class, 'myAcademicHistory']);
+    });
+
     Route::middleware('role:SUPER_ADMIN|ADMIN_AKADEMIK|DOSEN|ADMIN_PMB')->group(function () {
         Route::get('students/export', [StudentController::class, 'export']);
         Route::post('students/import', [StudentController::class, 'import']);
