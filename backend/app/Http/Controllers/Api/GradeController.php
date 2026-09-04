@@ -10,6 +10,7 @@ use App\Imports\GradeImport;
 use App\Models\ClassModel;
 use App\Models\GradeSchema;
 use App\Models\Institution;
+use App\Models\LecturerPosition;
 use App\Models\Semester;
 use App\Models\Student;
 use App\Models\StudentGrade;
@@ -241,6 +242,11 @@ class GradeController extends Controller
             ->orderByDesc('semesters.start_date')
             ->select('summaries.*')
             ->first();
+        $wk1Lecturer = LecturerPosition::with('lecturer')
+            ->where('position_code', 'WK1')
+            ->where('is_active', true)
+            ->whereHas('lecturer', fn ($query) => $query->where('status', true))
+            ->first()?->lecturer;
         $qrData = $this->academicDocumentQrData('transcript', $student, $grades);
 
         $pdf = Pdf::loadView('pdf.transcript', $this->pdfData() + $qrData + [
@@ -248,6 +254,7 @@ class GradeController extends Controller
             'grades' => $grades,
             'totalCredits' => $totalCredits,
             'ipk' => $latestSummary?->cumulative_gpa ?? $calculatedIpk,
+            'wk1Lecturer' => $wk1Lecturer,
         ])->setPaper('a4', 'portrait')->setOption('isRemoteEnabled', true);
 
         return $pdf->download('Transkrip-'.$student->nim.'.pdf');
@@ -317,19 +324,26 @@ class GradeController extends Controller
         return trim(preg_replace('/[^A-Za-z0-9._-]+/', '-', $value) ?? '', '-');
     }
 
-    /** @return array{verifyUrl:string,qrSignature:string,qrAdvisorSignature:string,qrStudentSignature:string,qrVerification:string} */
+    /** @return array<string, string> */
     private function academicDocumentQrData(string $type, Student $student, Collection $grades, ?int $semesterId = null): array
     {
         $token = AcademicDocumentVerification::issue($type, $student, $grades, $semesterId);
         $verifyUrl = rtrim((string) config('app.frontend_url'), '/').'/verify/'.$type.'/'.$token;
 
-        return [
+        $data = [
             'verifyUrl' => $verifyUrl,
             'qrSignature' => QrCodeHelper::generate($verifyUrl.'?signer=kaprodi', 240),
-            'qrAdvisorSignature' => QrCodeHelper::generate($verifyUrl.'?signer=dosen_wali', 240),
-            'qrStudentSignature' => QrCodeHelper::generate($verifyUrl.'?signer=mahasiswa', 240),
             'qrVerification' => QrCodeHelper::generateWithLogo($verifyUrl, 240),
         ];
+
+        if ($type === 'khs') {
+            $data['qrAdvisorSignature'] = QrCodeHelper::generate($verifyUrl.'?signer=dosen_wali', 240);
+            $data['qrStudentSignature'] = QrCodeHelper::generate($verifyUrl.'?signer=mahasiswa', 240);
+        } else {
+            $data['qrWk1Signature'] = QrCodeHelper::generate($verifyUrl.'?signer=waket1', 240);
+        }
+
+        return $data;
     }
 
     /** Skema nilai aktif */

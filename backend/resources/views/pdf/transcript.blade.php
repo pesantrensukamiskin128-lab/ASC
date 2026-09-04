@@ -5,8 +5,8 @@
     <title>Transkrip - {{ $student->nim }}</title>
     <style>
         @page { margin: 5mm 13mm 27mm; }
-        body { font-family: DejaVu Sans, sans-serif; color: #111827; font-size: 9pt; line-height: 1.25; }
-        table { width: 100%; border-collapse: collapse; }
+        body { font-family: DejaVu Sans, sans-serif; color: #111827; font-size: 8pt; line-height: 1; }
+        table { width: 100%; border-collapse: collapse; line-height: 1; }
         .header td { vertical-align: middle; }
         .letterhead { width: 100%; margin: 0 0 5px; padding: 0; text-align: center; line-height: 0; }
         .letterhead img { display: block; width: 100%; height: auto; margin: 0 auto; padding: 0; }
@@ -17,18 +17,19 @@
         .institution div { font-size: 8pt; }
         .rule { border-top: 2px solid #111; border-bottom: 1px solid #111; height: 2px; margin: 6px 0 8px; }
         h1 { text-align: center; font-size: 13pt; margin: 0 0 10px; letter-spacing: .4px; }
-        .identity td { padding: 2px 4px; vertical-align: top; }
+        .identity td { padding: 1px 4px; vertical-align: top; }
         .identity .label { width: 105px; font-weight: bold; white-space: nowrap; }
         .grades { margin-top: 10px; }
-        .grades th, .grades td { border: 1px solid #374151; padding: 4px 5px; }
+        .grades th, .grades td { border: 1px solid #374151; padding: 3px 5px; line-height: 1; }
         .grades th { background: #e5e7eb; text-align: center; font-size: 8pt; }
         .center { text-align: center; }
         .summary { margin-top: 8px; width: 43%; margin-left: auto; page-break-inside: avoid; }
-        .summary td { border: 1px solid #6b7280; padding: 4px 6px; }
+        .summary td { border: 1px solid #6b7280; padding: 3px 5px; line-height: 1; }
         .summary .value { text-align: right; font-weight: bold; }
         .note { margin-top: 8px; font-size: 7.5pt; color: #4b5563; }
-        .signature { margin-top: 22px; page-break-inside: avoid; }
-        .signature td { width: 50%; text-align: center; vertical-align: top; line-height: 1.15; }
+        .signature-dateline { margin-top: 22px; margin-bottom: 4px; text-align: right; white-space: nowrap; }
+        .signature { margin-top: 0; page-break-inside: avoid; }
+        .signature td { width: 50%; text-align: center; vertical-align: top; line-height: 1; }
         .signature-space { height: 50px; }
         .signature-qr { height: 54px; padding-top: 2px; }
         .signature-qr img { width: 50px; height: 50px; }
@@ -38,7 +39,7 @@
         .verify-footer td { border: none; padding: 0; vertical-align: middle; }
         .verify-footer .qr-cell { width: 72px; }
         .verify-footer img { width: 68px; height: 68px; }
-        .verify-text { padding-left: 7px; color: #6b7280; font-size: 7pt; line-height: 1.25; }
+        .verify-text { padding-left: 7px; color: #6b7280; font-size: 7pt; line-height: 1; }
         thead { display: table-header-group; }
         tr { page-break-inside: avoid; }
     </style>
@@ -76,8 +77,9 @@
     </table>
     <div class="note">Catatan: Mutu = SKS x bobot nilai. Dokumen ini menampilkan seluruh nilai yang tercatat pada ASC.</div>
 
+    <div class="signature-dateline">Bandung, {{ $printedAt->locale('id')->translatedFormat('d F Y') }}</div>
     <table class="signature"><tr>
-        <td></td>
+        <td>Wakil Ketua I,<div class="signature-qr">@if($wk1Lecturer)<a href="{{ $verifyUrl }}?signer=waket1"><img src="{{ $qrWk1Signature }}" alt="QR tanda tangan Wakil Ketua I"></a>@endif</div><span class="name">{{ $wk1Lecturer?->display_name ?? '................................' }}</span><span class="identifier">NIDN {{ $wk1Lecturer?->nidn ?? '-' }}</span></td>
         <td>Ketua Program Studi,<div class="signature-qr"><a href="{{ $verifyUrl }}?signer=kaprodi"><img src="{{ $qrSignature }}" alt="QR tanda tangan"></a></div><span class="name">{{ $student->studyProgram?->headLecturer?->display_name ?? '................................' }}</span><span class="identifier">NIDN {{ $student->studyProgram?->headLecturer?->nidn ?? '-' }}</span></td>
     </tr></table>
 

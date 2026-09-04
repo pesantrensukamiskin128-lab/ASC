@@ -52,8 +52,18 @@ class StudentAcademicPortalTest extends TestCase
         ]);
         DB::table('faculties')->insert(['id' => 1, 'code' => 'FT', 'name' => 'Fakultas Tarbiyah']);
         DB::table('lecturers')->insert([
-            'id' => 1, 'nidn' => '0011223344', 'full_name' => 'Ahmad Fauzi',
-            'degree_front' => 'Dr.', 'degree_back' => 'M.Pd', 'status' => true,
+            [
+                'id' => 1, 'nidn' => '0011223344', 'full_name' => 'Ahmad Fauzi',
+                'degree_front' => 'Dr.', 'degree_back' => 'M.Pd', 'status' => true,
+            ],
+            [
+                'id' => 2, 'nidn' => '0099887766', 'full_name' => 'Siti Rahmawati',
+                'degree_front' => 'Dr.', 'degree_back' => 'M.Pd', 'status' => true,
+            ],
+        ]);
+        DB::table('lecturer_positions')->insert([
+            'lecturer_id' => 2, 'position_code' => 'WK1', 'position_name' => 'Wakil Ketua I',
+            'is_active' => true,
         ]);
         DB::table('study_programs')->insert([
             'id' => 1, 'faculty_id' => 1, 'head_lecturer_id' => 1,
@@ -253,6 +263,14 @@ class StudentAcademicPortalTest extends TestCase
             $table->string('degree_back')->nullable();
             $table->string('full_name');
             $table->boolean('status')->default(true);
+        });
+        Schema::create('lecturer_positions', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('lecturer_id');
+            $table->string('position_code');
+            $table->string('position_name');
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
         });
         Schema::create('students', function (Blueprint $table): void {
             $table->id();

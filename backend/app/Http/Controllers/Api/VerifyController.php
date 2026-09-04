@@ -364,6 +364,13 @@ class VerifyController extends Controller
                 ->select('summaries.*')->first();
         $signer = $student->studyProgram?->headLecturer;
         $signedAt = isset($payload['i']) ? Carbon::parse($payload['i'])->translatedFormat('d F Y, H:i') : null;
+        $wk1Signer = $request->query('signer') === 'waket1'
+            ? LecturerPosition::with('lecturer')
+                ->where('position_code', 'WK1')
+                ->where('is_active', true)
+                ->whereHas('lecturer', fn ($query) => $query->where('status', true))
+                ->first()?->lecturer
+            : null;
         $signerInfo = match ($request->query('signer')) {
             'kaprodi' => [
                 'label' => 'Ketua Program Studi',
@@ -381,6 +388,12 @@ class VerifyController extends Controller
                 'label' => 'Mahasiswa',
                 'name' => $student->name,
                 'signed' => true,
+                'signed_at' => $signedAt,
+            ],
+            'waket1' => [
+                'label' => 'Wakil Ketua I',
+                'name' => $wk1Signer?->display_name,
+                'signed' => $wk1Signer !== null,
                 'signed_at' => $signedAt,
             ],
             default => null,
