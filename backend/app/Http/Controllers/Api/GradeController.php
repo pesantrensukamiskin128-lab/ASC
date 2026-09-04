@@ -263,14 +263,15 @@ class GradeController extends Controller
                 'f' => function (int $pageNumber, int $pageCount, $canvas, $fontMetrics) use ($pdfData): void {
                     $left = 36.85;
                     $contentWidth = 521.58;
-                    $maxHeight = 70.87;
+                    $maxHeight = 82.0;
                     $letterheadPath = $pdfData['letterheadPath'];
 
                     if ($letterheadPath && file_exists($letterheadPath)) {
                         $size = getimagesize($letterheadPath);
                         $ratio = $size && $size[1] > 0 ? $size[0] / $size[1] : $contentWidth / $maxHeight;
-                        $height = min($maxHeight, $contentWidth / $ratio);
-                        $width = $height * $ratio;
+                        $naturalHeight = $contentWidth / $ratio;
+                        $height = min($maxHeight, $naturalHeight);
+                        $width = $naturalHeight <= $maxHeight ? $contentWidth : $height * $ratio;
                         $canvas->image($letterheadPath, $left + (($contentWidth - $width) / 2), 5, $width, $height);
 
                         return;
