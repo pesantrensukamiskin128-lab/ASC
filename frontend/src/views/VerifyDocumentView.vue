@@ -35,6 +35,10 @@ function docTypeLabel(type: string): string {
     rpkps: 'RPS/RPKPS',
     'academic-calendar': 'Kalender Akademik',
     surat: 'Surat Keluar',
+    khs: 'Kartu Hasil Studi (KHS)',
+    transcript: 'Transkrip Nilai Akademik',
+    'event-attendance': 'Daftar Hadir Agenda',
+    'pmb-card': 'Kartu Peserta PMB',
   }
   return map[type] ?? type.toUpperCase()
 }
@@ -126,6 +130,47 @@ function docTypeLabel(type: string): string {
                 <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                 <div><p class="text-xs text-gray-400">Ditujukan Kepada</p><p class="text-sm font-medium text-gray-800">{{ result.recipient }}</p></div>
               </div>
+            </div>
+          </div>
+
+          <!-- Document Info - KRS -->
+          <div v-if="['khs', 'transcript'].includes(docType)" class="space-y-3">
+            <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">Informasi Dokumen</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+              <div><p class="text-xs text-gray-400">Jenis Dokumen</p><p class="font-medium text-gray-800">{{ docTypeLabel(docType) }}</p></div>
+              <div><p class="text-xs text-gray-400">NIM</p><p class="font-medium text-gray-800 font-mono">{{ result.student?.nim }}</p></div>
+              <div><p class="text-xs text-gray-400">Mahasiswa</p><p class="font-medium text-gray-800">{{ result.student?.name }}</p></div>
+              <div><p class="text-xs text-gray-400">Program Studi</p><p class="font-medium text-gray-800">{{ result.student?.study_program }}</p></div>
+              <div v-if="result.semester"><p class="text-xs text-gray-400">Semester</p><p class="font-medium text-gray-800">{{ result.semester }}</p></div>
+              <div><p class="text-xs text-gray-400">Mata Kuliah</p><p class="font-medium text-gray-800">{{ result.courses_count }} mata kuliah</p></div>
+              <div><p class="text-xs text-gray-400">Total SKS</p><p class="font-medium text-gray-800">{{ result.total_credits }} SKS</p></div>
+              <div><p class="text-xs text-gray-400">{{ docType === 'khs' ? 'IP Semester' : 'IP Kumulatif' }}</p><p class="font-semibold text-blue-700">{{ result.gpa }}</p></div>
+            </div>
+            <div class="flex items-start gap-3 p-3 bg-green-50 rounded-lg border border-green-100">
+              <div><p class="text-xs text-gray-500">Ditandatangani secara elektronik oleh</p><p class="text-sm font-semibold text-gray-800">{{ result.signed_by ?? '-' }}</p><p class="text-xs text-gray-500">{{ result.signer_position }} · {{ result.issued_at }}</p></div>
+            </div>
+          </div>
+
+          <div v-if="docType === 'event-attendance'" class="space-y-3">
+            <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">Informasi Dokumen</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+              <div class="sm:col-span-2"><p class="text-xs text-gray-400">Agenda</p><p class="font-medium text-gray-800">{{ result.event?.title }}</p></div>
+              <div><p class="text-xs text-gray-400">Tanggal</p><p class="font-medium text-gray-800">{{ result.event?.date }}</p></div>
+              <div><p class="text-xs text-gray-400">Tempat</p><p class="font-medium text-gray-800">{{ result.event?.location ?? '-' }}</p></div>
+              <div><p class="text-xs text-gray-400">Penyelenggara</p><p class="font-medium text-gray-800">{{ result.event?.organizer ?? '-' }}</p></div>
+              <div><p class="text-xs text-gray-400">Total Hadir</p><p class="font-medium text-gray-800">{{ result.event?.attendances_count }} orang</p></div>
+            </div>
+          </div>
+
+          <div v-if="docType === 'pmb-card'" class="space-y-3">
+            <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">Informasi Peserta</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+              <div><p class="text-xs text-gray-400">Nomor Pendaftaran</p><p class="font-medium text-gray-800 font-mono">{{ result.registrant?.registration_number }}</p></div>
+              <div><p class="text-xs text-gray-400">Nama</p><p class="font-medium text-gray-800">{{ result.registrant?.name }}</p></div>
+              <div><p class="text-xs text-gray-400">Periode</p><p class="font-medium text-gray-800">{{ result.registrant?.period ?? '-' }}</p></div>
+              <div><p class="text-xs text-gray-400">Jalur</p><p class="font-medium text-gray-800">{{ result.registrant?.path ?? '-' }}</p></div>
+              <div><p class="text-xs text-gray-400">Pilihan Program Studi</p><p class="font-medium text-gray-800">{{ result.registrant?.study_program ?? '-' }}</p></div>
+              <div><p class="text-xs text-gray-400">Status</p><p class="font-semibold text-blue-700">{{ result.registrant?.status }}</p></div>
             </div>
           </div>
 
@@ -235,6 +280,7 @@ function docTypeLabel(type: string): string {
             <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
             <div>
               <p class="text-sm font-semibold text-gray-800">{{ result.signer_info.label }}</p>
+              <p v-if="result.signer_info.name" class="text-xs text-gray-600 mb-1">{{ result.signer_info.name }}</p>
               <span :class="['text-xs px-2 py-0.5 rounded-full font-medium', result.signer_info.signed ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700']">
                 {{ result.signer_info.signed ? '✓ Sudah Ditandatangani' : '⏳ Belum Ditandatangani' }}
               </span>

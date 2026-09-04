@@ -4,7 +4,11 @@ namespace Tests\Feature;
 
 use App\Http\Controllers\Api\GradeController;
 use App\Http\Controllers\Api\StudentController;
+use App\Http\Controllers\Api\VerifyController;
+use App\Models\Student;
+use App\Models\StudentGrade;
 use App\Models\User;
+use App\Support\AcademicDocumentVerification;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -155,6 +159,31 @@ class StudentAcademicPortalTest extends TestCase
         DB::table('student_grades')->where('student_id', 1)->delete();
         $emptyExcelResponse = app(GradeController::class)->transcriptExcel($excelRequest);
         $this->assertStringStartsWith('PK', file_get_contents($emptyExcelResponse->getFile()->getPathname()));
+    }
+
+    public function test_academic_document_token_verifies_current_data_and_rejects_changes(): void
+    {
+        $student = Student::with(['studyProgram.faculty', 'studyProgram.headLecturer'])->findOrFail(1);
+        $grades = StudentGrade::where('student_id', 1)->get();
+        $token = AcademicDocumentVerification::issue('khs', $student, $grades, 1);
+
+        $request = Request::create('/api/verify/khs/'.$token, 'GET', ['signer' => 'kaprodi']);
+        $verified = app(VerifyController::class)->verifyKhs($request, $token);
+        $verifiedData = $verified->getData(true);
+
+        $this->assertTrue($verifiedData['valid']);
+        $this->assertSame('M001', $verifiedData['student']['nim']);
+        $this->assertTrue($verifiedData['signer_info']['signed']);
+
+        DB::table('student_grades')->where('student_id', 1)->update([
+            'grade_point' => 3.5,
+            'updated_at' => now()->addMinute(),
+        ]);
+        $obsolete = app(VerifyController::class)->verifyKhs($request, $token);
+
+        $this->assertSame(409, $obsolete->getStatusCode());
+        $this->assertFalse($obsolete->getData(true)['valid']);
+        $this->assertNull(AcademicDocumentVerification::decode($token.'tampered'));
     }
 
     private function createMinimalSchema(): void

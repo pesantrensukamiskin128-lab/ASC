@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Exports\TranscriptExport;
+use App\Helpers\QrCodeHelper;
 use App\Http\Controllers\Controller;
 use App\Imports\GradeClassImport;
 use App\Imports\GradeImport;
@@ -12,10 +13,12 @@ use App\Models\Institution;
 use App\Models\Semester;
 use App\Models\Student;
 use App\Models\StudentGrade;
+use App\Support\AcademicDocumentVerification;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
@@ -201,15 +204,16 @@ class GradeController extends Controller
         $summary = DB::table('student_semester_summaries')
             ->where(['student_id' => $studentId, 'semester_id' => $semester->id])
             ->first();
+        $qrData = $this->academicDocumentQrData('khs', $student, $grades, $semester->id);
 
-        $pdf = Pdf::loadView('pdf.khs', $this->pdfData() + [
+        $pdf = Pdf::loadView('pdf.khs', $this->pdfData() + $qrData + [
             'student' => $student,
             'semester' => $semester,
             'grades' => $grades,
             'summary' => $summary,
             'totalCredits' => $totalCredits,
             'ips' => $summary?->semester_gpa ?? $calculatedIps,
-        ])->setPaper('a4', 'portrait');
+        ])->setPaper('a4', 'portrait')->setOption('isRemoteEnabled', true);
 
         return $pdf->download('KHS-'.$student->nim.'-'.$this->safeFilename($semester->name).'.pdf');
     }
@@ -237,13 +241,14 @@ class GradeController extends Controller
             ->orderByDesc('semesters.start_date')
             ->select('summaries.*')
             ->first();
+        $qrData = $this->academicDocumentQrData('transcript', $student, $grades);
 
-        $pdf = Pdf::loadView('pdf.transcript', $this->pdfData() + [
+        $pdf = Pdf::loadView('pdf.transcript', $this->pdfData() + $qrData + [
             'student' => $student,
             'grades' => $grades,
             'totalCredits' => $totalCredits,
             'ipk' => $latestSummary?->cumulative_gpa ?? $calculatedIpk,
-        ])->setPaper('a4', 'portrait');
+        ])->setPaper('a4', 'portrait')->setOption('isRemoteEnabled', true);
 
         return $pdf->download('Transkrip-'.$student->nim.'.pdf');
     }
@@ -310,6 +315,19 @@ class GradeController extends Controller
     private function safeFilename(string $value): string
     {
         return trim(preg_replace('/[^A-Za-z0-9._-]+/', '-', $value) ?? '', '-');
+    }
+
+    /** @return array{verifyUrl:string,qrSignature:string,qrVerification:string} */
+    private function academicDocumentQrData(string $type, Student $student, Collection $grades, ?int $semesterId = null): array
+    {
+        $token = AcademicDocumentVerification::issue($type, $student, $grades, $semesterId);
+        $verifyUrl = rtrim((string) config('app.frontend_url'), '/').'/verify/'.$type.'/'.$token;
+
+        return [
+            'verifyUrl' => $verifyUrl,
+            'qrSignature' => QrCodeHelper::generate($verifyUrl.'?signer=kaprodi', 240),
+            'qrVerification' => QrCodeHelper::generateWithLogo($verifyUrl, 240),
+        ];
     }
 
     /** Skema nilai aktif */

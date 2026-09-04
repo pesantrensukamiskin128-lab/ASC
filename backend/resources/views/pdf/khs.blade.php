@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>KHS - {{ $student->nim }}</title>
     <style>
-        @page { margin: 5mm 15mm 18mm; }
+        @page { margin: 5mm 15mm 27mm; }
         body { font-family: DejaVu Sans, sans-serif; color: #111827; font-size: 9.5pt; line-height: 1.35; }
         table { width: 100%; border-collapse: collapse; }
         .header td { vertical-align: middle; }
@@ -30,8 +30,14 @@
         .signature { margin-top: 24px; page-break-inside: avoid; }
         .signature td { width: 50%; text-align: center; vertical-align: top; }
         .signature-space { height: 52px; }
-        .name { font-weight: bold; text-decoration: underline; }
-        .footer { position: fixed; left: 0; right: 0; bottom: -8mm; text-align: center; color: #6b7280; font-size: 7.5pt; border-top: 1px solid #d1d5db; padding-top: 4px; }
+        .signature-qr { height: 80px; padding-top: 2px; }
+        .signature-qr img { width: 76px; height: 76px; }
+        .name { display: block; font-weight: bold; text-decoration: underline; }
+        .verify-footer { position: fixed; left: 0; right: 0; bottom: -17mm; border-top: 1px solid #d1d5db; padding-top: 4px; }
+        .verify-footer td { border: none; padding: 0; vertical-align: middle; }
+        .verify-footer .qr-cell { width: 72px; }
+        .verify-footer img { width: 68px; height: 68px; }
+        .verify-text { padding-left: 7px; color: #6b7280; font-size: 7pt; line-height: 1.25; }
         thead { display: table-header-group; }
         tr { page-break-inside: avoid; }
     </style>
@@ -80,9 +86,12 @@
 
     <table class="signature"><tr>
         <td>Mahasiswa,<div class="signature-space"></div><span class="name">{{ $student->name }}</span><br>NIM {{ $student->nim }}</td>
-        <td>Ketua Program Studi,<div class="signature-space"></div><span class="name">{{ $student->studyProgram?->headLecturer?->display_name ?? '................................' }}</span><br>NIDN {{ $student->studyProgram?->headLecturer?->nidn ?? '-' }}</td>
+        <td>Ketua Program Studi,<div class="signature-qr"><a href="{{ $verifyUrl }}?signer=kaprodi"><img src="{{ $qrSignature }}" alt="QR tanda tangan"></a></div><span class="name">{{ $student->studyProgram?->headLecturer?->display_name ?? '................................' }}</span><br>NIDN {{ $student->studyProgram?->headLecturer?->nidn ?? '-' }}</td>
     </tr></table>
 
-    <div class="footer">Dicetak dari Al-Jawami Smart Campus pada {{ $printedAt->format('d/m/Y H:i') }}</div>
+    <div class="verify-footer"><table><tr>
+        <td class="qr-cell"><a href="{{ $verifyUrl }}"><img src="{{ $qrVerification }}" alt="QR verifikasi"></a></td>
+        <td><div class="verify-text"><strong>Verifikasi dokumen:</strong> scan atau klik QR Code untuk memeriksa keaslian KHS melalui Al-Jawami Smart Campus.<br>Dicetak pada {{ $printedAt->format('d/m/Y H:i') }}</div></td>
+    </tr></table></div>
 </body>
 </html>

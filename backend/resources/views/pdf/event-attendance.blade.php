@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <style>
-@page { size: A4 portrait; margin: 15mm 10mm; }
+@page { size: A4 portrait; margin: 15mm 10mm 30mm; }
 body { font-family: Arial, sans-serif; font-size: 11pt; color: #1f2937; }
 .header { text-align: center; margin-bottom: 20px; }
 .header h1 { font-size: 16pt; margin: 0 0 4px; color: #1e3a8a; }
@@ -15,6 +15,15 @@ tr:nth-child(even) { background: #f9fafb; }
 td.center { text-align: center; }
 .footer { margin-top: 20px; font-size: 9pt; color: #6b7280; }
 .total { margin-top: 12px; font-weight: bold; font-size: 11pt; }
+.signature { width: 42%; margin: 18px 0 0 auto; page-break-inside: avoid; text-align: center; }
+.signature img { width: 70px; height: 70px; display: block; margin: 4px auto; }
+.signature .name { display: block; font-weight: bold; text-decoration: underline; }
+.verify-footer { position: fixed; left: 0; right: 0; bottom: -17mm; border-top: 1px solid #d1d5db; padding-top: 4px; }
+.verify-footer table { margin: 0; }
+.verify-footer td { border: none; padding: 0; vertical-align: middle; background: #fff; }
+.verify-footer .qr-cell { width: 64px; }
+.verify-footer img { width: 60px; height: 60px; }
+.verify-text { padding-left: 7px; color: #6b7280; font-size: 7pt; line-height: 1.25; }
 </style>
 </head>
 <body>
@@ -57,8 +66,16 @@ td.center { text-align: center; }
 
 <p class="total">Total Hadir: {{ $attendances->count() }} orang</p>
 
-<div class="footer">
-    <p>Dicetak dari Al-Jawami Smart Campus pada {{ now()->format('d F Y H:i') }}</p>
+<div class="signature">
+    Penanggung Jawab/Penyelenggara
+    <a href="{{ $verifyUrl }}?signer=organizer"><img src="{{ $qrSignature }}" alt="QR tanda tangan"></a>
+    <span class="name">{{ $event->organizer ?: ($event->creator?->name ?? '................................') }}</span>
+</div>
+
+<div class="verify-footer"><table><tr>
+    <td class="qr-cell"><a href="{{ $verifyUrl }}"><img src="{{ $qrVerification }}" alt="QR verifikasi"></a></td>
+    <td><div class="verify-text"><strong>Verifikasi dokumen:</strong> scan atau klik QR Code untuk memeriksa keaslian daftar hadir melalui Al-Jawami Smart Campus.<br>Dicetak pada {{ now()->format('d/m/Y H:i') }}</div></td>
+</tr></table>
 </div>
 </body>
 </html>

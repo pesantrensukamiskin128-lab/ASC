@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exports\EventAttendanceExport;
+use App\Helpers\QrCodeHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\EventAttendance;
+use App\Support\OperationalDocumentVerification;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class EventController extends Controller
 {
@@ -16,14 +21,14 @@ class EventController extends Controller
         $canManage = $user->can('agenda.create');
 
         $query = Event::withCount('attendances')
-            ->when($request->search, fn($q) => $q->where('title', 'like', "%{$request->search}%"))
-            ->when($request->category, fn($q) => $q->where('category', $request->category));
+            ->when($request->search, fn ($q) => $q->where('title', 'like', "%{$request->search}%"))
+            ->when($request->category, fn ($q) => $q->where('category', $request->category));
 
         // Non-admin: hanya lihat agenda yang diundang atau dibuat sendiri
-        if (!$canManage) {
+        if (! $canManage) {
             $query->where(function ($q) use ($user) {
                 $q->where('created_by', $user->id)
-                  ->orWhereHas('invitees', fn($sub) => $sub->where('user_id', $user->id));
+                    ->orWhereHas('invitees', fn ($sub) => $sub->where('user_id', $user->id));
             });
         }
 
@@ -36,24 +41,24 @@ class EventController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'title'        => 'required|string|max:255',
-            'organizer'    => 'nullable|string|max:255',
-            'category'     => 'required|in:Rapat,Seminar,Workshop,Pelatihan,Wisuda,Dies Natalis,Lainnya',
-            'type'         => 'required|in:Luring,Daring,Hibrid',
-            'location'     => 'nullable|string|max:255',
+            'title' => 'required|string|max:255',
+            'organizer' => 'nullable|string|max:255',
+            'category' => 'required|in:Rapat,Seminar,Workshop,Pelatihan,Wisuda,Dies Natalis,Lainnya',
+            'type' => 'required|in:Luring,Daring,Hibrid',
+            'location' => 'nullable|string|max:255',
             'meeting_link' => 'nullable|url|max:500',
-            'event_date'   => 'required|date',
-            'start_time'   => 'nullable|date_format:H:i',
-            'end_time'     => 'nullable|date_format:H:i',
-            'description'  => 'nullable|string',
-            'invitee_ids'  => 'nullable|array',
-            'invitee_ids.*'=> 'exists:users,id',
+            'event_date' => 'required|date',
+            'start_time' => 'nullable|date_format:H:i',
+            'end_time' => 'nullable|date_format:H:i',
+            'description' => 'nullable|string',
+            'invitee_ids' => 'nullable|array',
+            'invitee_ids.*' => 'exists:users,id',
         ]);
 
         $validated['created_by'] = auth()->id();
         $event = Event::create($validated);
 
-        if (!empty($validated['invitee_ids'])) {
+        if (! empty($validated['invitee_ids'])) {
             $event->invitees()->attach($validated['invitee_ids']);
         }
 
@@ -66,9 +71,9 @@ class EventController extends Controller
         $canManage = $user->can('agenda.create');
 
         // Non-admin: hanya bisa lihat jika diundang atau pembuat
-        if (!$canManage && $event->created_by !== $user->id) {
+        if (! $canManage && $event->created_by !== $user->id) {
             $isInvited = $event->invitees()->where('user_id', $user->id)->exists();
-            if (!$isInvited) {
+            if (! $isInvited) {
                 return response()->json(['message' => 'Anda tidak memiliki akses ke agenda ini.'], 403);
             }
         }
@@ -81,19 +86,19 @@ class EventController extends Controller
     public function update(Request $request, Event $event): JsonResponse
     {
         $validated = $request->validate([
-            'title'        => 'sometimes|string|max:255',
-            'organizer'    => 'nullable|string|max:255',
-            'category'     => 'sometimes|in:Rapat,Seminar,Workshop,Pelatihan,Wisuda,Dies Natalis,Lainnya',
-            'type'         => 'sometimes|in:Luring,Daring,Hibrid',
-            'location'     => 'nullable|string|max:255',
+            'title' => 'sometimes|string|max:255',
+            'organizer' => 'nullable|string|max:255',
+            'category' => 'sometimes|in:Rapat,Seminar,Workshop,Pelatihan,Wisuda,Dies Natalis,Lainnya',
+            'type' => 'sometimes|in:Luring,Daring,Hibrid',
+            'location' => 'nullable|string|max:255',
             'meeting_link' => 'nullable|url|max:500',
-            'event_date'   => 'sometimes|date',
-            'start_time'   => 'nullable|date_format:H:i',
-            'end_time'     => 'nullable|date_format:H:i',
-            'description'  => 'nullable|string',
-            'is_open'      => 'sometimes|boolean',
-            'invitee_ids'  => 'nullable|array',
-            'invitee_ids.*'=> 'exists:users,id',
+            'event_date' => 'sometimes|date',
+            'start_time' => 'nullable|date_format:H:i',
+            'end_time' => 'nullable|date_format:H:i',
+            'description' => 'nullable|string',
+            'is_open' => 'sometimes|boolean',
+            'invitee_ids' => 'nullable|array',
+            'invitee_ids.*' => 'exists:users,id',
         ]);
 
         $event->update($validated);
@@ -110,7 +115,7 @@ class EventController extends Controller
     {
         $event = Event::where('qr_token', $qrToken)->firstOrFail();
 
-        if (!$event->is_open) {
+        if (! $event->is_open) {
             return response()->json(['message' => 'Presensi untuk agenda ini sudah ditutup.'], 422);
         }
 
@@ -126,9 +131,9 @@ class EventController extends Controller
         }
 
         EventAttendance::create([
-            'event_id'    => $event->id,
-            'user_id'     => $userId,
-            'method'      => 'APP',
+            'event_id' => $event->id,
+            'user_id' => $userId,
+            'method' => 'APP',
             'attended_at' => now(),
         ]);
 
@@ -140,20 +145,20 @@ class EventController extends Controller
     {
         $event = Event::where('qr_token', $qrToken)->firstOrFail();
 
-        if (!$event->is_open) {
+        if (! $event->is_open) {
             return response()->json(['message' => 'Presensi untuk agenda ini sudah ditutup.'], 422);
         }
 
         $validated = $request->validate([
-            'guest_name'        => 'required|string|max:255',
-            'guest_phone'       => 'nullable|string|max:20',
+            'guest_name' => 'required|string|max:255',
+            'guest_phone' => 'nullable|string|max:20',
             'guest_institution' => 'nullable|string|max:255',
-            'guest_position'    => 'nullable|string|max:255',
+            'guest_position' => 'nullable|string|max:255',
         ]);
 
         EventAttendance::create(array_merge($validated, [
-            'event_id'    => $event->id,
-            'method'      => 'FORM',
+            'event_id' => $event->id,
+            'method' => 'FORM',
             'attended_at' => now(),
         ]));
 
@@ -164,25 +169,28 @@ class EventController extends Controller
     public function getByToken(string $qrToken): JsonResponse
     {
         $event = Event::where('qr_token', $qrToken)->first();
-        if (!$event) {
+        if (! $event) {
             return response()->json(['message' => 'Agenda tidak ditemukan.'], 404);
         }
+
         return response()->json($event->only('id', 'title', 'organizer', 'category', 'type', 'location', 'event_date', 'start_time', 'end_time', 'is_open'));
     }
 
     public function destroy(Event $event): JsonResponse
     {
         $event->delete();
+
         return response()->json(['message' => 'Agenda berhasil dihapus.']);
     }
 
     /** Toggle buka/tutup presensi */
     public function toggleOpen(Event $event): JsonResponse
     {
-        $event->update(['is_open' => !$event->is_open]);
+        $event->update(['is_open' => ! $event->is_open]);
+
         return response()->json([
             'message' => $event->is_open ? 'Presensi dibuka.' : 'Presensi ditutup.',
-            'data'    => $event->fresh(),
+            'data' => $event->fresh(),
         ]);
     }
 
@@ -195,7 +203,7 @@ class EventController extends Controller
             ->with('event:id,title,event_date,location,category')
             ->orderByDesc('attended_at')
             ->limit(50)->get()
-            ->map(fn($a) => [
+            ->map(fn ($a) => [
                 'id' => $a->id,
                 'event_id' => $a->event_id,
                 'event_title' => $a->event?->title,
@@ -213,22 +221,23 @@ class EventController extends Controller
     public function qrCode(Event $event): JsonResponse
     {
         $frontendUrl = rtrim(config('app.frontend_url'), '/');
-        $url = $frontendUrl . '/presensi/' . $event->qr_token;
-        $qr = \App\Helpers\QrCodeHelper::generateWithLogo($url, 400);
+        $url = $frontendUrl.'/presensi/'.$event->qr_token;
+        $qr = QrCodeHelper::generateWithLogo($url, 400);
 
         return response()->json([
             'qr_image' => $qr,
-            'url'      => $url,
-            'event'    => $event->only('id', 'title', 'event_date', 'start_time', 'end_time', 'location', 'organizer'),
+            'url' => $url,
+            'event' => $event->only('id', 'title', 'event_date', 'start_time', 'end_time', 'location', 'organizer'),
         ]);
     }
 
     /** Download daftar hadir sebagai Excel */
     public function exportExcel(Event $event)
     {
-        $filename = 'Daftar-Hadir-' . preg_replace('/[^a-zA-Z0-9]/', '-', $event->title) . '.xlsx';
-        return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\EventAttendanceExport($event),
+        $filename = 'Daftar-Hadir-'.preg_replace('/[^a-zA-Z0-9]/', '-', $event->title).'.xlsx';
+
+        return Excel::download(
+            new EventAttendanceExport($event),
             $filename
         );
     }
@@ -236,17 +245,25 @@ class EventController extends Controller
     /** Download daftar hadir sebagai PDF */
     public function exportPdf(Event $event)
     {
+        $event->loadMissing('creator');
         $attendances = EventAttendance::where('event_id', $event->id)
             ->with('user')
             ->orderBy('attended_at')
             ->get();
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.event-attendance', [
+        $token = OperationalDocumentVerification::issue('event-attendance', $event->id, (string) $event->qr_token);
+        $verifyUrl = rtrim((string) config('app.frontend_url'), '/').'/verify/event-attendance/'.$token;
+
+        $pdf = Pdf::loadView('pdf.event-attendance', [
             'event' => $event,
             'attendances' => $attendances,
-        ])->setPaper('a4', 'portrait');
+            'verifyUrl' => $verifyUrl,
+            'qrSignature' => QrCodeHelper::generate($verifyUrl.'?signer=organizer', 240),
+            'qrVerification' => QrCodeHelper::generateWithLogo($verifyUrl, 240),
+        ])->setPaper('a4', 'portrait')->setOption('isRemoteEnabled', true);
 
-        $filename = 'Daftar-Hadir-' . preg_replace('/[^a-zA-Z0-9]/', '-', $event->title) . '.pdf';
+        $filename = 'Daftar-Hadir-'.preg_replace('/[^a-zA-Z0-9]/', '-', $event->title).'.pdf';
+
         return $pdf->download($filename);
     }
 }

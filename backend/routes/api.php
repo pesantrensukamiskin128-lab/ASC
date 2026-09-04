@@ -74,6 +74,10 @@ Route::prefix('verify')->group(function () {
     Route::get('rpkps/{code}',   [VerifyController::class, 'verifyRpkps']);
     Route::get('academic-calendar/{id}', [VerifyController::class, 'verifyAcademicCalendar']);
     Route::get('surat/{token}',  [VerifyController::class, 'verifyOutgoingLetter']);
+    Route::get('khs/{token}', [VerifyController::class, 'verifyKhs']);
+    Route::get('transcript/{token}', [VerifyController::class, 'verifyTranscript']);
+    Route::get('event-attendance/{token}', [VerifyController::class, 'verifyEventAttendance']);
+    Route::get('pmb-card/{token}', [VerifyController::class, 'verifyPmbCard']);
 });
 
 // 2FA verification (setelah login, sebelum full access)

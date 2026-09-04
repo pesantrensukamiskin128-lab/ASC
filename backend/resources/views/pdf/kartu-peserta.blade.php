@@ -123,6 +123,12 @@
         .footer-right strong {
             color: #374151;
         }
+        .qr-table { width: 100%; border-collapse: collapse; }
+        .qr-table td { border: none; padding: 0 4px 0 0; vertical-align: middle; background: transparent; }
+        .qr-table .qr-cell { width: 52px; }
+        .qr-table img { width: 48px; height: 48px; display: block; }
+        .qr-label { font-size: 7px; line-height: 1.25; color: #4b5563; }
+        .qr-label strong { color: #1f2937; }
     </style>
 </head>
 <body>
@@ -220,15 +226,17 @@
 
         <!-- FOOTER ROW -->
         <tr>
-            <td class="card-footer" style="width:60%;">
-                Kartu ini wajib dibawa saat mengikuti seleksi.<br>
-                Tidak berlaku tanpa pas foto asli.
+            <td class="card-footer" style="width:55%;">
+                <table class="qr-table"><tr>
+                    <td class="qr-cell"><a href="{{ $verifyUrl }}"><img src="{{ $qrVerification }}" alt="QR verifikasi"></a></td>
+                    <td><div class="qr-label"><strong>Verifikasi kartu peserta</strong><br>Scan atau klik QR Code untuk memeriksa keaslian dokumen.<br>Kartu wajib dibawa saat seleksi.</div></td>
+                </tr></table>
             </td>
-            <td class="card-footer footer-right" style="width:40%;">
-                @if($registrant->period && $registrant->period->selection_date)
-                    <strong>Tanggal Seleksi</strong><br>
-                    {{ $registrant->period->selection_date->format('d F Y') }}
-                @endif
+            <td class="card-footer" style="width:45%;">
+                <table class="qr-table"><tr>
+                    <td class="qr-cell"><a href="{{ $verifyUrl }}?signer=verifier"><img src="{{ $qrSignature }}" alt="QR tanda tangan"></a></td>
+                    <td><div class="qr-label"><strong>Diverifikasi oleh</strong><br>{{ $registrant->verifiedBy?->name ?? 'Panitia PMB' }}<br>{{ $registrant->verified_at?->format('d/m/Y H:i') ?? '' }}</div></td>
+                </tr></table>
             </td>
         </tr>
     </table>

@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\QrCodeHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Institution;
-use App\Models\PmbPeriod;
 use App\Models\PmbPath;
+use App\Models\PmbPeriod;
 use App\Models\PmbRegistrant;
 use App\Models\StudyProgram;
 use App\Models\User;
+use App\Support\OperationalDocumentVerification;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,6 +23,7 @@ class PmbPublicController extends Controller
     public function activePeriod(): JsonResponse
     {
         $period = PmbPeriod::where('is_active', true)->with('academicYear')->first();
+
         return response()->json($period);
     }
 
@@ -42,16 +45,16 @@ class PmbPublicController extends Controller
     public function register(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'phone'    => 'nullable|string|max:20',
+            'phone' => 'nullable|string|max:20',
         ]);
 
         $user = User::create([
-            'name'      => $validated['name'],
-            'email'     => $validated['email'],
-            'password'  => Hash::make($validated['password']),
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
             'is_active' => true,
         ]);
         $user->assignRole('MAHASISWA');
@@ -59,12 +62,12 @@ class PmbPublicController extends Controller
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'message'      => 'Registrasi berhasil.',
+            'message' => 'Registrasi berhasil.',
             'access_token' => $token,
-            'token_type'   => 'Bearer',
-            'user'         => [
-                'id'    => $user->id,
-                'name'  => $user->name,
+            'token_type' => 'Bearer',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
                 'email' => $user->email,
                 'roles' => $user->getRoleNames(),
                 'permissions' => $user->getAllPermissions()->pluck('name'),
@@ -90,47 +93,47 @@ class PmbPublicController extends Controller
     {
         $validated = $request->validate([
             'pmb_period_id' => 'required|exists:pmb_periods,id',
-            'pmb_path_id'   => 'nullable|exists:pmb_paths,id',
+            'pmb_path_id' => 'nullable|exists:pmb_paths,id',
             // Data pribadi — semua nullable saat save draft
-            'full_name'     => 'nullable|string|max:255',
-            'gender'        => 'nullable|in:L,P',
-            'birth_place'   => 'nullable|string|max:100',
-            'birth_date'    => 'nullable|date',
-            'religion'      => 'nullable|string|max:50',
-            'nik'           => 'nullable|string|max:20',
-            'phone'         => 'nullable|string|max:20',
-            'email'         => 'nullable|email',
-            'address'       => 'nullable|string',
-            'province'      => 'nullable|string|max:100',
-            'city'          => 'nullable|string|max:100',
-            'district'      => 'nullable|string|max:100',
-            'village'       => 'nullable|string|max:100',
-            'postal_code'   => 'nullable|string|max:10',
+            'full_name' => 'nullable|string|max:255',
+            'gender' => 'nullable|in:L,P',
+            'birth_place' => 'nullable|string|max:100',
+            'birth_date' => 'nullable|date',
+            'religion' => 'nullable|string|max:50',
+            'nik' => 'nullable|string|max:20',
+            'phone' => 'nullable|string|max:20',
+            'email' => 'nullable|email',
+            'address' => 'nullable|string',
+            'province' => 'nullable|string|max:100',
+            'city' => 'nullable|string|max:100',
+            'district' => 'nullable|string|max:100',
+            'village' => 'nullable|string|max:100',
+            'postal_code' => 'nullable|string|max:10',
             // Orang tua
-            'father_name'       => 'nullable|string|max:255',
+            'father_name' => 'nullable|string|max:255',
             'father_occupation' => 'nullable|string|max:100',
-            'father_phone'      => 'nullable|string|max:20',
-            'mother_name'       => 'nullable|string|max:255',
+            'father_phone' => 'nullable|string|max:20',
+            'mother_name' => 'nullable|string|max:255',
             'mother_occupation' => 'nullable|string|max:100',
-            'mother_phone'      => 'nullable|string|max:20',
-            'guardian_name'     => 'nullable|string|max:255',
+            'mother_phone' => 'nullable|string|max:20',
+            'guardian_name' => 'nullable|string|max:255',
             'guardian_occupation' => 'nullable|string|max:100',
-            'guardian_phone'    => 'nullable|string|max:20',
+            'guardian_phone' => 'nullable|string|max:20',
             // Pendidikan
-            'school_name'    => 'nullable|string|max:255',
+            'school_name' => 'nullable|string|max:255',
             'school_address' => 'nullable|string',
-            'graduation_year'=> 'nullable|integer|digits:4',
+            'graduation_year' => 'nullable|integer|digits:4',
             'diploma_number' => 'nullable|string|max:100',
             // Pilihan prodi
-            'choice_1'       => 'nullable|exists:study_programs,id',
-            'choice_2'       => 'nullable|exists:study_programs,id',
-            'choice_3'       => 'nullable|exists:study_programs,id',
+            'choice_1' => 'nullable|exists:study_programs,id',
+            'choice_2' => 'nullable|exists:study_programs,id',
+            'choice_3' => 'nullable|exists:study_programs,id',
             // Prestasi
             'achievement_description' => 'nullable|string',
             // Dokumen (link Google Drive)
-            'diploma_link'     => 'nullable|string|max:500',
+            'diploma_link' => 'nullable|string|max:500',
             'family_card_link' => 'nullable|string|max:500',
-            'identity_link'    => 'nullable|string|max:500',
+            'identity_link' => 'nullable|string|max:500',
         ]);
 
         $registrant = PmbRegistrant::updateOrCreate(
@@ -141,8 +144,8 @@ class PmbPublicController extends Controller
                     ->value('registration_number')
                     ?? PmbRegistrant::generateRegistrationNumber($validated['pmb_period_id']),
                 'full_name' => $validated['full_name'] ?? auth()->user()->name,
-                'gender'    => $validated['gender'] ?? 'L',
-                'email'     => $validated['email'] ?? auth()->user()->email,
+                'gender' => $validated['gender'] ?? 'L',
+                'email' => $validated['email'] ?? auth()->user()->email,
             ])
         );
 
@@ -164,8 +167,8 @@ class PmbPublicController extends Controller
         $registrant->update(['photo_path' => $path]);
 
         return response()->json([
-            'message'    => 'Foto berhasil diupload.',
-            'photo_url'  => Storage::disk('public')->url($path),
+            'message' => 'Foto berhasil diupload.',
+            'photo_url' => Storage::disk('public')->url($path),
         ]);
     }
 
@@ -198,10 +201,10 @@ class PmbPublicController extends Controller
 
         $registrant = PmbRegistrant::where('user_id', auth()->id())->latest()->firstOrFail();
         $registrant->update([
-            'is_paid'       => true,
+            'is_paid' => true,
             'payment_proof' => $request->payment_proof,
-            'paid_at'       => now(),
-            'status'        => 'MENUNGGU_VERIFIKASI',
+            'paid_at' => now(),
+            'status' => 'MENUNGGU_VERIFIKASI',
         ]);
 
         return response()->json(['message' => 'Pembayaran berhasil dikonfirmasi.', 'data' => $registrant->fresh()]);
@@ -216,7 +219,7 @@ class PmbPublicController extends Controller
             ->firstOrFail();
 
         return response()->json([
-            'status'           => $registrant->status,
+            'status' => $registrant->status,
             'accepted_program' => $registrant->acceptedProgram,
             'selection_result' => $registrant->selectionResult,
         ]);
@@ -226,24 +229,30 @@ class PmbPublicController extends Controller
     public function downloadCard()
     {
         $registrant = PmbRegistrant::where('user_id', auth()->id())
-            ->with(['period', 'path', 'studyProgramChoice1', 'studyProgramChoice2', 'studyProgramChoice3'])
+            ->with(['period', 'path', 'studyProgramChoice1', 'studyProgramChoice2', 'studyProgramChoice3', 'verifiedBy'])
             ->latest()
             ->firstOrFail();
 
         // Hanya bisa cetak jika sudah terverifikasi
         $allowedStatuses = ['TERVERIFIKASI', 'MENGIKUTI_SELEKSI', 'LULUS', 'TIDAK_LULUS', 'DAFTAR_ULANG', 'MAHASISWA_BARU'];
-        if (!in_array($registrant->status, $allowedStatuses)) {
+        if (! in_array($registrant->status, $allowedStatuses)) {
             return response()->json(['message' => 'Kartu peserta belum tersedia. Status pendaftaran belum terverifikasi.'], 422);
         }
 
         $institution = Institution::first();
+        $token = OperationalDocumentVerification::issue('pmb-card', $registrant->id, (string) $registrant->registration_number);
+        $verifyUrl = rtrim((string) config('app.frontend_url'), '/').'/verify/pmb-card/'.$token;
 
         $pdf = Pdf::loadView('pdf.kartu-peserta', [
-            'registrant'  => $registrant,
+            'registrant' => $registrant,
             'institution' => $institution,
+            'verifyUrl' => $verifyUrl,
+            'qrSignature' => QrCodeHelper::generate($verifyUrl.'?signer=verifier', 240),
+            'qrVerification' => QrCodeHelper::generateWithLogo($verifyUrl, 240),
         ])->setPaper('a5', 'landscape')
-          ->setOption('dpi', 96)
-          ->setOption('defaultFont', 'DejaVu Sans');
+            ->setOption('dpi', 96)
+            ->setOption('defaultFont', 'DejaVu Sans')
+            ->setOption('isRemoteEnabled', true);
 
         $filename = "kartu-peserta-{$registrant->registration_number}.pdf";
 
