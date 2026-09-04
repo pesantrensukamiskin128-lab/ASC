@@ -248,14 +248,49 @@ class GradeController extends Controller
             ->whereHas('lecturer', fn ($query) => $query->where('status', true))
             ->first()?->lecturer;
         $qrData = $this->academicDocumentQrData('transcript', $student, $grades);
+        $pdfData = $this->pdfData();
 
-        $pdf = Pdf::loadView('pdf.transcript', $this->pdfData() + $qrData + [
+        $pdf = Pdf::loadView('pdf.transcript', $pdfData + $qrData + [
             'student' => $student,
             'grades' => $grades,
             'totalCredits' => $totalCredits,
             'ipk' => $latestSummary?->cumulative_gpa ?? $calculatedIpk,
             'wk1Lecturer' => $wk1Lecturer,
-        ])->setPaper('a4', 'portrait')->setOption('isRemoteEnabled', true);
+        ])->setPaper('a4', 'portrait')
+            ->setOption('isRemoteEnabled', true)
+            ->setCallbacks([[
+                'event' => 'end_document',
+                'f' => function (int $pageNumber, int $pageCount, $canvas, $fontMetrics) use ($pdfData): void {
+                    $left = 36.85;
+                    $contentWidth = 521.58;
+                    $maxHeight = 70.87;
+                    $letterheadPath = $pdfData['letterheadPath'];
+
+                    if ($letterheadPath && file_exists($letterheadPath)) {
+                        $size = getimagesize($letterheadPath);
+                        $ratio = $size && $size[1] > 0 ? $size[0] / $size[1] : $contentWidth / $maxHeight;
+                        $height = min($maxHeight, $contentWidth / $ratio);
+                        $width = $height * $ratio;
+                        $canvas->image($letterheadPath, $left + (($contentWidth - $width) / 2), 5, $width, $height);
+
+                        return;
+                    }
+
+                    $institution = $pdfData['institution'];
+                    $logoPath = $pdfData['logoPath'];
+                    if ($logoPath && file_exists($logoPath)) {
+                        $canvas->image($logoPath, $left + 8, 8, 55, 55);
+                    }
+                    $titleFont = $fontMetrics->getFont('DejaVu Serif', 'bold');
+                    $bodyFont = $fontMetrics->getFont('DejaVu Sans');
+                    $canvas->text($left + 72, 15, strtoupper($institution?->name ?? 'PERGURUAN TINGGI'), $titleFont, 13, [0.07, 0.1, 0.16]);
+                    $canvas->text($left + 72, 34, (string) ($institution?->address ?? ''), $bodyFont, 7.5, [0.2, 0.24, 0.3]);
+                    $contacts = collect([$institution?->phone, $institution?->email, $institution?->website])->filter()->join(' | ');
+                    $canvas->text($left + 72, 47, $contacts, $bodyFont, 7.5, [0.2, 0.24, 0.3]);
+                    $canvas->line($left, 67, $left + $contentWidth, 67, [0.07, 0.1, 0.16], 1.5);
+                    $canvas->line($left, 70, $left + $contentWidth, 70, [0.07, 0.1, 0.16], 0.5);
+                },
+            ]]);
 
         return $pdf->download('Transkrip-'.$student->nim.'.pdf');
     }

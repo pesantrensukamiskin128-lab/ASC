@@ -197,6 +197,13 @@ class StudentAcademicPortalTest extends TestCase
         $this->assertSame('Mahasiswa Satu', $studentData['signer_info']['name']);
         $this->assertTrue($studentData['signer_info']['signed']);
 
+        $transcriptToken = AcademicDocumentVerification::issue('transcript', $student, $grades);
+        $wk1Request = Request::create('/api/verify/transcript/'.$transcriptToken, 'GET', ['signer' => 'waket1']);
+        $wk1Data = app(VerifyController::class)->verifyTranscript($wk1Request, $transcriptToken)->getData(true);
+        $this->assertSame('Wakil Ketua I', $wk1Data['signer_info']['label']);
+        $this->assertSame('Dr. Siti Rahmawati, M.Pd.', $wk1Data['signer_info']['name']);
+        $this->assertTrue($wk1Data['signer_info']['signed']);
+
         DB::table('student_grades')->where('student_id', 1)->update([
             'grade_point' => 3.5,
             'updated_at' => now()->addMinute(),

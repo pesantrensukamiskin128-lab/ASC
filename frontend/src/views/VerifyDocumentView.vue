@@ -15,6 +15,8 @@ const docId = route.params.id as string
 const signer = (route.query.signer as string) || ''
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api'
+const institutionLogoUrl = `${BASE_URL}/institution/logo`
+const logoVisible = ref(true)
 
 onMounted(async () => {
   try {
@@ -56,12 +58,14 @@ function docTypeLabel(type: string): string {
     <div class="w-full max-w-lg relative z-10">
       <!-- Loading State -->
       <div v-if="loading" class="bg-white rounded-3xl p-12 text-center shadow-2xl">
+        <img v-if="logoVisible" :src="institutionLogoUrl" alt="Logo institusi" class="w-20 h-20 object-contain mx-auto mb-5" @error="logoVisible = false">
         <div class="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
         <p class="text-gray-500 font-medium">Memverifikasi dokumen...</p>
       </div>
 
       <!-- Invalid / Error State -->
       <div v-else-if="!isValid" class="bg-white rounded-3xl p-10 text-center shadow-2xl">
+        <img v-if="logoVisible" :src="institutionLogoUrl" alt="Logo institusi" class="w-24 h-24 object-contain mx-auto mb-5" @error="logoVisible = false">
         <div class="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-5">
           <svg class="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
@@ -82,7 +86,10 @@ function docTypeLabel(type: string): string {
       <div v-else class="bg-white rounded-3xl shadow-2xl overflow-hidden">
         <!-- Header with gradient -->
         <div class="bg-gradient-to-r from-blue-700 to-blue-600 px-8 py-8 text-center">
-          <div class="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-4">
+          <div v-if="logoVisible" class="w-24 h-24 rounded-2xl bg-white flex items-center justify-center mx-auto mb-4 p-2 shadow-lg">
+            <img :src="institutionLogoUrl" alt="Logo institusi" class="w-full h-full object-contain" @error="logoVisible = false">
+          </div>
+          <div v-else class="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-4">
             <svg class="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
             </svg>

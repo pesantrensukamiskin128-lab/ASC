@@ -27,7 +27,10 @@
         .summary { margin-top: 9px; width: 48%; margin-left: auto; }
         .summary td { border: 1px solid #6b7280; padding: 3px 5px; line-height: 1; }
         .summary .value { text-align: right; font-weight: bold; }
-        .signature-dateline { margin-top: 24px; margin-bottom: 4px; padding-right: 3px; text-align: right; white-space: nowrap; }
+        .signature-dateline { margin-top: 24px; margin-bottom: 4px; margin-left: auto; text-align: center; white-space: nowrap; }
+        .signature-dateline.two-columns { width: 50%; }
+        .signature-dateline.three-columns { width: 33.333%; }
+        .signature-block { page-break-inside: avoid; }
         .signature { margin-top: 0; page-break-inside: avoid; }
         .signature td { text-align: center; vertical-align: top; line-height: 1; padding: 0 3px; }
         .signature.two-columns td { width: 50%; }
@@ -87,14 +90,16 @@
         <tr><td>IP Kumulatif (IPK)</td><td class="value">{{ $summary?->cumulative_gpa !== null ? number_format((float) $summary->cumulative_gpa, 2, ',', '.') : '-' }}</td></tr>
     </table>
 
-    <div class="signature-dateline">Bandung, {{ $printedAt->locale('id')->translatedFormat('d F Y') }}</div>
-    <table class="signature {{ $student->advisor ? 'three-columns' : 'two-columns' }}"><tr>
-        <td>Ketua Program Studi,<div class="signature-qr"><a href="{{ $verifyUrl }}?signer=kaprodi"><img src="{{ $qrSignature }}" alt="QR tanda tangan"></a></div><span class="name">{{ $student->studyProgram?->headLecturer?->display_name ?? '................................' }}</span><span class="identifier">NIDN {{ $student->studyProgram?->headLecturer?->nidn ?? '-' }}</span></td>
-        @if($student->advisor)
-            <td>Pembimbing Akademik,<div class="signature-qr"><a href="{{ $verifyUrl }}?signer=dosen_wali"><img src="{{ $qrAdvisorSignature }}" alt="QR tanda tangan pembimbing akademik"></a></div><span class="name">{{ $student->advisor->display_name }}</span><span class="identifier">NIDN {{ $student->advisor->nidn ?? '-' }}</span></td>
-        @endif
-        <td>Mahasiswa,<div class="signature-qr"><a href="{{ $verifyUrl }}?signer=mahasiswa"><img src="{{ $qrStudentSignature }}" alt="QR tanda tangan mahasiswa"></a></div><span class="name">{{ $student->name }}</span><span class="identifier">NIM {{ $student->nim }}</span></td>
-    </tr></table>
+    <div class="signature-block">
+        <div class="signature-dateline {{ $student->advisor ? 'three-columns' : 'two-columns' }}">Bandung, {{ $printedAt->locale('id')->translatedFormat('d F Y') }}</div>
+        <table class="signature {{ $student->advisor ? 'three-columns' : 'two-columns' }}"><tr>
+            <td>Ketua Program Studi,<div class="signature-qr"><a href="{{ $verifyUrl }}?signer=kaprodi"><img src="{{ $qrSignature }}" alt="QR tanda tangan"></a></div><span class="name">{{ $student->studyProgram?->headLecturer?->display_name ?? '................................' }}</span><span class="identifier">NIDN {{ $student->studyProgram?->headLecturer?->nidn ?? '-' }}</span></td>
+            @if($student->advisor)
+                <td>Pembimbing Akademik,<div class="signature-qr"><a href="{{ $verifyUrl }}?signer=dosen_wali"><img src="{{ $qrAdvisorSignature }}" alt="QR tanda tangan pembimbing akademik"></a></div><span class="name">{{ $student->advisor->display_name }}</span><span class="identifier">NIDN {{ $student->advisor->nidn ?? '-' }}</span></td>
+            @endif
+            <td>Mahasiswa,<div class="signature-qr"><a href="{{ $verifyUrl }}?signer=mahasiswa"><img src="{{ $qrStudentSignature }}" alt="QR tanda tangan mahasiswa"></a></div><span class="name">{{ $student->name }}</span><span class="identifier">NIM {{ $student->nim }}</span></td>
+        </tr></table>
+    </div>
 
     <div class="verify-footer"><table><tr>
         <td class="qr-cell"><a href="{{ $verifyUrl }}"><img src="{{ $qrVerification }}" alt="QR verifikasi"></a></td>

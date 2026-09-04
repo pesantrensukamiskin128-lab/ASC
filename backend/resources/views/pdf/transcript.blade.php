@@ -4,12 +4,12 @@
     <meta charset="utf-8">
     <title>Transkrip - {{ $student->nim }}</title>
     <style>
-        @page { margin: 5mm 13mm 27mm; }
+        @page { margin: 32mm 13mm 27mm; }
         body { font-family: DejaVu Sans, sans-serif; color: #111827; font-size: 8pt; line-height: 1; }
         table { width: 100%; border-collapse: collapse; line-height: 1; }
         .header td { vertical-align: middle; }
-        .letterhead { width: 100%; margin: 0 0 5px; padding: 0; text-align: center; line-height: 0; }
-        .letterhead img { display: block; width: 100%; height: auto; margin: 0 auto; padding: 0; }
+        .letterhead { width: 100%; margin: 0; padding: 0; text-align: center; line-height: 0; }
+        .letterhead img { display: block; width: 100%; max-height: 25mm; height: auto; margin: 0 auto; padding: 0; }
         .logo { width: 68px; text-align: center; }
         .logo img { max-width: 55px; max-height: 55px; }
         .institution { text-align: center; font-family: DejaVu Serif, serif; }
@@ -27,7 +27,8 @@
         .summary td { border: 1px solid #6b7280; padding: 3px 5px; line-height: 1; }
         .summary .value { text-align: right; font-weight: bold; }
         .note { margin-top: 8px; font-size: 7.5pt; color: #4b5563; }
-        .signature-dateline { margin-top: 22px; margin-bottom: 4px; text-align: right; white-space: nowrap; }
+        .signature-dateline { width: 50%; margin: 22px 0 4px auto; text-align: center; white-space: nowrap; }
+        .signature-block { page-break-inside: avoid; }
         .signature { margin-top: 0; page-break-inside: avoid; }
         .signature td { width: 50%; text-align: center; vertical-align: top; line-height: 1; }
         .signature-space { height: 50px; }
@@ -45,13 +46,6 @@
     </style>
 </head>
 <body>
-    @if($letterheadPath && file_exists($letterheadPath))
-        <div class="letterhead"><img src="{{ $letterheadPath }}" alt="Kop institusi"></div>
-    @else
-        <table class="header"><tr><td class="logo">@if($logoPath && file_exists($logoPath))<img src="{{ $logoPath }}" alt="Logo">@endif</td><td class="institution"><strong>{{ strtoupper($institution?->name ?? 'PERGURUAN TINGGI') }}</strong><div>{{ $institution?->address }}</div><div>{{ collect([$institution?->phone, $institution?->email, $institution?->website])->filter()->join(' | ') }}</div></td><td style="width:68px"></td></tr></table>
-        <div class="rule"></div>
-    @endif
-
     <h1>TRANSKRIP NILAI AKADEMIK</h1>
     <table class="identity">
         <tr><td class="label">NIM</td><td>: {{ $student->nim }}</td><td class="label">Program Studi</td><td>: {{ $student->studyProgram?->name ?? '-' }}</td></tr>
@@ -77,11 +71,13 @@
     </table>
     <div class="note">Catatan: Mutu = SKS x bobot nilai. Dokumen ini menampilkan seluruh nilai yang tercatat pada ASC.</div>
 
-    <div class="signature-dateline">Bandung, {{ $printedAt->locale('id')->translatedFormat('d F Y') }}</div>
-    <table class="signature"><tr>
-        <td>Wakil Ketua I,<div class="signature-qr">@if($wk1Lecturer)<a href="{{ $verifyUrl }}?signer=waket1"><img src="{{ $qrWk1Signature }}" alt="QR tanda tangan Wakil Ketua I"></a>@endif</div><span class="name">{{ $wk1Lecturer?->display_name ?? '................................' }}</span><span class="identifier">NIDN {{ $wk1Lecturer?->nidn ?? '-' }}</span></td>
-        <td>Ketua Program Studi,<div class="signature-qr"><a href="{{ $verifyUrl }}?signer=kaprodi"><img src="{{ $qrSignature }}" alt="QR tanda tangan"></a></div><span class="name">{{ $student->studyProgram?->headLecturer?->display_name ?? '................................' }}</span><span class="identifier">NIDN {{ $student->studyProgram?->headLecturer?->nidn ?? '-' }}</span></td>
-    </tr></table>
+    <div class="signature-block">
+        <div class="signature-dateline">Bandung, {{ $printedAt->locale('id')->translatedFormat('d F Y') }}</div>
+        <table class="signature"><tr>
+            <td>Wakil Ketua I,<div class="signature-qr">@if($wk1Lecturer)<a href="{{ $verifyUrl }}?signer=waket1"><img src="{{ $qrWk1Signature }}" alt="QR tanda tangan Wakil Ketua I"></a>@endif</div><span class="name">{{ $wk1Lecturer?->display_name ?? '................................' }}</span><span class="identifier">NIDN {{ $wk1Lecturer?->nidn ?? '-' }}</span></td>
+            <td>Ketua Program Studi,<div class="signature-qr"><a href="{{ $verifyUrl }}?signer=kaprodi"><img src="{{ $qrSignature }}" alt="QR tanda tangan"></a></div><span class="name">{{ $student->studyProgram?->headLecturer?->display_name ?? '................................' }}</span><span class="identifier">NIDN {{ $student->studyProgram?->headLecturer?->nidn ?? '-' }}</span></td>
+        </tr></table>
+    </div>
 
     <div class="verify-footer"><table><tr>
         <td class="qr-cell"><a href="{{ $verifyUrl }}"><img src="{{ $qrVerification }}" alt="QR verifikasi"></a></td>
