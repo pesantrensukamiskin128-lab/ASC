@@ -7,6 +7,7 @@ import api from '@/services/api'
 const toast = useToast()
 const auth = useAuthStore()
 const isMahasiswa = auth.user?.roles?.includes('MAHASISWA')
+const isAcademicAdmin = computed(() => auth.hasRole(['SUPER_ADMIN', 'ADMIN_AKADEMIK']))
 
 const activeTab = ref<'khs' | 'transkrip'>('khs')
 const loading = ref(false)
@@ -22,6 +23,7 @@ const studentId = ref<number | null>(null)
 // Data
 const khsData = ref<any>(null)
 const transcriptData = ref<any>(null)
+const downloading = ref<string | null>(null)
 
 onMounted(async () => {
   const { data } = await api.get('/semesters', { params: { per_page: 50 } })
@@ -71,6 +73,47 @@ async function loadTranscript() {
     transcriptData.value = data
   } catch { transcriptData.value = null }
   finally { loading.value = false }
+}
+
+function downloadBlob(blobData: BlobPart, filename: string, mimeType: string) {
+  const url = URL.createObjectURL(new Blob([blobData], { type: mimeType }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
+async function downloadKhsPdf() {
+  if (!studentId.value || !filterSemester.value) return
+  downloading.value = 'khs'
+  try {
+    const response = await api.get('/grades/khs/pdf', {
+      params: { student_id: studentId.value, semester_id: filterSemester.value },
+      responseType: 'blob',
+    })
+    downloadBlob(response.data, `KHS-${selectedStudent.value?.nim ?? studentId.value}.pdf`, 'application/pdf')
+  } catch { toast.error('Gagal mengunduh KHS PDF.') }
+  finally { downloading.value = null }
+}
+
+async function downloadTranscript(format: 'pdf' | 'excel') {
+  if (!studentId.value) return
+  downloading.value = `transcript-${format}`
+  try {
+    const response = await api.get(`/grades/transcript/${format === 'excel' ? 'excel' : 'pdf'}`, {
+      params: { student_id: studentId.value },
+      responseType: 'blob',
+    })
+    const extension = format === 'excel' ? 'xlsx' : 'pdf'
+    const mimeType = format === 'excel'
+      ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      : 'application/pdf'
+    downloadBlob(response.data, `Transkrip-${selectedStudent.value?.nim ?? studentId.value}.${extension}`, mimeType)
+  } catch { toast.error(`Gagal mengunduh Transkrip ${format === 'excel' ? 'Excel' : 'PDF'}.`) }
+  finally { downloading.value = null }
 }
 
 function switchTab(tab: 'khs' | 'transkrip') {
@@ -139,10 +182,13 @@ const groupedTranscript = computed(() => {
 
     <!-- TAB: KHS -->
     <div v-if="activeTab === 'khs' && studentId">
-      <div class="mb-4">
+      <div class="mb-4 flex flex-wrap items-center gap-2">
         <select v-model="filterSemester" class="px-3 py-2 rounded-lg border border-gray-300 text-sm" @change="loadKhs">
           <option v-for="s in semesters" :key="s.id" :value="s.id">{{ s.name }}</option>
         </select>
+        <button :disabled="downloading === 'khs'" class="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-medium" @click="downloadKhsPdf">
+          {{ downloading === 'khs' ? 'Menyiapkan...' : 'Cetak KHS PDF' }}
+        </button>
       </div>
 
       <div v-if="loading" class="text-center py-8 text-gray-400">Memuat...</div>
@@ -183,6 +229,14 @@ const groupedTranscript = computed(() => {
 
     <!-- TAB: Transkrip -->
     <div v-if="activeTab === 'transkrip' && studentId">
+      <div class="mb-4 flex flex-wrap gap-2">
+        <button :disabled="downloading === 'transcript-pdf'" class="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-medium" @click="downloadTranscript('pdf')">
+          {{ downloading === 'transcript-pdf' ? 'Menyiapkan...' : 'Cetak Transkrip PDF' }}
+        </button>
+        <button v-if="isAcademicAdmin" :disabled="downloading === 'transcript-excel'" class="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-medium" @click="downloadTranscript('excel')">
+          {{ downloading === 'transcript-excel' ? 'Menyiapkan...' : 'Download Transkrip Excel' }}
+        </button>
+      </div>
       <div v-if="loading" class="text-center py-8 text-gray-400">Memuat...</div>
       <div v-else-if="!transcriptData?.grades?.length" class="text-center py-8 text-gray-400 text-sm">Belum ada data transkrip.</div>
       <div v-else class="space-y-4">

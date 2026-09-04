@@ -21,6 +21,7 @@ const transcriptData = ref<any>(null)
 const khsData = ref<any>(null)
 const selectedSemester = ref('')
 const khsLoading = ref(false)
+const downloadingAcademic = ref<string | null>(null)
 
 // KKN data
 const kknLoading = ref(true)
@@ -94,6 +95,28 @@ async function loadAcademicHistory() {
   } catch {
     toast.error('Gagal memuat riwayat akademik.')
   }
+}
+
+async function downloadKhsPdf() {
+  if (!selectedSemester.value) return
+  downloadingAcademic.value = 'khs'
+  try {
+    const response = await api.get('/grades/khs/pdf', {
+      params: { semester_id: selectedSemester.value },
+      responseType: 'blob',
+    })
+    downloadBlob(response.data, `KHS-${academicHistory.value?.student?.nim ?? 'Mahasiswa'}.pdf`)
+  } catch { toast.error('Gagal mengunduh KHS PDF.') }
+  finally { downloadingAcademic.value = null }
+}
+
+async function downloadTranscriptPdf() {
+  downloadingAcademic.value = 'transcript'
+  try {
+    const response = await api.get('/grades/transcript/pdf', { responseType: 'blob' })
+    downloadBlob(response.data, `Transkrip-${academicHistory.value?.student?.nim ?? 'Mahasiswa'}.pdf`)
+  } catch { toast.error('Gagal mengunduh Transkrip PDF.') }
+  finally { downloadingAcademic.value = null }
 }
 
 async function loadKhs() {
@@ -229,9 +252,14 @@ function formatNumber(value: string | number | null | undefined, decimals = 0) {
         <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div><h2 class="font-semibold text-gray-900 flex items-center gap-2"><BookOpenIcon class="w-5 h-5 text-blue-600" /> Kartu Hasil Studi</h2><p class="text-xs text-gray-500 mt-0.5">Pilih semester untuk melihat nilai mata kuliah</p></div>
-            <select v-model="selectedSemester" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" @change="loadKhs">
-              <option v-for="summary in academicHistory.summaries" :key="summary.semester_id" :value="String(summary.semester_id)">{{ summary.semester?.name }}</option>
-            </select>
+            <div class="flex flex-wrap gap-2">
+              <select v-model="selectedSemester" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" @change="loadKhs">
+                <option v-for="summary in academicHistory.summaries" :key="summary.semester_id" :value="String(summary.semester_id)">{{ summary.semester?.name }}</option>
+              </select>
+              <button :disabled="!selectedSemester || downloadingAcademic === 'khs'" class="inline-flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg" @click="downloadKhsPdf">
+                <ArrowDownTrayIcon class="w-4 h-4" /> {{ downloadingAcademic === 'khs' ? 'Menyiapkan...' : 'Cetak PDF' }}
+              </button>
+            </div>
           </div>
           <div v-if="khsLoading" class="text-center text-gray-400 py-6">Memuat KHS...</div>
           <div v-else-if="!khsData?.grades?.length" class="text-center text-gray-400 py-6">Belum ada nilai pada semester ini.</div>
@@ -245,7 +273,7 @@ function formatNumber(value: string | number | null | undefined, decimals = 0) {
         </div>
 
         <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
-          <div class="flex items-center justify-between"><h2 class="font-semibold text-gray-900 flex items-center gap-2"><DocumentTextIcon class="w-5 h-5 text-green-600" /> Transkrip Nilai</h2><div class="text-right"><p class="text-xl font-bold text-green-700">{{ formatNumber(transcriptData?.ipk, 2) }}</p><p class="text-[10px] text-gray-500">IPK · {{ transcriptData?.total_credits ?? 0 }} SKS bernilai</p></div></div>
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><h2 class="font-semibold text-gray-900 flex items-center gap-2"><DocumentTextIcon class="w-5 h-5 text-green-600" /> Transkrip Nilai</h2><div class="flex items-center gap-3"><button :disabled="downloadingAcademic === 'transcript'" class="inline-flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg" @click="downloadTranscriptPdf"><ArrowDownTrayIcon class="w-4 h-4" /> {{ downloadingAcademic === 'transcript' ? 'Menyiapkan...' : 'Cetak PDF' }}</button><div class="text-right"><p class="text-xl font-bold text-green-700">{{ formatNumber(transcriptData?.ipk, 2) }}</p><p class="text-[10px] text-gray-500">IPK · {{ transcriptData?.total_credits ?? 0 }} SKS bernilai</p></div></div></div>
           <div v-if="!transcriptData?.grades?.length" class="text-center text-gray-400 py-6">Belum ada data transkrip.</div>
           <div v-else class="overflow-x-auto">
             <table class="w-full min-w-[750px] text-sm">

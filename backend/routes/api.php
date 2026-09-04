@@ -380,6 +380,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:SUPER_ADMIN|ADMIN_AKADEMIK|DOSEN|MAHASISWA')->group(function () {
         Route::get('grades/khs', [GradeController::class, 'khs']);
         Route::get('grades/transcript', [GradeController::class, 'transcript']);
+        Route::get('grades/khs/pdf', [GradeController::class, 'khsPdf']);
+        Route::get('grades/transcript/pdf', [GradeController::class, 'transcriptPdf']);
+    });
+
+    Route::middleware('role:SUPER_ADMIN|ADMIN_AKADEMIK')->group(function () {
+        Route::get('grades/transcript/excel', [GradeController::class, 'transcriptExcel']);
     });
 
     Route::middleware('role:SUPER_ADMIN|ADMIN_AKADEMIK|DOSEN')->group(function () {

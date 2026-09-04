@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\PermissionRegistrar;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Tests\TestCase;
 
 class StudentAcademicPortalTest extends TestCase
@@ -20,23 +21,46 @@ class StudentAcademicPortalTest extends TestCase
         $this->createMinimalSchema();
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        DB::table('roles')->insert(['id' => 1, 'name' => 'MAHASISWA', 'guard_name' => 'web']);
+        DB::table('roles')->insert([
+            ['id' => 1, 'name' => 'MAHASISWA', 'guard_name' => 'web'],
+            ['id' => 2, 'name' => 'ADMIN_AKADEMIK', 'guard_name' => 'web'],
+        ]);
         DB::table('users')->insert([
-            'id' => 1, 'name' => 'Mahasiswa Satu', 'username' => 'M001',
-            'email' => 'm001@example.test', 'password' => bcrypt('secret'), 'is_active' => true,
-            'created_at' => now(), 'updated_at' => now(),
+            [
+                'id' => 1, 'name' => 'Mahasiswa Satu', 'username' => 'M001',
+                'email' => 'm001@example.test', 'password' => bcrypt('secret'), 'is_active' => true,
+                'created_at' => now(), 'updated_at' => now(),
+            ],
+            [
+                'id' => 3, 'name' => 'Admin Akademik', 'username' => 'admin.akademik',
+                'email' => 'admin@example.test', 'password' => bcrypt('secret'), 'is_active' => true,
+                'created_at' => now(), 'updated_at' => now(),
+            ],
         ]);
         DB::table('model_has_roles')->insert([
-            'role_id' => 1, 'model_type' => User::class, 'model_id' => 1,
+            ['role_id' => 1, 'model_type' => User::class, 'model_id' => 1],
+            ['role_id' => 2, 'model_type' => User::class, 'model_id' => 3],
         ]);
-        DB::table('study_programs')->insert(['id' => 1, 'code' => 'P1', 'name' => 'Program Studi Satu']);
+        DB::table('institutions')->insert([
+            'code' => 'ASC', 'name' => 'Sekolah Tinggi Agama Islam Al-Jawami',
+            'address' => 'Jl. Pendidikan No. 1, Bandung',
+        ]);
+        DB::table('faculties')->insert(['id' => 1, 'code' => 'FT', 'name' => 'Fakultas Tarbiyah']);
+        DB::table('lecturers')->insert([
+            'id' => 1, 'nidn' => '0011223344', 'full_name' => 'Ahmad Fauzi',
+            'degree_front' => 'Dr.', 'degree_back' => 'M.Pd', 'status' => true,
+        ]);
+        DB::table('study_programs')->insert([
+            'id' => 1, 'faculty_id' => 1, 'head_lecturer_id' => 1,
+            'code' => 'P1', 'name' => 'Pendidikan Agama Islam', 'level' => 'S1',
+        ]);
         DB::table('students')->insert([
             [
-                'id' => 1, 'user_id' => 1, 'study_program_id' => 1, 'nim' => 'M001',
+                'id' => 1, 'user_id' => 1, 'study_program_id' => 1, 'advisor_id' => 1, 'nim' => 'M001',
                 'name' => 'Mahasiswa Satu', 'status' => 'Aktif', 'created_at' => now(), 'updated_at' => now(),
             ],
             [
-                'id' => 2, 'user_id' => null, 'study_program_id' => 1, 'nim' => 'M002',
+                'id' => 2, 'user_id' => null, 'study_program_id' => 1, 'advisor_id' => null, 'nim' => 'M002',
                 'name' => 'Mahasiswa Dua', 'status' => 'Aktif', 'created_at' => now(), 'updated_at' => now(),
             ],
         ]);
@@ -97,6 +121,41 @@ class StudentAcademicPortalTest extends TestCase
         $this->assertEquals(3.25, $transcript['ipk']);
     }
 
+    public function test_pdf_and_admin_excel_exports_are_valid_and_protected(): void
+    {
+        $studentUser = User::findOrFail(1);
+        $adminUser = User::findOrFail(3);
+
+        $khsRequest = Request::create('/api/grades/khs/pdf', 'GET', ['semester_id' => 1]);
+        $khsRequest->setUserResolver(fn () => $studentUser);
+        $khsResponse = app(GradeController::class)->khsPdf($khsRequest);
+        $khsBytes = (string) $khsResponse->getContent();
+        $this->assertStringStartsWith('%PDF-', $khsBytes);
+        $this->assertStringContainsString('KHS-M001-Ganjil-2020-2021.pdf', (string) $khsResponse->headers->get('content-disposition'));
+
+        $transcriptRequest = Request::create('/api/grades/transcript/pdf', 'GET');
+        $transcriptRequest->setUserResolver(fn () => $studentUser);
+        $transcriptResponse = app(GradeController::class)->transcriptPdf($transcriptRequest);
+        $transcriptBytes = (string) $transcriptResponse->getContent();
+        $this->assertStringStartsWith('%PDF-', $transcriptBytes);
+
+        $excelRequest = Request::create('/api/grades/transcript/excel', 'GET', ['student_id' => 1]);
+        $excelRequest->setUserResolver(fn () => $adminUser);
+        $excelResponse = app(GradeController::class)->transcriptExcel($excelRequest);
+        $this->assertInstanceOf(BinaryFileResponse::class, $excelResponse);
+        $excelBytes = file_get_contents($excelResponse->getFile()->getPathname());
+        $this->assertIsString($excelBytes);
+        $this->assertStringStartsWith('PK', $excelBytes);
+
+        $this->actingAs($studentUser)
+            ->get('/api/grades/transcript/excel?student_id=1')
+            ->assertForbidden();
+
+        DB::table('student_grades')->where('student_id', 1)->delete();
+        $emptyExcelResponse = app(GradeController::class)->transcriptExcel($excelRequest);
+        $this->assertStringStartsWith('PK', file_get_contents($emptyExcelResponse->getFile()->getPathname()));
+    }
+
     private function createMinimalSchema(): void
     {
         Schema::create('users', function (Blueprint $table): void {
@@ -122,13 +181,42 @@ class StudentAcademicPortalTest extends TestCase
         });
         Schema::create('study_programs', function (Blueprint $table): void {
             $table->id();
+            $table->unsignedBigInteger('faculty_id')->nullable();
+            $table->unsignedBigInteger('head_lecturer_id')->nullable();
             $table->string('code');
             $table->string('name');
+            $table->string('level')->nullable();
+        });
+        Schema::create('institutions', function (Blueprint $table): void {
+            $table->id();
+            $table->string('code');
+            $table->string('name');
+            $table->string('address')->nullable();
+            $table->string('phone')->nullable();
+            $table->string('email')->nullable();
+            $table->string('website')->nullable();
+            $table->string('logo_path')->nullable();
+            $table->string('letterhead_path')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('faculties', function (Blueprint $table): void {
+            $table->id();
+            $table->string('code');
+            $table->string('name');
+        });
+        Schema::create('lecturers', function (Blueprint $table): void {
+            $table->id();
+            $table->string('nidn')->nullable();
+            $table->string('degree_front')->nullable();
+            $table->string('degree_back')->nullable();
+            $table->string('full_name');
+            $table->boolean('status')->default(true);
         });
         Schema::create('students', function (Blueprint $table): void {
             $table->id();
             $table->unsignedBigInteger('user_id')->nullable();
             $table->unsignedBigInteger('study_program_id');
+            $table->unsignedBigInteger('advisor_id')->nullable();
             $table->string('nim')->unique();
             $table->string('name');
             $table->string('status');
@@ -180,6 +268,7 @@ class StudentAcademicPortalTest extends TestCase
             $table->unsignedBigInteger('course_id');
             $table->unsignedBigInteger('semester_id');
             $table->string('letter_grade')->nullable();
+            $table->decimal('final_score', 5, 2)->nullable();
             $table->decimal('grade_point', 3, 2)->nullable();
             $table->timestamps();
         });
