@@ -25,13 +25,14 @@ class AcademicDocumentVerification
             base_convert((string) now()->timestamp, 10, 36),
         ]);
 
-        return $encoded.'.'.substr(hash_hmac('sha256', $encoded, self::key()), 0, 32);
+        return $encoded.'_'.substr(hash_hmac('sha256', $encoded, self::key()), 0, 32);
     }
 
     /** @return array<string, mixed>|null */
     public static function decode(string $token): ?array
     {
-        [$encoded, $signature] = array_pad(explode('.', $token, 2), 2, null);
+        $separator = str_contains($token, '_') ? '_' : '.';
+        [$encoded, $signature] = array_pad(explode($separator, $token, 2), 2, null);
         if (! $encoded || ! $signature || ! hash_equals(substr(hash_hmac('sha256', $encoded, self::key()), 0, 32), $signature)) {
             return null;
         }
@@ -60,16 +61,24 @@ class AcademicDocumentVerification
 
     public static function matches(array $payload, string $type, Student $student, Collection $grades, ?int $semesterId = null): bool
     {
-        return ($payload['t'] ?? null) === $type
-            && (int) ($payload['s'] ?? 0) === (int) $student->id
-            && (int) ($payload['m'] ?? 0) === (int) ($semesterId ?? 0)
-            && hash_equals(
-                (string) ($payload['h'] ?? ''),
-                substr(self::contentHash($type, $student, $grades, $semesterId), 0, 32)
-            );
+        if (($payload['t'] ?? null) !== $type
+            || (int) ($payload['s'] ?? 0) !== (int) $student->id
+            || (int) ($payload['m'] ?? 0) !== (int) ($semesterId ?? 0)) {
+            return false;
+        }
+
+        $hash = (string) ($payload['h'] ?? '');
+
+        return hash_equals($hash, substr(self::contentHash($type, $student, $grades, $semesterId), 0, 32))
+            || hash_equals($hash, substr(self::contentHashValue($type, $student, $grades, $semesterId, false), 0, 32));
     }
 
     public static function contentHash(string $type, Student $student, Collection $grades, ?int $semesterId = null): string
+    {
+        return self::contentHashValue($type, $student, $grades, $semesterId, true);
+    }
+
+    private static function contentHashValue(string $type, Student $student, Collection $grades, ?int $semesterId, bool $includeAdvisor): string
     {
         $data = [
             'type' => $type,
@@ -92,6 +101,10 @@ class AcademicDocumentVerification
                 'updated_at' => $grade->updated_at?->toIso8601String(),
             ])->sortBy('id')->values()->all(),
         ];
+
+        if ($includeAdvisor) {
+            $data['student']['advisor_id'] = $student->advisor_id;
+        }
 
         return hash('sha256', json_encode($data, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
     }

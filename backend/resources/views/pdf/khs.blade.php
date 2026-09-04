@@ -5,7 +5,7 @@
     <title>KHS - {{ $student->nim }}</title>
     <style>
         @page { margin: 5mm 15mm 27mm; }
-        body { font-family: DejaVu Sans, sans-serif; color: #111827; font-size: 9.5pt; line-height: 1.35; }
+        body { font-family: DejaVu Sans, sans-serif; color: #111827; font-size: 9pt; line-height: 1.28; }
         table { width: 100%; border-collapse: collapse; }
         .header td { vertical-align: middle; }
         .letterhead { width: 100%; margin: 0 0 5px; padding: 0; text-align: center; line-height: 0; }
@@ -18,7 +18,7 @@
         .rule { border-top: 2px solid #111; border-bottom: 1px solid #111; height: 2px; margin: 7px 0 10px; }
         h1 { text-align: center; font-size: 13pt; margin: 0 0 12px; letter-spacing: .4px; }
         .identity td { padding: 2px 4px; vertical-align: top; }
-        .identity .label { width: 95px; font-weight: bold; }
+        .identity .label { width: 105px; font-weight: bold; white-space: nowrap; }
         .grades { margin-top: 12px; }
         .grades th, .grades td { border: 1px solid #374151; padding: 5px 6px; }
         .grades th { background: #e5e7eb; text-align: center; font-size: 8.5pt; }
@@ -28,11 +28,13 @@
         .summary td { border: 1px solid #6b7280; padding: 4px 6px; }
         .summary .value { text-align: right; font-weight: bold; }
         .signature { margin-top: 24px; page-break-inside: avoid; }
-        .signature td { width: 50%; text-align: center; vertical-align: top; }
-        .signature-space { height: 52px; }
-        .signature-qr { height: 80px; padding-top: 2px; }
-        .signature-qr img { width: 76px; height: 76px; }
-        .name { display: block; font-weight: bold; text-decoration: underline; }
+        .signature td { text-align: center; vertical-align: top; line-height: 1.15; padding: 0 3px; }
+        .signature.two-columns td { width: 50%; }
+        .signature.three-columns td { width: 33.333%; }
+        .signature-qr { height: 54px; padding-top: 2px; }
+        .signature-qr img { width: 50px; height: 50px; }
+        .name { display: block; font-weight: bold; text-decoration: underline; margin-bottom: 1px; }
+        .identifier { display: block; margin-top: 0; }
         .verify-footer { position: fixed; left: 0; right: 0; bottom: -17mm; border-top: 1px solid #d1d5db; padding-top: 4px; }
         .verify-footer td { border: none; padding: 0; vertical-align: middle; }
         .verify-footer .qr-cell { width: 72px; }
@@ -84,9 +86,12 @@
         <tr><td>IP Kumulatif (IPK)</td><td class="value">{{ $summary?->cumulative_gpa !== null ? number_format((float) $summary->cumulative_gpa, 2, ',', '.') : '-' }}</td></tr>
     </table>
 
-    <table class="signature"><tr>
-        <td>Mahasiswa,<div class="signature-space"></div><span class="name">{{ $student->name }}</span><br>NIM {{ $student->nim }}</td>
-        <td>Ketua Program Studi,<div class="signature-qr"><a href="{{ $verifyUrl }}?signer=kaprodi"><img src="{{ $qrSignature }}" alt="QR tanda tangan"></a></div><span class="name">{{ $student->studyProgram?->headLecturer?->display_name ?? '................................' }}</span><br>NIDN {{ $student->studyProgram?->headLecturer?->nidn ?? '-' }}</td>
+    <table class="signature {{ $student->advisor ? 'three-columns' : 'two-columns' }}"><tr>
+        <td>Ketua Program Studi,<div class="signature-qr"><a href="{{ $verifyUrl }}?signer=kaprodi"><img src="{{ $qrSignature }}" alt="QR tanda tangan"></a></div><span class="name">{{ $student->studyProgram?->headLecturer?->display_name ?? '................................' }}</span><span class="identifier">NIDN {{ $student->studyProgram?->headLecturer?->nidn ?? '-' }}</span></td>
+        @if($student->advisor)
+            <td>Pembimbing Akademik,<div class="signature-qr"><a href="{{ $verifyUrl }}?signer=dosen_wali"><img src="{{ $qrAdvisorSignature }}" alt="QR tanda tangan pembimbing akademik"></a></div><span class="name">{{ $student->advisor->display_name }}</span><span class="identifier">NIDN {{ $student->advisor->nidn ?? '-' }}</span></td>
+        @endif
+        <td>Mahasiswa,<div class="signature-qr"><a href="{{ $verifyUrl }}?signer=mahasiswa"><img src="{{ $qrStudentSignature }}" alt="QR tanda tangan mahasiswa"></a></div><span class="name">{{ $student->name }}</span><span class="identifier">NIM {{ $student->nim }}</span></td>
     </tr></table>
 
     <div class="verify-footer"><table><tr>

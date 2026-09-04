@@ -317,7 +317,7 @@ class GradeController extends Controller
         return trim(preg_replace('/[^A-Za-z0-9._-]+/', '-', $value) ?? '', '-');
     }
 
-    /** @return array{verifyUrl:string,qrSignature:string,qrVerification:string} */
+    /** @return array{verifyUrl:string,qrSignature:string,qrAdvisorSignature:string,qrStudentSignature:string,qrVerification:string} */
     private function academicDocumentQrData(string $type, Student $student, Collection $grades, ?int $semesterId = null): array
     {
         $token = AcademicDocumentVerification::issue($type, $student, $grades, $semesterId);
@@ -326,6 +326,8 @@ class GradeController extends Controller
         return [
             'verifyUrl' => $verifyUrl,
             'qrSignature' => QrCodeHelper::generate($verifyUrl.'?signer=kaprodi', 240),
+            'qrAdvisorSignature' => QrCodeHelper::generate($verifyUrl.'?signer=dosen_wali', 240),
+            'qrStudentSignature' => QrCodeHelper::generate($verifyUrl.'?signer=mahasiswa', 240),
             'qrVerification' => QrCodeHelper::generateWithLogo($verifyUrl, 240),
         ];
     }

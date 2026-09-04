@@ -9,12 +9,13 @@ class OperationalDocumentVerification
         $encodedId = base_convert((string) $id, 10, 36);
         $signature = substr(hash_hmac('sha256', $type.'|'.$id.'|'.$reference, self::key()), 0, 32);
 
-        return $encodedId.'.'.$signature;
+        return $encodedId.'_'.$signature;
     }
 
     public static function id(string $token): ?int
     {
-        [$encodedId, $signature] = array_pad(explode('.', $token, 2), 2, null);
+        $separator = str_contains($token, '_') ? '_' : '.';
+        [$encodedId, $signature] = array_pad(explode($separator, $token, 2), 2, null);
         if (! $encodedId || ! $signature || ! preg_match('/^[0-9a-z]+$/', $encodedId)) {
             return null;
         }
@@ -24,7 +25,7 @@ class OperationalDocumentVerification
 
     public static function matches(string $token, string $type, int $id, string $reference): bool
     {
-        return hash_equals(self::issue($type, $id, $reference), $token);
+        return hash_equals(self::issue($type, $id, $reference), str_replace('.', '_', $token));
     }
 
     private static function key(): string

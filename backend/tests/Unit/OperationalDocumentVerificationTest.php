@@ -14,7 +14,9 @@ class OperationalDocumentVerificationTest extends TestCase
         $token = OperationalDocumentVerification::issue('pmb-card', 42, 'PMB-2026-00042');
 
         $this->assertSame(42, OperationalDocumentVerification::id($token));
+        $this->assertSame(42, OperationalDocumentVerification::id(str_replace('_', '.', $token)));
         $this->assertTrue(OperationalDocumentVerification::matches($token, 'pmb-card', 42, 'PMB-2026-00042'));
+        $this->assertTrue(OperationalDocumentVerification::matches(str_replace('_', '.', $token), 'pmb-card', 42, 'PMB-2026-00042'));
         $this->assertFalse(OperationalDocumentVerification::matches($token, 'pmb-card', 42, 'PMB-2026-99999'));
         $this->assertNull(OperationalDocumentVerification::id('token-tidak-valid'));
     }

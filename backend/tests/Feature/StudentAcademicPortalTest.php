@@ -166,6 +166,7 @@ class StudentAcademicPortalTest extends TestCase
         $student = Student::with(['studyProgram.faculty', 'studyProgram.headLecturer'])->findOrFail(1);
         $grades = StudentGrade::where('student_id', 1)->get();
         $token = AcademicDocumentVerification::issue('khs', $student, $grades, 1);
+        $this->assertNotNull(AcademicDocumentVerification::decode(str_replace('_', '.', $token)));
 
         $request = Request::create('/api/verify/khs/'.$token, 'GET', ['signer' => 'kaprodi']);
         $verified = app(VerifyController::class)->verifyKhs($request, $token);
@@ -174,6 +175,17 @@ class StudentAcademicPortalTest extends TestCase
         $this->assertTrue($verifiedData['valid']);
         $this->assertSame('M001', $verifiedData['student']['nim']);
         $this->assertTrue($verifiedData['signer_info']['signed']);
+
+        $advisorRequest = Request::create('/api/verify/khs/'.$token, 'GET', ['signer' => 'dosen_wali']);
+        $advisorData = app(VerifyController::class)->verifyKhs($advisorRequest, $token)->getData(true);
+        $this->assertSame('Dosen Pembimbing Akademik', $advisorData['signer_info']['label']);
+        $this->assertSame('Dr. Ahmad Fauzi, M.Pd.', $advisorData['signer_info']['name']);
+        $this->assertTrue($advisorData['signer_info']['signed']);
+
+        $studentRequest = Request::create('/api/verify/khs/'.$token, 'GET', ['signer' => 'mahasiswa']);
+        $studentData = app(VerifyController::class)->verifyKhs($studentRequest, $token)->getData(true);
+        $this->assertSame('Mahasiswa Satu', $studentData['signer_info']['name']);
+        $this->assertTrue($studentData['signer_info']['signed']);
 
         DB::table('student_grades')->where('student_id', 1)->update([
             'grade_point' => 3.5,

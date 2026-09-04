@@ -68,4 +68,4 @@ echo "→ Storage setup complete"
 # ============================================================
 APP_PORT="${PORT:-8080}"
 echo "=== Starting PHP server on 0.0.0.0:${APP_PORT} ==="
-exec php -S "0.0.0.0:${APP_PORT}" -t public
+exec php -S "0.0.0.0:${APP_PORT}" -t public server.php

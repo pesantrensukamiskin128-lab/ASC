@@ -333,7 +333,7 @@ class VerifyController extends Controller
             return response()->json(['valid' => false, 'message' => 'Token verifikasi dokumen tidak valid.'], 404);
         }
 
-        $student = Student::with(['studyProgram.faculty', 'studyProgram.headLecturer'])->find($payload['s'] ?? null);
+        $student = Student::with(['studyProgram.faculty', 'studyProgram.headLecturer', 'advisor'])->find($payload['s'] ?? null);
         $semesterId = $type === 'khs' ? (int) ($payload['m'] ?? 0) : null;
         $semester = $semesterId ? Semester::find($semesterId) : null;
         if (! $student || ($type === 'khs' && ! $semester)) {
@@ -364,6 +364,27 @@ class VerifyController extends Controller
                 ->select('summaries.*')->first();
         $signer = $student->studyProgram?->headLecturer;
         $signedAt = isset($payload['i']) ? Carbon::parse($payload['i'])->translatedFormat('d F Y, H:i') : null;
+        $signerInfo = match ($request->query('signer')) {
+            'kaprodi' => [
+                'label' => 'Ketua Program Studi',
+                'name' => $signer?->display_name,
+                'signed' => $signer !== null && (int) ($payload['g'] ?? 0) === (int) $signer->id,
+                'signed_at' => $signedAt,
+            ],
+            'dosen_wali' => [
+                'label' => 'Dosen Pembimbing Akademik',
+                'name' => $student->advisor?->display_name,
+                'signed' => $student->advisor !== null,
+                'signed_at' => $signedAt,
+            ],
+            'mahasiswa' => [
+                'label' => 'Mahasiswa',
+                'name' => $student->name,
+                'signed' => true,
+                'signed_at' => $signedAt,
+            ],
+            default => null,
+        };
 
         return response()->json([
             'valid' => true,
@@ -383,12 +404,7 @@ class VerifyController extends Controller
             'signer_position' => 'Ketua Program Studi',
             'issued_at' => $signedAt,
             'is_valid' => true,
-            'signer_info' => $request->query('signer') === 'kaprodi' ? [
-                'label' => 'Ketua Program Studi',
-                'name' => $signer?->display_name,
-                'signed' => $signer !== null && (int) ($payload['g'] ?? 0) === (int) $signer->id,
-                'signed_at' => $signedAt,
-            ] : null,
+            'signer_info' => $signerInfo,
         ]);
     }
 }
