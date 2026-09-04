@@ -124,7 +124,8 @@ function displayName(): string {
         <div><span class="text-gray-400 text-xs">NIP</span><p class="text-gray-800 font-mono">{{ data.nip ?? '-' }}</p></div>
         <div><span class="text-gray-400 text-xs">Program Studi</span><p class="text-gray-800">{{ data.study_program?.name ?? '-' }}</p></div>
         <div><span class="text-gray-400 text-xs">Jabatan Akademik</span><p class="text-gray-800">{{ data.academic_rank ?? '-' }}</p></div>
-        <div><span class="text-gray-400 text-xs">Status</span><p class="text-gray-800">{{ data.employment_status ?? '-' }}</p></div>
+        <div><span class="text-gray-400 text-xs">Status Kepegawaian</span><p class="text-gray-800">{{ data.employment_status ?? '-' }}</p></div>
+        <div><span class="text-gray-400 text-xs">Status Dosen</span><p><span :class="['inline-flex px-2 py-0.5 rounded-full text-xs font-semibold', data.status ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-600']">{{ data.status ? 'Aktif' : 'Nonaktif' }}</span></p></div>
         <div><span class="text-gray-400 text-xs">Email</span><p class="text-gray-800">{{ data.email ?? '-' }}</p></div>
         <div><span class="text-gray-400 text-xs">Telepon</span><p class="text-gray-800">{{ data.phone ?? '-' }}</p></div>
       </div>

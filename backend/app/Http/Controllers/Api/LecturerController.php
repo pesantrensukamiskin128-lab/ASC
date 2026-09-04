@@ -6,6 +6,7 @@ use App\Exports\LecturerExport;
 use App\Http\Controllers\Controller;
 use App\Imports\LecturerImport;
 use App\Models\Lecturer;
+use App\Models\LecturerPosition;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,13 +22,13 @@ class LecturerController extends Controller
         $kaprodiProdiId = $this->getKaprodiProdiId();
 
         $data = Lecturer::with(['studyProgram.faculty', 'activePositions'])
-            ->when($kaprodiProdiId, fn($q) => $q->where('study_program_id', $kaprodiProdiId))
-            ->when($request->search, fn($q) => $q
+            ->when($kaprodiProdiId, fn ($q) => $q->where('study_program_id', $kaprodiProdiId))
+            ->when($request->search, fn ($q) => $q->where(fn ($searchQuery) => $searchQuery
                 ->where('full_name', 'like', "%{$request->search}%")
                 ->orWhere('nidn', 'like', "%{$request->search}%")
-                ->orWhere('nuptk', 'like', "%{$request->search}%"))
-            ->when($request->study_program_id && !$kaprodiProdiId, fn($q) => $q->where('study_program_id', $request->study_program_id))
-            ->when($request->status !== null, fn($q) => $q->where('status', $request->boolean('status')))
+                ->orWhere('nuptk', 'like', "%{$request->search}%")))
+            ->when($request->study_program_id && ! $kaprodiProdiId, fn ($q) => $q->where('study_program_id', $request->study_program_id))
+            ->when($request->status !== null, fn ($q) => $q->where('status', $request->boolean('status')))
             ->paginate($request->per_page ?? 15);
 
         return response()->json($data);
@@ -41,9 +42,11 @@ class LecturerController extends Controller
             return null;
         }
         $lecturer = $user->lecturer;
-        if (!$lecturer) return null;
+        if (! $lecturer) {
+            return null;
+        }
 
-        $position = \App\Models\LecturerPosition::where('lecturer_id', $lecturer->id)
+        $position = LecturerPosition::where('lecturer_id', $lecturer->id)
             ->where('is_active', true)
             ->whereIn('position_code', ['KAPRODI', 'SEKPRODI'])
             ->where('scope_type', 'study_program')
@@ -56,26 +59,27 @@ class LecturerController extends Controller
     {
         $validated = $request->validate([
             'study_program_id' => 'nullable|exists:study_programs,id',
-            'nidn'             => 'nullable|string|max:20|unique:lecturers',
-            'nuptk'            => 'nullable|string|max:20|unique:lecturers',
-            'nip'              => 'nullable|string|max:30',
-            'degree_front'     => 'nullable|string|max:50',
-            'degree_back'      => 'nullable|string|max:100',
-            'full_name'        => 'required|string|max:255',
-            'gender'           => 'nullable|in:L,P',
-            'birth_place'      => 'nullable|string|max:100',
-            'birth_date'       => 'nullable|date',
-            'email'            => 'nullable|email',
-            'phone'            => 'nullable|string|max:20',
-            'address'          => 'nullable|string',
-            'academic_rank'    => 'nullable|string|max:100',
-            'employment_status'=> 'nullable|string|max:50',
+            'nidn' => 'nullable|string|max:20|unique:lecturers',
+            'nuptk' => 'nullable|string|max:20|unique:lecturers',
+            'nip' => 'nullable|string|max:30',
+            'degree_front' => 'nullable|string|max:50',
+            'degree_back' => 'nullable|string|max:100',
+            'full_name' => 'required|string|max:255',
+            'gender' => 'nullable|in:L,P',
+            'birth_place' => 'nullable|string|max:100',
+            'birth_date' => 'nullable|date',
+            'email' => 'nullable|email',
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string',
+            'academic_rank' => 'nullable|string|max:100',
+            'employment_status' => 'nullable|string|max:50',
+            'status' => 'sometimes|boolean',
         ]);
 
         // Buat akun user otomatis jika NIDN tersedia
-        if (!empty($validated['nidn'])) {
-            $email = $validated['email'] ?? $validated['nidn'] . '@dosen.jawami.ac.id';
-            $user  = User::firstOrCreate(
+        if (! empty($validated['nidn'])) {
+            $email = $validated['email'] ?? $validated['nidn'].'@dosen.jawami.ac.id';
+            $user = User::firstOrCreate(
                 ['username' => $validated['nidn']],
                 ['name' => $validated['full_name'], 'email' => $email, 'password' => Hash::make($validated['nidn'])]
             );
@@ -89,7 +93,7 @@ class LecturerController extends Controller
 
         return response()->json([
             'message' => 'Data dosen berhasil ditambahkan.',
-            'data'    => $lecturer->load('studyProgram'),
+            'data' => $lecturer->load('studyProgram'),
         ], 201);
     }
 
@@ -102,28 +106,28 @@ class LecturerController extends Controller
     {
         $validated = $request->validate([
             'study_program_id' => 'nullable|exists:study_programs,id',
-            'nidn'             => "nullable|string|max:20|unique:lecturers,nidn,{$lecturer->id}",
-            'nuptk'            => "nullable|string|max:20|unique:lecturers,nuptk,{$lecturer->id}",
-            'nip'              => 'nullable|string|max:30',
-            'degree_front'     => 'nullable|string|max:50',
-            'degree_back'      => 'nullable|string|max:100',
-            'full_name'        => 'sometimes|string|max:255',
-            'gender'           => 'nullable|in:L,P',
-            'birth_place'      => 'nullable|string|max:100',
-            'birth_date'       => 'nullable|date',
-            'email'            => 'nullable|email',
-            'phone'            => 'nullable|string|max:20',
-            'address'          => 'nullable|string',
-            'academic_rank'    => 'nullable|string|max:100',
-            'employment_status'=> 'nullable|string|max:50',
-            'status'           => 'boolean',
+            'nidn' => "nullable|string|max:20|unique:lecturers,nidn,{$lecturer->id}",
+            'nuptk' => "nullable|string|max:20|unique:lecturers,nuptk,{$lecturer->id}",
+            'nip' => 'nullable|string|max:30',
+            'degree_front' => 'nullable|string|max:50',
+            'degree_back' => 'nullable|string|max:100',
+            'full_name' => 'sometimes|string|max:255',
+            'gender' => 'nullable|in:L,P',
+            'birth_place' => 'nullable|string|max:100',
+            'birth_date' => 'nullable|date',
+            'email' => 'nullable|email',
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string',
+            'academic_rank' => 'nullable|string|max:100',
+            'employment_status' => 'nullable|string|max:50',
+            'status' => 'sometimes|boolean',
         ]);
 
         $lecturer->update($validated);
 
         return response()->json([
             'message' => 'Data dosen berhasil diupdate.',
-            'data'    => $lecturer->fresh('studyProgram'),
+            'data' => $lecturer->fresh('studyProgram'),
         ]);
     }
 
@@ -141,6 +145,7 @@ class LecturerController extends Controller
     {
         $request->validate(['ids' => 'required|array|min:1', 'ids.*' => 'exists:lecturers,id']);
         $count = Lecturer::whereIn('id', $request->ids)->delete();
+
         return response()->json(['message' => "{$count} data dosen berhasil dihapus."]);
     }
 
@@ -156,15 +161,16 @@ class LecturerController extends Controller
         $lecturer->update(['photo_path' => $path]);
 
         return response()->json([
-            'message'    => 'Foto berhasil diupload.',
+            'message' => 'Foto berhasil diupload.',
             'photo_path' => $path,
-            'photo_url'  => Storage::disk('public')->url($path),
+            'photo_url' => Storage::disk('public')->url($path),
         ]);
     }
 
     public function export(Request $request)
     {
-        $filename = 'dosen-' . now()->format('Ymd-His') . '.xlsx';
+        $filename = 'dosen-'.now()->format('Ymd-His').'.xlsx';
+
         return Excel::download(new LecturerExport($request->study_program_id), $filename);
     }
 
@@ -172,14 +178,14 @@ class LecturerController extends Controller
     {
         $request->validate(['file' => 'required|file|mimes:xlsx,xls,csv|max:5120']);
 
-        $import = new LecturerImport();
+        $import = new LecturerImport;
         Excel::import($import, $request->file('file'));
 
-        $errors = collect($import->errors())->map(fn($e) => $e->getMessage())->values();
+        $errors = collect($import->errors())->map(fn ($e) => $e->getMessage())->values();
 
         return response()->json([
-            'message' => 'Import selesai.' . ($errors->count() ? ' Beberapa baris dilewati.' : ''),
-            'errors'  => $errors,
+            'message' => 'Import selesai.'.($errors->count() ? ' Beberapa baris dilewati.' : ''),
+            'errors' => $errors,
         ]);
     }
 
@@ -187,10 +193,10 @@ class LecturerController extends Controller
     {
         return response()->json(
             Lecturer::where('status', true)
-                ->when($request->study_program_id, fn($q) => $q->where('study_program_id', $request->study_program_id))
+                ->when($request->study_program_id, fn ($q) => $q->where('study_program_id', $request->study_program_id))
                 ->select('id', 'nidn', 'full_name', 'degree_front', 'degree_back')
                 ->get()
-                ->map(fn($l) => [
+                ->map(fn ($l) => [
                     'id' => $l->id,
                     'nidn' => $l->nidn,
                     'name' => $l->name,

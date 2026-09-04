@@ -18,7 +18,7 @@ interface Lecturer {
   degree_front: string; degree_back: string
   full_name: string
   gender: string; birth_place: string; birth_date: string
-  email: string; phone: string
+  email: string; phone: string; address: string
   photo_path: string | null
   academic_rank: string
   employment_status: string; status: boolean
@@ -50,6 +50,7 @@ async function bulkDelete() {
 const programs    = ref<StudyProgram[]>([])
 const search      = ref('')
 const filterProgram = ref('')
+const filterStatus = ref('')
 const modalOpen   = ref(false)
 const editingId   = ref<number | null>(null)
 const saving      = ref(false)
@@ -60,6 +61,7 @@ const form = reactive({
   full_name: '', gender: 'L', birth_place: '', birth_date: '',
   email: '', phone: '', address: '',
   academic_rank: '', employment_status: 'Tetap',
+  status: true,
 })
 
 const columns = [
@@ -69,7 +71,8 @@ const columns = [
   { key: 'program',    label: 'Prodi' },
   { key: 'degree',     label: 'Gelar' },
   { key: 'rank',       label: 'Jabatan Akademik' },
-  { key: 'employment', label: 'Status' },
+  { key: 'employment', label: 'Status Kepegawaian' },
+  { key: 'active_status', label: 'Status Dosen' },
   { key: 'aksi',       label: 'Aksi', class: 'text-right' },
 ]
 
@@ -86,7 +89,12 @@ onMounted(async () => {
 })
 
 async function load(page = 1) {
-  await fetchAll({ search: search.value, study_program_id: filterProgram.value, page })
+  await fetchAll({
+    search: search.value,
+    study_program_id: filterProgram.value,
+    ...(filterStatus.value !== '' ? { status: filterStatus.value } : {}),
+    page,
+  })
 }
 
 function openCreate() {
@@ -98,6 +106,7 @@ function openCreate() {
     full_name: '', gender: 'L', birth_place: '', birth_date: '',
     email: '', phone: '', address: '',
     academic_rank: '', employment_status: 'Tetap',
+    status: true,
   })
   modalOpen.value = true
 }
@@ -118,8 +127,10 @@ function openEdit(item: Lecturer) {
     birth_date:       item.birth_date ?? '',
     email:            item.email ?? '',
     phone:            item.phone ?? '',
+    address:          item.address ?? '',
     academic_rank:    item.academic_rank ?? '',
     employment_status:item.employment_status ?? 'Tetap',
+    status:            item.status ?? true,
   })
   modalOpen.value = true
 }
@@ -137,6 +148,19 @@ async function handleDelete(item: Lecturer) {
   if (!confirm(`Hapus dosen "${item.full_name}"?`)) return
   await remove(item.id)
   load()
+}
+
+async function toggleStatus(item: Lecturer) {
+  const nextStatus = !item.status
+  const action = nextStatus ? 'mengaktifkan' : 'menonaktifkan'
+  if (!confirm(`Yakin ingin ${action} dosen "${item.full_name}"?`)) return
+  try {
+    await api.put(`/lecturers/${item.id}`, { status: nextStatus })
+    toast.success(`Dosen berhasil ${nextStatus ? 'diaktifkan' : 'dinonaktifkan'}.`)
+    load(pagination.currentPage)
+  } catch (e: any) {
+    toast.error(e?.response?.data?.message ?? 'Gagal mengubah status dosen.')
+  }
 }
 
 // --- Foto upload ---
@@ -236,6 +260,15 @@ async function uploadPhoto(file: File) {
         <option value="">Semua Prodi</option>
         <option v-for="p in programs" :key="p.id" :value="p.id">{{ p.code }} - {{ p.name }}</option>
       </select>
+      <select
+        v-model="filterStatus"
+        class="px-3.5 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        @change="load()"
+      >
+        <option value="">Semua Status Dosen</option>
+        <option value="1">Aktif</option>
+        <option value="0">Nonaktif</option>
+      </select>
       <button v-if="selectedIds.length" :disabled="bulkDeleting" class="ml-auto px-3 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white text-xs font-medium rounded-lg inline-flex items-center gap-1.5" @click="bulkDelete">
         <TrashIcon class="w-3.5 h-3.5" /> Hapus {{ selectedIds.length }} dipilih
       </button>
@@ -285,6 +318,16 @@ async function uploadPhoto(file: File) {
             row.employment_status === 'Tetap' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700']">
             {{ row.employment_status }}
           </span>
+        </td>
+        <td class="px-4 py-3">
+          <button
+            type="button"
+            :class="['inline-flex px-2 py-1 rounded-full text-xs font-semibold transition-colors', row.status ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-gray-200 text-gray-600 hover:bg-gray-300']"
+            :title="row.status ? 'Klik untuk menonaktifkan dosen' : 'Klik untuk mengaktifkan dosen'"
+            @click="toggleStatus(row)"
+          >
+            {{ row.status ? 'Aktif' : 'Nonaktif' }}
+          </button>
         </td>
         <td class="px-4 py-3">
           <div class="flex items-center justify-end gap-1">
@@ -446,6 +489,14 @@ async function uploadPhoto(file: File) {
           <select v-model="form.employment_status" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option v-for="s in ['Tetap','Tidak Tetap','DPK','Honorer']" :key="s" :value="s">{{ s }}</option>
           </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Status Dosen</label>
+          <select v-model="form.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option :value="true">Aktif</option>
+            <option :value="false">Nonaktif</option>
+          </select>
+          <p class="text-xs text-gray-400 mt-1">Dosen nonaktif tidak muncul pada pilihan penugasan baru, tetapi riwayat datanya tetap tersimpan.</p>
         </div>
       </div>
 

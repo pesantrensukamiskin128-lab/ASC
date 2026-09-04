@@ -4,10 +4,12 @@
     <meta charset="utf-8">
     <title>Transkrip - {{ $student->nim }}</title>
     <style>
-        @page { margin: 12mm 13mm 17mm; }
+        @page { margin: 5mm 13mm 17mm; }
         body { font-family: DejaVu Sans, sans-serif; color: #111827; font-size: 8.5pt; line-height: 1.3; }
         table { width: 100%; border-collapse: collapse; }
         .header td { vertical-align: middle; }
+        .letterhead { width: 100%; margin: 0 0 5px; padding: 0; text-align: center; line-height: 0; }
+        .letterhead img { display: block; width: 100%; height: auto; margin: 0 auto; padding: 0; }
         .logo { width: 68px; text-align: center; }
         .logo img { max-width: 55px; max-height: 55px; }
         .institution { text-align: center; font-family: DejaVu Serif, serif; }
@@ -36,7 +38,7 @@
 </head>
 <body>
     @if($letterheadPath && file_exists($letterheadPath))
-        <div style="text-align:center"><img src="{{ $letterheadPath }}" style="width:100%; max-height:90px; object-fit:contain" alt="Kop institusi"></div>
+        <div class="letterhead"><img src="{{ $letterheadPath }}" alt="Kop institusi"></div>
     @else
         <table class="header"><tr><td class="logo">@if($logoPath && file_exists($logoPath))<img src="{{ $logoPath }}" alt="Logo">@endif</td><td class="institution"><strong>{{ strtoupper($institution?->name ?? 'PERGURUAN TINGGI') }}</strong><div>{{ $institution?->address }}</div><div>{{ collect([$institution?->phone, $institution?->email, $institution?->website])->filter()->join(' | ') }}</div></td><td style="width:68px"></td></tr></table>
         <div class="rule"></div>

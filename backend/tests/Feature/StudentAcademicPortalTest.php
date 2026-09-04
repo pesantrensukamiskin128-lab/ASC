@@ -44,6 +44,7 @@ class StudentAcademicPortalTest extends TestCase
         DB::table('institutions')->insert([
             'code' => 'ASC', 'name' => 'Sekolah Tinggi Agama Islam Al-Jawami',
             'address' => 'Jl. Pendidikan No. 1, Bandung',
+            'letterhead_path' => '../../../tests/Fixtures/letterhead.svg',
         ]);
         DB::table('faculties')->insert(['id' => 1, 'code' => 'FT', 'name' => 'Fakultas Tarbiyah']);
         DB::table('lecturers')->insert([

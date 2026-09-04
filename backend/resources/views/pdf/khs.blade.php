@@ -4,10 +4,12 @@
     <meta charset="utf-8">
     <title>KHS - {{ $student->nim }}</title>
     <style>
-        @page { margin: 13mm 15mm 18mm; }
+        @page { margin: 5mm 15mm 18mm; }
         body { font-family: DejaVu Sans, sans-serif; color: #111827; font-size: 9.5pt; line-height: 1.35; }
         table { width: 100%; border-collapse: collapse; }
         .header td { vertical-align: middle; }
+        .letterhead { width: 100%; margin: 0 0 5px; padding: 0; text-align: center; line-height: 0; }
+        .letterhead img { display: block; width: 100%; height: auto; margin: 0 auto; padding: 0; }
         .logo { width: 70px; text-align: center; }
         .logo img { max-width: 58px; max-height: 58px; }
         .institution { text-align: center; font-family: DejaVu Serif, serif; }
@@ -36,7 +38,7 @@
 </head>
 <body>
     @if($letterheadPath && file_exists($letterheadPath))
-        <div style="text-align:center"><img src="{{ $letterheadPath }}" style="width:100%; max-height:92px; object-fit:contain" alt="Kop institusi"></div>
+        <div class="letterhead"><img src="{{ $letterheadPath }}" alt="Kop institusi"></div>
     @else
         <table class="header"><tr>
             <td class="logo">@if($logoPath && file_exists($logoPath))<img src="{{ $logoPath }}" alt="Logo">@endif</td>
