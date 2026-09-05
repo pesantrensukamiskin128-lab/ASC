@@ -64,6 +64,8 @@ class MigrateSiakadPhaseSix extends Command
 
     private int $unresolvedInvoiceDates = 0;
 
+    private int $overpaidInvoices = 0;
+
     public function __construct(private readonly SqlDumpParser $parser)
     {
         parent::__construct();
@@ -113,6 +115,7 @@ class MigrateSiakadPhaseSix extends Command
         $this->prepareInvoices();
         $this->preparePayments();
         $this->resolveMissingInvoiceDates();
+        $this->auditInvoiceBalances();
         $this->inspectPaymentProofs();
 
         DB::transaction(function () use ($table): void {
@@ -149,6 +152,7 @@ class MigrateSiakadPhaseSix extends Command
         $this->eligibleStudents = 0;
         $this->inferredInvoiceDates = 0;
         $this->unresolvedInvoiceDates = 0;
+        $this->overpaidInvoices = 0;
     }
 
     private function loadTargetReferences(): void
@@ -411,6 +415,24 @@ class MigrateSiakadPhaseSix extends Command
         }
 
         return count($matches) === 1 ? $matches[0] : null;
+    }
+
+    private function auditInvoiceBalances(): void
+    {
+        foreach ($this->invoicePlans as $plan) {
+            if ($plan['payments_total'] <= $plan['amount']) {
+                continue;
+            }
+
+            $this->overpaidInvoices++;
+            $this->report(
+                'PAYMENT_EXCEEDS_INVOICE',
+                'invoice',
+                $plan['source_id'],
+                $plan['nim'],
+                "Total pembayaran {$plan['payments_total']} melebihi nominal tagihan {$plan['amount']}; seluruh transaksi tetap dipertahankan."
+            );
+        }
     }
 
     private function inspectPaymentProofs(): void
@@ -717,6 +739,7 @@ class MigrateSiakadPhaseSix extends Command
         $this->line("Tagihan sumber yang dilewati karena angkatan: {$this->excludedByCohort}.");
         $this->line("Tanggal tagihan yang dipetakan dari pembayaran: {$this->inferredInvoiceDates}.");
         $this->line("Tagihan tanpa semester dan tanggal valid yang dilewati: {$this->unresolvedInvoiceDates}.");
+        $this->line("Tagihan dengan total pembayaran melebihi nominal: {$this->overpaidInvoices}.");
         $rows = [];
         foreach ($this->stats as $table => $stats) {
             $rows[] = [$table, $stats['total'], $stats['inserted'], $stats['existing'], $stats['skipped']];

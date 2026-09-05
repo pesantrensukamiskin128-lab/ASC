@@ -54,7 +54,7 @@ INSERT INTO `keu_bayar_mahasiswa` (`id`, `id_keu_tagihan_mhs`, `tgl_bayar`, `tgl
 (21, 101, '2018-09-01 10:00:00', '2018-09-01 10:05:00', 'root', 600000, 'KWT-1', 1, '001', '0'),
 (22, 101, '2018-10-01 10:00:00', '2018-10-01 10:05:00', 'root', 400000, 'KWT-2', 2, '001', '0'),
 (23, 101, '2018-11-01 10:00:00', '2018-11-01 10:05:00', 'root', 0, 'KWT-3', 3, '001', '0'),
-(24, 104, '2020-03-01 10:00:00', '2020-03-01 10:05:00', 'root', 1000000, 'KWT-4', 1, '001', '0');
+(24, 104, '2020-03-01 10:00:00', '2020-03-01 10:05:00', 'root', 1200000, 'KWT-4', 1, '001', '0');
 INSERT INTO `keu_bukti_bayar` (`id`, `nim`, `ket`, `semester`, `file`, `ext`, `norek_pengirim`, `bank`, `bank_tujuan`, `jumlah`, `acc`, `date_created`, `tgl_bayar`) VALUES
 (31, '20180001', 'Bukti SPP', 20181, 'bukti.jpg', 'jpg', NULL, NULL, '001', 1000000, '1', '2018-10-01 10:00:00', '2018-10-01');
 SQL);
@@ -91,6 +91,7 @@ SQL);
         $this->assertStringContainsString('MISSING_STUDENT', $report);
         $this->assertStringContainsString('INVOICE_DATE_INFERRED_FROM_PAYMENT,invoice,104,2020-03-01', $report);
         $this->assertStringContainsString('UNRESOLVED_INVOICE_DATE,invoice,105,20180001', $report);
+        $this->assertStringContainsString('PAYMENT_EXCEEDS_INVOICE,invoice,104,20180001', $report);
 
         $this->assertSame(0, Artisan::call('siakad:migrate-phase6', $arguments));
         $this->assertDatabaseCount('fee_types', 1);
