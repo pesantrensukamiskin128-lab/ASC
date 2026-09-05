@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\AlumniSynchronizer;
 use App\Traits\HasFiles;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -32,6 +33,15 @@ class Student extends Model
         'birth_date' => 'date',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (Student $student): void {
+            if ($student->status === 'Lulus' && ($student->wasRecentlyCreated || $student->wasChanged('status'))) {
+                app(AlumniSynchronizer::class)->sync($student);
+            }
+        });
+    }
+
     // === Core Relations ===
 
     public function user(): BelongsTo
@@ -52,6 +62,11 @@ class Student extends Model
     public function advisor(): BelongsTo
     {
         return $this->belongsTo(Lecturer::class, 'advisor_id');
+    }
+
+    public function alumni(): HasOne
+    {
+        return $this->hasOne(Alumni::class);
     }
 
     // === Extended Relations (tabel terpisah) ===

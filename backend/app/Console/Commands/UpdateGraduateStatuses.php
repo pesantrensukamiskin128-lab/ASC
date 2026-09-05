@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Student;
+use App\Services\AlumniSynchronizer;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -59,6 +60,7 @@ class UpdateGraduateStatuses extends Command
         $forceConflicts = (bool) $this->option('force-conflicts');
         $terminalConflicts = ['DO', 'Mengundurkan Diri'];
         $updates = [];
+        $alumniSyncRecords = [];
         $stats = [
             'baris_sumber' => array_sum(array_column($records, 'source_rows')),
             'nim_unik' => count($records),
@@ -81,6 +83,7 @@ class UpdateGraduateStatuses extends Command
             }
             if ($student->status === 'Lulus') {
                 $stats['sudah_lulus']++;
+                $alumniSyncRecords[$student->id] = $record + ['student_id' => (int) $student->id];
                 $this->report('ALREADY_GRADUATED', $nim, $record['exit_date'], $record['source'], 'Status mahasiswa sudah Lulus.');
 
                 continue;
@@ -96,12 +99,13 @@ class UpdateGraduateStatuses extends Command
             $record['previous_status'] = (string) $student->status;
             $record['semester_id'] = $semesters[$record['period']] ?? null;
             $updates[] = $record;
+            $alumniSyncRecords[$student->id] = $record;
             $stats['akan_diubah']++;
             $this->report('STATUS_UPDATE', $nim, $student->status, 'Lulus', $dryRun ? 'Akan diubah saat eksekusi nyata.' : 'Status dan riwayat kelulusan diperbarui.');
         }
 
         if (! $dryRun) {
-            DB::transaction(function () use ($updates): void {
+            DB::transaction(function () use ($updates, $alumniSyncRecords): void {
                 foreach ($updates as $record) {
                     DB::table('student_status_histories')
                         ->where('student_id', $record['student_id'])
@@ -124,6 +128,13 @@ class UpdateGraduateStatuses extends Command
                     DB::table('students')
                         ->where('id', $record['student_id'])
                         ->update(['status' => 'Lulus', 'updated_at' => now()]);
+                }
+
+                foreach ($alumniSyncRecords as $record) {
+                    $student = Student::find($record['student_id']);
+                    if ($student) {
+                        app(AlumniSynchronizer::class)->sync($student, ['graduation_date' => $record['exit_date']]);
+                    }
                 }
             });
         }
