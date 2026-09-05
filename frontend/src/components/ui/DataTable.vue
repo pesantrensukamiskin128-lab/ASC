@@ -1,5 +1,7 @@
 <script setup lang="ts" generic="T extends { id: number }">
-defineProps<{
+import { computed } from 'vue'
+
+const props = defineProps<{
   columns: { key: string; label: string; class?: string }[]
   rows: T[]
   loading?: boolean
@@ -8,9 +10,53 @@ defineProps<{
   lastPage?: number
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   pageChange: [page: number]
 }>()
+
+type PaginationItem = number | 'start-ellipsis' | 'end-ellipsis'
+
+const normalizedCurrentPage = computed(() => {
+  const lastPage = Math.max(1, props.lastPage ?? 1)
+  return Math.min(Math.max(1, props.currentPage ?? 1), lastPage)
+})
+
+const paginationItems = computed<PaginationItem[]>(() => {
+  const lastPage = Math.max(1, props.lastPage ?? 1)
+  const currentPage = normalizedCurrentPage.value
+
+  if (lastPage <= 7) {
+    return Array.from({ length: lastPage }, (_, index) => index + 1)
+  }
+
+  let windowStart: number
+  let windowEnd: number
+
+  if (currentPage <= 4) {
+    windowStart = 2
+    windowEnd = 5
+  } else if (currentPage >= lastPage - 3) {
+    windowStart = lastPage - 4
+    windowEnd = lastPage - 1
+  } else {
+    windowStart = currentPage - 1
+    windowEnd = currentPage + 1
+  }
+
+  const items: PaginationItem[] = [1]
+  if (windowStart > 2) items.push('start-ellipsis')
+  for (let page = windowStart; page <= windowEnd; page++) items.push(page)
+  if (windowEnd < lastPage - 1) items.push('end-ellipsis')
+  items.push(lastPage)
+
+  return items
+})
+
+function changePage(page: number) {
+  const lastPage = Math.max(1, props.lastPage ?? 1)
+  if (page < 1 || page > lastPage || page === normalizedCurrentPage.value) return
+  emit('pageChange', page)
+}
 </script>
 
 <template>
@@ -63,26 +109,59 @@ defineEmits<{
     </div>
 
     <!-- Pagination -->
-    <div v-if="lastPage && lastPage > 1" class="flex items-center justify-between px-4 py-3 border-t border-gray-100">
-      <p class="text-sm text-gray-500">
+    <div v-if="lastPage && lastPage > 1" class="flex flex-col gap-3 px-4 py-3 border-t border-gray-100 sm:flex-row sm:items-center sm:justify-between">
+      <p class="text-sm text-gray-500 shrink-0">
         Halaman {{ currentPage }} dari {{ lastPage }} ({{ total }} data)
       </p>
-      <div class="flex gap-1">
+      <nav class="flex flex-wrap items-center gap-1 sm:justify-end" aria-label="Navigasi halaman tabel">
         <button
-          v-for="p in lastPage"
-          :key="p"
-          :disabled="p === currentPage"
-          :class="[
-            'px-3 py-1 rounded-lg text-sm transition-colors',
-            p === currentPage
-              ? 'bg-blue-600 text-white font-medium'
-              : 'text-gray-600 hover:bg-gray-100',
-          ]"
-          @click="$emit('pageChange', p)"
+          type="button"
+          :disabled="normalizedCurrentPage === 1"
+          class="inline-flex h-8 items-center rounded-lg px-2.5 text-sm text-gray-600 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+          aria-label="Halaman sebelumnya"
+          @click="changePage(normalizedCurrentPage - 1)"
         >
-          {{ p }}
+          <span aria-hidden="true">‹</span>
+          <span class="ml-1 hidden md:inline">Sebelumnya</span>
         </button>
-      </div>
+
+        <template v-for="item in paginationItems" :key="item">
+          <span
+            v-if="typeof item !== 'number'"
+            class="inline-flex h-8 min-w-8 items-center justify-center px-1 text-sm text-gray-400"
+            aria-hidden="true"
+          >
+            …
+          </span>
+          <button
+            v-else
+            type="button"
+            :disabled="item === normalizedCurrentPage"
+            :aria-current="item === normalizedCurrentPage ? 'page' : undefined"
+            :aria-label="`Halaman ${item}`"
+            :class="[
+              'inline-flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-sm transition-colors',
+              item === normalizedCurrentPage
+                ? 'bg-blue-600 text-white font-medium'
+                : 'text-gray-600 hover:bg-gray-100',
+            ]"
+            @click="changePage(item)"
+          >
+            {{ item }}
+          </button>
+        </template>
+
+        <button
+          type="button"
+          :disabled="normalizedCurrentPage === lastPage"
+          class="inline-flex h-8 items-center rounded-lg px-2.5 text-sm text-gray-600 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+          aria-label="Halaman berikutnya"
+          @click="changePage(normalizedCurrentPage + 1)"
+        >
+          <span class="mr-1 hidden md:inline">Berikutnya</span>
+          <span aria-hidden="true">›</span>
+        </button>
+      </nav>
     </div>
   </div>
 </template>
