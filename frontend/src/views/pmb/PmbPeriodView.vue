@@ -31,8 +31,12 @@ const columns = [
   { key: 'aksi', label: 'Aksi', class: 'text-right' },
 ]
 
+function load(page = 1) {
+  return fetchAll({ page })
+}
+
 onMounted(async () => {
-  fetchAll()
+  load()
   const { data } = await api.get('/academic-years/all')
   academicYears.value = data
 })
@@ -83,7 +87,7 @@ function formatCurrency(n: number) { return new Intl.NumberFormat('id-ID', { sty
       </button>
     </div>
 
-    <DataTable :columns="columns" :rows="items" :loading="loading" :total="pagination.total" :current-page="pagination.currentPage" :last-page="pagination.lastPage" @page-change="fetchAll">
+    <DataTable :columns="columns" :rows="items" :loading="loading" :total="pagination.total" :current-page="pagination.currentPage" :last-page="pagination.lastPage" @page-change="load">
       <template #default="{ row }">
         <td class="px-4 py-3 font-medium text-gray-900">{{ row.name }}</td>
         <td class="px-4 py-3 text-gray-600 text-sm">{{ row.academic_year?.name ?? '-' }}</td>

@@ -313,7 +313,7 @@ const statusColor: Record<string, string> = { DRAFT: 'bg-gray-100 text-gray-600'
           <div class="flex items-start justify-between gap-3">
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1">
-                <span class="text-xs font-bold text-gray-400">#{{ i + 1 }}</span>
+                <span class="text-xs font-bold text-gray-400">#{{ Number(i) + 1 }}</span>
                 <span class="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">{{ q.type.replace('_', ' ') }}</span>
                 <span class="text-xs text-blue-600 font-medium">{{ q.score }} poin</span>
               </div>
@@ -323,7 +323,7 @@ const statusColor: Record<string, string> = { DRAFT: 'bg-gray-100 text-gray-600'
                 <div v-for="(opt, oi) in q.options" :key="oi" class="flex items-center gap-2 text-xs">
                   <span :class="['w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold shrink-0',
                     q.correct_answer === opt ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600']">
-                    {{ String.fromCharCode(65 + oi) }}
+                    {{ String.fromCharCode(65 + Number(oi)) }}
                   </span>
                   <span :class="q.correct_answer === opt ? 'text-green-700 font-medium' : 'text-gray-600'">{{ opt }}</span>
                 </div>

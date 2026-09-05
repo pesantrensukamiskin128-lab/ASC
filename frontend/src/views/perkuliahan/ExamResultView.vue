@@ -169,7 +169,7 @@ const needsManualGrading = (answers: any[]) =>
             <td colspan="8" class="text-center py-10 text-gray-400 text-sm">Belum ada peserta yang mengerjakan.</td>
           </tr>
           <tr v-for="(s, i) in filteredSessions" :key="s.session_id" class="hover:bg-gray-50">
-            <td class="px-4 py-3 text-gray-400 text-xs">{{ i + 1 }}</td>
+            <td class="px-4 py-3 text-gray-400 text-xs">{{ Number(i) + 1 }}</td>
             <td class="px-4 py-3">
               <p class="font-medium text-gray-900">{{ s.name }}</p>
               <p class="text-xs text-gray-400">{{ s.nim }}</p>
@@ -232,7 +232,7 @@ const needsManualGrading = (answers: any[]) =>
           class="p-4 border border-gray-200 rounded-xl">
           <div class="flex items-start justify-between gap-2 mb-2">
             <div class="flex items-center gap-2">
-              <span class="text-xs font-bold text-gray-400">#{{ i + 1 }}</span>
+              <span class="text-xs font-bold text-gray-400">#{{ Number(i) + 1 }}</span>
               <span class="text-xs px-1.5 py-0.5 bg-gray-100 rounded text-gray-600">{{ a.question_type?.replace(/_/g, ' ') }}</span>
               <!-- Ikon benar/salah untuk PG/BS -->
               <CheckCircleIcon v-if="a.is_correct === true" class="w-4 h-4 text-green-500" />

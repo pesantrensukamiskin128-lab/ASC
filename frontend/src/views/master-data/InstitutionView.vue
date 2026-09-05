@@ -122,7 +122,7 @@ async function handleSave() {
       const { data } = await api.put(`/institutions/${institution.value.id}`, cleanPayload(form))
       institution.value = data.data
       toast.success(data.message)
-      id = institution.value.id
+      id = data.data.id
     } else {
       const { data } = await api.post('/institutions', cleanPayload(form))
       institution.value = data.data

@@ -20,6 +20,10 @@ interface ClassItem {
   lecturer?: { id: number; full_name?: string; name?: string }
   room?: { id: number; code: string; name: string }
   semester?: { id: number; name: string; academic_year?: { name: string } }
+  schedules?: Array<{
+    id: number; day: string; start_time: string; end_time: string
+    room?: { id: number; code?: string; name: string }
+  }>
 }
 
 const toast = useToast()

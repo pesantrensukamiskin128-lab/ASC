@@ -365,7 +365,7 @@ async function downloadAttendance(format: 'excel' | 'pdf') {
               </tr></thead>
               <tbody>
                 <tr v-for="(a, i) in event.attendances" :key="a.id" class="border-t border-gray-50 hover:bg-gray-50">
-                  <td class="px-5 py-2.5 text-gray-400">{{ i + 1 }}</td>
+                  <td class="px-5 py-2.5 text-gray-400">{{ Number(i) + 1 }}</td>
                   <td class="px-5 py-2.5 font-medium text-gray-800">{{ a.user?.name ?? a.guest_name ?? '-' }}</td>
                   <td class="px-5 py-2.5 text-gray-500 hidden sm:table-cell">{{ a.guest_institution ?? a.guest_position ?? '-' }}</td>
                   <td class="px-5 py-2.5 text-xs text-gray-500 font-mono">{{ a.attended_at?.split('T')[1]?.slice(0,5) ?? '-' }}</td>

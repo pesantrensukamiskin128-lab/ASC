@@ -486,7 +486,7 @@ const methodOptions = [
             <input v-model.number="a.weight" :disabled="!isEditable" type="number" min="0" max="100" class="w-16 px-2 py-2 border border-gray-300 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50" />
             <span class="text-xs text-gray-500">%</span>
           </div>
-          <button v-if="isEditable" class="p-1.5 text-red-400 hover:text-red-600" @click="removeAssessment(i)">
+          <button v-if="isEditable" class="p-1.5 text-red-400 hover:text-red-600" @click="removeAssessment(Number(i))">
             <TrashIcon class="w-4 h-4" />
           </button>
         </div>
@@ -517,7 +517,7 @@ const methodOptions = [
             <select v-model="r.category" :disabled="!isEditable" class="px-2 py-1 border border-gray-300 rounded text-xs">
               <option v-for="c in ['Buku','Jurnal','Peraturan','Fatwa','Putusan','Website','Artikel','Modul','Video','E-book','Lainnya']" :key="c" :value="c">{{ c }}</option>
             </select>
-            <button v-if="isEditable" class="ml-auto p-1 text-red-400 hover:text-red-600" @click="removeReference(i)"><TrashIcon class="w-4 h-4" /></button>
+            <button v-if="isEditable" class="ml-auto p-1 text-red-400 hover:text-red-600" @click="removeReference(Number(i))"><TrashIcon class="w-4 h-4" /></button>
           </div>
           <input v-model="r.title" :disabled="!isEditable" placeholder="Judul *" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500 disabled:bg-gray-50" />
           <div class="grid grid-cols-2 md:grid-cols-4 gap-2">

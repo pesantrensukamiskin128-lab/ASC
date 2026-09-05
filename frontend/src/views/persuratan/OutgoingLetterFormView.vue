@@ -24,7 +24,7 @@ function onDocFilesSelected(e: Event) {
   pendingFiles.value.push(...Array.from(files))
   // Tambah ke list preview
   for (const f of files) {
-    uploadedDocs.value.push({ name: f.getClientOriginalName ?? f.name, size: f.size, pending: true })
+    uploadedDocs.value.push({ name: f.name, size: f.size, pending: true })
   }
   (e.target as HTMLInputElement).value = ''
 }

@@ -189,7 +189,7 @@ async function doImport() {
           <div class="flex items-start justify-between gap-3">
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1">
-                <span class="text-xs font-bold text-gray-400">#{{ i + 1 }}</span>
+                <span class="text-xs font-bold text-gray-400">#{{ Number(i) + 1 }}</span>
                 <span class="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">{{ item.type.replace(/_/g, ' ') }}</span>
                 <span :class="['text-xs px-1.5 py-0.5 rounded font-medium', diffColor[item.difficulty ?? 'SEDANG']]">{{ item.difficulty ?? 'SEDANG' }}</span>
                 <span class="text-xs text-blue-600 font-medium ml-auto">{{ item.default_score }} poin</span>
@@ -197,7 +197,7 @@ async function doImport() {
               <p class="text-sm text-gray-800 whitespace-pre-line">{{ item.question }}</p>
               <div v-if="item.options?.length" class="mt-2 space-y-1">
                 <div v-for="(opt, oi) in item.options" :key="oi" class="flex items-center gap-2 text-xs">
-                  <span :class="['w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold', item.correct_answer === opt ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600']">{{ String.fromCharCode(65 + oi) }}</span>
+                  <span :class="['w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold', item.correct_answer === opt ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600']">{{ String.fromCharCode(65 + Number(oi)) }}</span>
                   <span :class="item.correct_answer === opt ? 'text-green-700 font-medium' : 'text-gray-600'">{{ opt }}</span>
                 </div>
               </div>

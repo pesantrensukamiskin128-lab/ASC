@@ -248,7 +248,7 @@ const progress = computed(() => questions.value.length > 0 ? Math.round((answere
               answers[questions[currentQ].id] === opt ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50']">
             <input type="radio" :name="`q_${questions[currentQ].id}`" :value="opt"
               v-model="answers[questions[currentQ].id]" class="text-blue-600 shrink-0" />
-            <span class="w-6 h-6 flex items-center justify-center rounded-full bg-gray-200 text-gray-600 text-xs font-bold shrink-0">{{ String.fromCharCode(65 + oi) }}</span>
+            <span class="w-6 h-6 flex items-center justify-center rounded-full bg-gray-200 text-gray-600 text-xs font-bold shrink-0">{{ String.fromCharCode(65 + Number(oi)) }}</span>
             <span class="text-sm text-gray-700">{{ opt }}</span>
           </label>
         </div>
@@ -314,7 +314,7 @@ const progress = computed(() => questions.value.length > 0 ? Math.round((answere
               'border-gray-200']">
             <div class="flex items-start justify-between gap-2 mb-2">
               <div class="flex items-center gap-2">
-                <span class="text-xs font-bold text-gray-400">#{{ i + 1 }}</span>
+                <span class="text-xs font-bold text-gray-400">#{{ Number(i) + 1 }}</span>
                 <span class="text-xs px-1.5 py-0.5 bg-white rounded border text-gray-600">{{ a.question_type?.replace(/_/g, ' ') }}</span>
                 <CheckCircleIcon v-if="a.is_correct === true" class="w-4 h-4 text-green-500" />
                 <XCircleIcon v-else-if="a.is_correct === false" class="w-4 h-4 text-red-500" />

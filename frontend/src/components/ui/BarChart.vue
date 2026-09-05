@@ -20,7 +20,7 @@ const defaultColors = [
 ]
 
 function getColor(index: number, custom?: string): string {
-  return custom ?? defaultColors[index % defaultColors.length]
+  return custom ?? defaultColors[index % defaultColors.length] ?? 'bg-blue-500'
 }
 
 const totalValue = computed(() => props.data.reduce((sum, d) => sum + d.value, 0))

@@ -66,7 +66,9 @@ const groupedEvents = computed(() => {
 function formatMonth(ym: string) {
   const [y, m] = ym.split('-')
   const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des']
-  return `${months[parseInt(m) - 1]} ${y}`
+  if (!y || !m) return ym
+  const month = months[Number.parseInt(m, 10) - 1]
+  return month ? `${month} ${y}` : ym
 }
 
 onMounted(async () => {

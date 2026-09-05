@@ -17,9 +17,12 @@ const scoring = ref(false)
 const nimInput = ref('')
 
 // Exam types & score input
-interface ExamType { id: number; code: string; name: string; weight: number; passing_grade: number }
+interface ScoreInput { score: number; note: string }
+interface ExamType {
+  id: number; code: string; name: string; weight: number; passing_grade: number
+  input: ScoreInput
+}
 const examTypes = ref<ExamType[]>([])
-const scoreInputs = ref<Record<number, { score: number; note: string }>>({})
 const savingScores = ref(false)
 
 onMounted(async () => {
@@ -29,7 +32,10 @@ onMounted(async () => {
       api.get('/pmb-exam-types'),
     ])
     data.value = regRes.data
-    examTypes.value = examRes.data
+    examTypes.value = examRes.data.map((examType: Omit<ExamType, 'input'>) => ({
+      ...examType,
+      input: { score: 0, note: '' },
+    }))
 
     // Pre-fill score inputs dari data existing
     initScoreInputs()
@@ -39,7 +45,7 @@ onMounted(async () => {
 function initScoreInputs() {
   examTypes.value.forEach(et => {
     const existing = data.value?.exam_scores?.find((s: any) => s.exam_type_id === et.id)
-    scoreInputs.value[et.id] = {
+    et.input = {
       score: existing?.score ?? 0,
       note:  existing?.note ?? '',
     }
@@ -69,10 +75,10 @@ async function setSelection() {
 async function saveScores() {
   savingScores.value = true
   try {
-    const scores = Object.entries(scoreInputs.value).map(([examTypeId, val]) => ({
-      exam_type_id: Number(examTypeId),
-      score: val.score,
-      note: val.note || null,
+    const scores = examTypes.value.map(examType => ({
+      exam_type_id: examType.id,
+      score: examType.input.score,
+      note: examType.input.note || null,
     }))
     await api.post(`/pmb-registrants/${data.value.id}/scores`, { scores })
     toast.success('Nilai berhasil disimpan.')
@@ -316,15 +322,15 @@ const photoUrl = computed(() => {
               <td class="py-2.5 text-center text-gray-500">{{ et.passing_grade }}</td>
               <td class="py-2.5 text-center">
                 <input
-                  v-model.number="scoreInputs[et.id].score"
+                  v-model.number="et.input.score"
                   type="number" min="0" max="100" step="0.5"
                   class="w-20 px-2 py-1 text-center border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  :class="scoreInputs[et.id].score < et.passing_grade && scoreInputs[et.id].score > 0 ? 'border-red-300 bg-red-50' : ''"
+                  :class="et.input.score < et.passing_grade && et.input.score > 0 ? 'border-red-300 bg-red-50' : ''"
                 />
               </td>
               <td class="py-2.5">
                 <input
-                  v-model="scoreInputs[et.id].note"
+                  v-model="et.input.note"
                   type="text" placeholder="Opsional"
                   class="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />

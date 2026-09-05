@@ -166,16 +166,19 @@ async function deleteItem(type: 'journal' | 'material' | 'assignment' | 'announc
   const labels: Record<string, string> = {
     journal: 'jurnal pertemuan', material: 'materi', assignment: 'tugas', announcement: 'pengumuman',
   }
-  if (!confirm(`Hapus ${labels[type]} ini? Data tidak dapat dikembalikan.`)) return
+  const label = labels[type] ?? 'data'
+  if (!confirm(`Hapus ${label} ini? Data tidak dapat dikembalikan.`)) return
   const urls: Record<string, string> = {
     journal: `/lectures/journals/${id}`,
     material: `/lectures/materials/${id}`,
     assignment: `/lectures/assignments/${id}`,
     announcement: `/lectures/announcements/${id}`,
   }
+  const url = urls[type]
+  if (!url) return
   try {
-    await api.delete(urls[type])
-    toast.success(`${labels[type].charAt(0).toUpperCase() + labels[type].slice(1)} berhasil dihapus.`)
+    await api.delete(url)
+    toast.success(`${label.charAt(0).toUpperCase() + label.slice(1)} berhasil dihapus.`)
     loadTab()
   } catch (e: any) {
     toast.error(e?.response?.data?.message ?? 'Gagal menghapus.')
@@ -206,15 +209,17 @@ function openEdit(type: 'journal' | 'material' | 'assignment' | 'announcement', 
 
 async function saveEdit() {
   if (!editId.value || !editType.value) return
-  savingEdit.value = true
   const urls: Record<string, string> = {
     journal: `/lectures/journals/${editId.value}`,
     material: `/lectures/materials/${editId.value}`,
     assignment: `/lectures/assignments/${editId.value}`,
     announcement: `/lectures/announcements/${editId.value}`,
   }
+  const url = urls[editType.value]
+  if (!url) return
+  savingEdit.value = true
   try {
-    await api.put(urls[editType.value], editForm.value)
+    await api.put(url, editForm.value)
     toast.success('Berhasil diupdate.')
     editModal.value = false
     loadTab()

@@ -157,7 +157,7 @@ async function toggleStatus(item: Lecturer) {
   try {
     await api.put(`/lecturers/${item.id}`, { status: nextStatus })
     toast.success(`Dosen berhasil ${nextStatus ? 'diaktifkan' : 'dinonaktifkan'}.`)
-    load(pagination.currentPage)
+    load(pagination.value.currentPage)
   } catch (e: any) {
     toast.error(e?.response?.data?.message ?? 'Gagal mengubah status dosen.')
   }
