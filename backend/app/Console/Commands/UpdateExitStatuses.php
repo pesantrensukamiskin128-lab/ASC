@@ -94,12 +94,17 @@ class UpdateExitStatuses extends Command
                 ->where('student_id', $student->id)
                 ->whereNull('end_date')
                 ->orderByDesc('start_date')
-                ->first(['id', 'start_date']);
+                ->first(['id', 'status', 'start_date', 'reason']);
             if ($openHistory && (string) $openHistory->start_date > $record['exit_date']) {
-                $stats['konflik_riwayat']++;
-                $this->report('HISTORY_DATE_CONFLICT', $nim, (string) $openHistory->start_date, $record['exit_date'], 'Riwayat terbuka dimulai setelah tanggal keluar; status tidak diubah.');
+                if (! $this->isGeneratedNonactiveHistory($openHistory)) {
+                    $stats['konflik_riwayat']++;
+                    $this->report('HISTORY_DATE_CONFLICT', $nim, (string) $openHistory->start_date, $record['exit_date'], 'Riwayat terbuka dimulai setelah tanggal keluar; status tidak diubah.');
 
-                continue;
+                    continue;
+                }
+
+                $record['replace_history_id'] = (int) $openHistory->id;
+                $this->report('NONACTIVE_HISTORY_REPLACED', $nim, (string) $openHistory->start_date, $record['exit_date'], 'Riwayat Nonaktif hasil pembaruan sebelumnya akan dikoreksi menggunakan data keluar resmi.');
             }
 
             $record['student_id'] = (int) $student->id;
@@ -116,14 +121,7 @@ class UpdateExitStatuses extends Command
         if (! $dryRun) {
             DB::transaction(function () use ($updates): void {
                 foreach ($updates as $record) {
-                    DB::table('student_status_histories')
-                        ->where('student_id', $record['student_id'])
-                        ->whereNull('end_date')
-                        ->whereDate('start_date', '<=', $record['exit_date'])
-                        ->update(['end_date' => $record['exit_date'], 'updated_at' => now()]);
-
-                    DB::table('student_status_histories')->insert([
-                        'student_id' => $record['student_id'],
+                    $historyValues = [
                         'semester_id' => $record['semester_id'],
                         'status' => $record['target_status'],
                         'start_date' => $record['exit_date'],
@@ -131,9 +129,26 @@ class UpdateExitStatuses extends Command
                         'reason' => $record['exit_type'].' berdasarkan data Excel ('.$record['source'].')',
                         'decree_number' => null,
                         'created_by' => null,
-                        'created_at' => now(),
                         'updated_at' => now(),
-                    ]);
+                    ];
+
+                    if (isset($record['replace_history_id'])) {
+                        DB::table('student_status_histories')
+                            ->where('id', $record['replace_history_id'])
+                            ->where('student_id', $record['student_id'])
+                            ->update($historyValues);
+                    } else {
+                        DB::table('student_status_histories')
+                            ->where('student_id', $record['student_id'])
+                            ->whereNull('end_date')
+                            ->whereDate('start_date', '<=', $record['exit_date'])
+                            ->update(['end_date' => $record['exit_date'], 'updated_at' => now()]);
+
+                        DB::table('student_status_histories')->insert($historyValues + [
+                            'student_id' => $record['student_id'],
+                            'created_at' => now(),
+                        ]);
+                    }
 
                     DB::table('students')
                         ->where('id', $record['student_id'])
@@ -256,6 +271,12 @@ class UpdateExitStatuses extends Command
             'mengajukan pengunduran diri', 'mengundurkan diri' => 'Mengundurkan Diri',
             default => null,
         };
+    }
+
+    private function isGeneratedNonactiveHistory(object $history): bool
+    {
+        return $history->status === 'Nonaktif'
+            && str_starts_with((string) $history->reason, 'Status Nonaktif berdasarkan data aktivitas mahasiswa ');
     }
 
     private function normalizeHeader(string $value): string
