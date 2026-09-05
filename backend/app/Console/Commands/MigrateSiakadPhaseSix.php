@@ -118,17 +118,21 @@ class MigrateSiakadPhaseSix extends Command
         $this->auditInvoiceBalances();
         $this->inspectPaymentProofs();
 
-        DB::transaction(function () use ($table): void {
-            if (in_array($table, ['all', 'fee-types', 'invoices'], true)) {
+        if (in_array($table, ['all', 'fee-types', 'invoices'], true)) {
+            $this->runDatabaseStage('jenis biaya', function (): void {
                 $this->migrateFeeTypes();
-            }
-            if (in_array($table, ['all', 'invoices'], true)) {
+            });
+        }
+        if (in_array($table, ['all', 'invoices'], true)) {
+            $this->runDatabaseStage('tagihan dan detail tagihan', function () use ($table): void {
                 $this->migrateInvoices($table === 'all');
-            }
-            if (in_array($table, ['all', 'payments'], true)) {
+            });
+        }
+        if (in_array($table, ['all', 'payments'], true)) {
+            $this->runDatabaseStage('pembayaran', function (): void {
                 $this->migratePayments();
-            }
-        });
+            });
+        }
 
         $reportPath = $this->writeReport();
         $this->displaySummary($reportPath);
@@ -153,6 +157,19 @@ class MigrateSiakadPhaseSix extends Command
         $this->inferredInvoiceDates = 0;
         $this->unresolvedInvoiceDates = 0;
         $this->overpaidInvoices = 0;
+    }
+
+    private function runDatabaseStage(string $label, callable $callback): void
+    {
+        if (! $this->dryRun) {
+            $this->line("  Menulis {$label}...");
+            if (DB::connection()->getDriverName() === 'mysql') {
+                DB::purge();
+                DB::reconnect();
+            }
+        }
+
+        DB::transaction($callback);
     }
 
     private function loadTargetReferences(): void
