@@ -295,6 +295,18 @@ class PracticalController extends Controller
         return response()->json(['message' => 'Peserta berhasil dihapus.']);
     }
 
+    public function showParticipant(PracticalParticipant $participant): JsonResponse
+    {
+        return response()->json($participant->load([
+            'student.studyProgram',
+            'program',
+            'group',
+            'location',
+            'supervisor',
+            'supervisor2',
+        ]));
+    }
+
     // === LOGBOOK ===
     public function logbooks(PracticalParticipant $participant): JsonResponse
     {

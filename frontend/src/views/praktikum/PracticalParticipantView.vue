@@ -36,11 +36,13 @@ onMounted(async () => {
 })
 
 async function loadAll() {
-  const [logRes, attRes, assRes] = await Promise.allSettled([
+  const [participantRes, logRes, attRes, assRes] = await Promise.allSettled([
+    api.get(`/practical-participants/${route.params.id}`),
     api.get(`/practical-participants/${route.params.id}/logbooks`),
     api.get(`/practical-participants/${route.params.id}/attendances`),
     api.get(`/practical-participants/${route.params.id}/assessments`),
   ])
+  participant.value = participantRes.status === 'fulfilled' ? participantRes.value.data : null
   logbooks.value = logRes.status === 'fulfilled' ? logRes.value.data : []
   attendances.value = attRes.status === 'fulfilled' ? attRes.value.data : []
   assessments.value = assRes.status === 'fulfilled' ? assRes.value.data : []
@@ -300,8 +302,11 @@ function formatDate(d: string) { return d ? new Date(d).toLocaleDateString('id-I
     <div class="flex items-center gap-3">
       <button class="p-2 rounded-lg hover:bg-gray-100" @click="router.back()"><ArrowLeftIcon class="w-5 h-5 text-gray-500" /></button>
       <div>
-        <h1 class="text-lg font-bold text-gray-900">Detail Peserta Praktikum</h1>
-        <p class="text-sm text-gray-500">Logbook, presensi, penilaian, dan laporan</p>
+        <h1 class="text-lg font-bold text-gray-900">{{ participant?.student?.name ?? 'Detail Peserta Praktikum' }}</h1>
+        <p class="text-sm text-gray-500">
+          <span v-if="participant?.student?.nim" class="font-mono">{{ participant.student.nim }}</span>
+          <span v-if="participant?.student?.nim"> · </span>Logbook, presensi, penilaian, dan laporan
+        </p>
       </div>
     </div>
 
