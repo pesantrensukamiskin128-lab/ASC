@@ -38,6 +38,9 @@ class MigrateSiakadPhaseSix extends Command
     /** @var array<string, object> */
     private array $semesters = [];
 
+    /** @var array<int, object> */
+    private array $semesterRanges = [];
+
     /** @var array<string, array{source_code:string,code:string,name:string,recurring:bool}> */
     private array $feeTypePlans = [];
 
@@ -56,6 +59,10 @@ class MigrateSiakadPhaseSix extends Command
     private int $excludedByCohort = 0;
 
     private int $eligibleStudents = 0;
+
+    private int $inferredInvoiceDates = 0;
+
+    private int $unresolvedInvoiceDates = 0;
 
     public function __construct(private readonly SqlDumpParser $parser)
     {
@@ -105,6 +112,7 @@ class MigrateSiakadPhaseSix extends Command
         $this->prepareChargeDefinitions();
         $this->prepareInvoices();
         $this->preparePayments();
+        $this->resolveMissingInvoiceDates();
         $this->inspectPaymentProofs();
 
         DB::transaction(function () use ($table): void {
@@ -131,6 +139,7 @@ class MigrateSiakadPhaseSix extends Command
         $this->reportRows = [];
         $this->students = [];
         $this->semesters = [];
+        $this->semesterRanges = [];
         $this->feeTypePlans = [];
         $this->chargeTypes = [];
         $this->chargeDefinitions = [];
@@ -138,6 +147,8 @@ class MigrateSiakadPhaseSix extends Command
         $this->paymentPlans = [];
         $this->excludedByCohort = 0;
         $this->eligibleStudents = 0;
+        $this->inferredInvoiceDates = 0;
+        $this->unresolvedInvoiceDates = 0;
     }
 
     private function loadTargetReferences(): void
@@ -150,6 +161,7 @@ class MigrateSiakadPhaseSix extends Command
         }
 
         foreach (DB::table('semesters')->get(['id', 'name', 'type', 'start_date', 'end_date']) as $semester) {
+            $this->semesterRanges[] = $semester;
             if (! preg_match('/(\d{4})\/(\d{4})/', (string) $semester->name, $match)) {
                 continue;
             }
@@ -245,9 +257,8 @@ class MigrateSiakadPhaseSix extends Command
             $period = trim((string) ($row['periode'] ?? ''));
             $semester = $this->semesters[$period] ?? null;
             if (! $semester) {
-                $this->report('MISSING_SEMESTER', 'invoice', $sourceId, $period, 'Semester tidak ditemukan; tagihan tetap dimigrasikan tanpa semester.');
+                $this->report('MISSING_SEMESTER', 'invoice', $sourceId, $period, 'Semester tidak ditemukan; tanggal akan dicocokkan dari pembayaran valid.');
             }
-            [$invoiceDate, $dueDate] = $this->invoiceDates($period, $semester);
 
             $this->invoicePlans[$sourceId] = [
                 'source_id' => $sourceId,
@@ -255,8 +266,8 @@ class MigrateSiakadPhaseSix extends Command
                 'nim' => $nim,
                 'semester_id' => $semester?->id ? (int) $semester->id : null,
                 'invoice_number' => 'MIG-SIAKAD-INV-'.$sourceId,
-                'invoice_date' => $invoiceDate,
-                'due_date' => $dueDate,
+                'invoice_date' => $semester ? substr((string) $semester->start_date, 0, 10) : null,
+                'due_date' => $semester ? substr((string) $semester->end_date, 0, 10) : null,
                 'amount' => $definition['amount'],
                 'fee_source_code' => $chargeType['payment_code'],
                 'description' => $chargeType['name'],
@@ -331,6 +342,75 @@ class MigrateSiakadPhaseSix extends Command
             }
         }
         $this->line("  Ditemukan {$counts['keu_cicilan']} cicilan dan {$counts['keu_bayar_mahasiswa']} pembayaran; ".count($this->paymentPlans).' transaksi unik memenuhi batas.');
+    }
+
+    private function resolveMissingInvoiceDates(): void
+    {
+        $earliestPayments = [];
+        foreach ($this->paymentPlans as $plan) {
+            $invoiceSourceId = $plan['invoice_source_id'];
+            $paymentDate = substr($plan['payment_date'], 0, 10);
+            if (! isset($earliestPayments[$invoiceSourceId]) || $paymentDate < $earliestPayments[$invoiceSourceId]) {
+                $earliestPayments[$invoiceSourceId] = $paymentDate;
+            }
+        }
+
+        $unresolved = [];
+        foreach ($this->invoicePlans as $sourceId => &$plan) {
+            if ($plan['invoice_date'] !== null && $plan['due_date'] !== null) {
+                continue;
+            }
+
+            $paymentDate = $earliestPayments[$sourceId] ?? null;
+            if ($paymentDate === null) {
+                $unresolved[$sourceId] = true;
+                $this->unresolvedInvoiceDates++;
+                $this->report('UNRESOLVED_INVOICE_DATE', 'invoice', $sourceId, $plan['nim'], 'Semester dan tanggal pembayaran valid tidak tersedia; tagihan dilewati.');
+
+                continue;
+            }
+
+            $semester = $this->semesterForDate($paymentDate);
+            $plan['semester_id'] = $semester?->id ? (int) $semester->id : null;
+            $plan['invoice_date'] = $semester ? substr((string) $semester->start_date, 0, 10) : $paymentDate;
+            $plan['due_date'] = $semester ? substr((string) $semester->end_date, 0, 10) : $paymentDate;
+            $this->inferredInvoiceDates++;
+            $this->report(
+                $semester ? 'INVOICE_DATE_INFERRED_FROM_PAYMENT' : 'INVOICE_DATE_INFERRED_WITHOUT_SEMESTER',
+                'invoice',
+                $sourceId,
+                $paymentDate,
+                $semester ? 'Tanggal dan semester dicocokkan dari pembayaran paling awal.' : 'Tanggal memakai pembayaran paling awal; semester target yang sesuai tidak ditemukan.'
+            );
+        }
+        unset($plan);
+
+        if ($unresolved === []) {
+            return;
+        }
+
+        $this->invoicePlans = array_filter(
+            $this->invoicePlans,
+            fn (array $plan): bool => ! isset($unresolved[$plan['source_id']])
+        );
+        $this->paymentPlans = array_filter(
+            $this->paymentPlans,
+            fn (array $plan): bool => ! isset($unresolved[$plan['invoice_source_id']])
+        );
+    }
+
+    private function semesterForDate(string $date): ?object
+    {
+        $matches = [];
+        foreach ($this->semesterRanges as $semester) {
+            $startDate = substr((string) $semester->start_date, 0, 10);
+            $endDate = substr((string) $semester->end_date, 0, 10);
+            if ($date >= $startDate && $date <= $endDate) {
+                $matches[] = $semester;
+            }
+        }
+
+        return count($matches) === 1 ? $matches[0] : null;
     }
 
     private function inspectPaymentProofs(): void
@@ -522,18 +602,6 @@ class MigrateSiakadPhaseSix extends Command
         ];
     }
 
-    /** @return array{0:string,1:string} */
-    private function invoiceDates(string $period, ?object $semester): array
-    {
-        if ($semester) {
-            return [substr((string) $semester->start_date, 0, 10), substr((string) $semester->end_date, 0, 10)];
-        }
-        $year = preg_match('/^(\d{4})/', $period, $match) ? (int) $match[1] : $this->entryYearFrom;
-        $isEven = str_ends_with($period, '2');
-
-        return $isEven ? [($year + 1).'-02-01', ($year + 1).'-08-31'] : ["{$year}-08-01", ($year + 1).'-01-31'];
-    }
-
     private function invoiceStatus(int $total, int $paid, string $dueDate): string
     {
         if ($paid >= $total) {
@@ -647,6 +715,8 @@ class MigrateSiakadPhaseSix extends Command
         $this->line("Batas angkatan: {$this->entryYearFrom} dan setelahnya.");
         $this->line("Mahasiswa ASC yang memenuhi batas: {$this->eligibleStudents}.");
         $this->line("Tagihan sumber yang dilewati karena angkatan: {$this->excludedByCohort}.");
+        $this->line("Tanggal tagihan yang dipetakan dari pembayaran: {$this->inferredInvoiceDates}.");
+        $this->line("Tagihan tanpa semester dan tanggal valid yang dilewati: {$this->unresolvedInvoiceDates}.");
         $rows = [];
         foreach ($this->stats as $table => $stats) {
             $rows[] = [$table, $stats['total'], $stats['inserted'], $stats['existing'], $stats['skipped']];

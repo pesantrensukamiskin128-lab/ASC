@@ -23,8 +23,14 @@ class MigrateSiakadPhaseSixTest extends TestCase
             ['id' => 2, 'nim' => '20170001', 'name' => 'Mahasiswa 2017', 'entry_year' => 2017],
         ]);
         DB::table('semesters')->insert([
-            'id' => 1, 'name' => 'Ganjil 2018/2019', 'type' => 'Ganjil',
-            'start_date' => '2018-08-01', 'end_date' => '2019-01-31',
+            [
+                'id' => 1, 'name' => 'Ganjil 2018/2019', 'type' => 'Ganjil',
+                'start_date' => '2018-08-01', 'end_date' => '2019-01-31',
+            ],
+            [
+                'id' => 2, 'name' => 'Genap 2019/2020', 'type' => 'Genap',
+                'start_date' => '2020-02-01', 'end_date' => '2020-07-31',
+            ],
         ]);
 
         $this->sqlPath = tempnam(sys_get_temp_dir(), 'asc-phase6-');
@@ -39,13 +45,16 @@ INSERT INTO `keu_tagihan` (`id`, `kode_prodi`, `kode_tagihan`, `nominal_tagihan`
 INSERT INTO `keu_tagihan_mahasiswa` (`id`, `nim`, `id_tagihan_prodi`, `periode`) VALUES
 (101, '20180001', 10, 20181),
 (102, '20170001', 10, 20181),
-(103, 'UNKNOWN', 10, 20181);
+(103, 'UNKNOWN', 10, 20181),
+(104, '20180001', 10, 20427),
+(105, '20180001', 10, 0);
 INSERT INTO `keu_cicilan` (`id_cicilan`, `id_tagihan_mhs`, `jml_bayar`, `tgl_bayar`, `validator`, `lunaskan`) VALUES
 (11, 101, 600000, '2018-09-01 10:00:00', 'root', '0');
 INSERT INTO `keu_bayar_mahasiswa` (`id`, `id_keu_tagihan_mhs`, `tgl_bayar`, `tgl_validasi`, `created_by`, `nominal_bayar`, `no_kwitansi`, `urutan_bayar_prodi`, `id_bank`, `afirmasi`) VALUES
 (21, 101, '2018-09-01 10:00:00', '2018-09-01 10:05:00', 'root', 600000, 'KWT-1', 1, '001', '0'),
 (22, 101, '2018-10-01 10:00:00', '2018-10-01 10:05:00', 'root', 400000, 'KWT-2', 2, '001', '0'),
-(23, 101, '2018-11-01 10:00:00', '2018-11-01 10:05:00', 'root', 0, 'KWT-3', 3, '001', '0');
+(23, 101, '2018-11-01 10:00:00', '2018-11-01 10:05:00', 'root', 0, 'KWT-3', 3, '001', '0'),
+(24, 104, '2020-03-01 10:00:00', '2020-03-01 10:05:00', 'root', 1000000, 'KWT-4', 1, '001', '0');
 INSERT INTO `keu_bukti_bayar` (`id`, `nim`, `ket`, `semester`, `file`, `ext`, `norek_pengirim`, `bank`, `bank_tujuan`, `jumlah`, `acc`, `date_created`, `tgl_bayar`) VALUES
 (31, '20180001', 'Bukti SPP', 20181, 'bukti.jpg', 'jpg', NULL, NULL, '001', 1000000, '1', '2018-10-01 10:00:00', '2018-10-01');
 SQL);
@@ -80,24 +89,33 @@ SQL);
         $this->assertStringContainsString('DUPLICATE_PAYMENT_MERGED', $report);
         $this->assertStringContainsString('LEGACY_RECEIPT_NOT_COPIED', $report);
         $this->assertStringContainsString('MISSING_STUDENT', $report);
+        $this->assertStringContainsString('INVOICE_DATE_INFERRED_FROM_PAYMENT,invoice,104,2020-03-01', $report);
+        $this->assertStringContainsString('UNRESOLVED_INVOICE_DATE,invoice,105,20180001', $report);
 
         $this->assertSame(0, Artisan::call('siakad:migrate-phase6', $arguments));
         $this->assertDatabaseCount('fee_types', 1);
-        $this->assertDatabaseCount('invoices', 1);
-        $this->assertDatabaseCount('invoice_items', 1);
-        $this->assertDatabaseCount('payments', 2);
+        $this->assertDatabaseCount('invoices', 2);
+        $this->assertDatabaseCount('invoice_items', 2);
+        $this->assertDatabaseCount('payments', 3);
         $this->assertDatabaseHas('invoices', [
             'student_id' => 1, 'total_amount' => 1000000, 'paid_amount' => 1000000, 'status' => 'PAID',
         ]);
         $this->assertDatabaseHas('payments', ['payment_number' => 'MIG-SIAKAD-CIC-11', 'amount' => 600000]);
         $this->assertDatabaseHas('payments', ['payment_number' => 'MIG-SIAKAD-BAY-22', 'amount' => 400000]);
-        $this->assertDatabaseCount('legacy_migration_maps', 4);
+        $this->assertDatabaseHas('invoices', [
+            'invoice_number' => 'MIG-SIAKAD-INV-104',
+            'semester_id' => 2,
+            'invoice_date' => '2020-02-01',
+            'due_date' => '2020-07-31',
+        ]);
+        $this->assertDatabaseMissing('invoices', ['invoice_number' => 'MIG-SIAKAD-INV-105']);
+        $this->assertDatabaseCount('legacy_migration_maps', 6);
 
         DB::table('invoices')->update(['note' => 'Catatan manual ASC']);
         DB::table('payments')->where('payment_number', 'MIG-SIAKAD-BAY-22')->update(['note' => 'Catatan pembayaran manual']);
         $this->assertSame(0, Artisan::call('siakad:migrate-phase6', $arguments));
-        $this->assertDatabaseCount('invoices', 1);
-        $this->assertDatabaseCount('payments', 2);
+        $this->assertDatabaseCount('invoices', 2);
+        $this->assertDatabaseCount('payments', 3);
         $this->assertDatabaseHas('invoices', ['note' => 'Catatan manual ASC']);
         $this->assertDatabaseHas('payments', ['payment_number' => 'MIG-SIAKAD-BAY-22', 'note' => 'Catatan pembayaran manual']);
     }
