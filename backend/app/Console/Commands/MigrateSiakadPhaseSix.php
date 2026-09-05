@@ -283,13 +283,15 @@ class MigrateSiakadPhaseSix extends Command
 
     private function preparePayments(): void
     {
-        $seenFingerprints = [];
-        $availableInstallments = [];
-        $counts = [];
-        foreach ([
+        $sources = [
             'keu_cicilan' => ['id' => 'id_cicilan', 'invoice' => 'id_tagihan_mhs', 'amount' => 'jml_bayar', 'date' => 'tgl_bayar'],
             'keu_bayar_mahasiswa' => ['id' => 'id', 'invoice' => 'id_keu_tagihan_mhs', 'amount' => 'nominal_bayar', 'date' => 'tgl_bayar'],
-        ] as $table => $columns) {
+        ];
+        $counts = [];
+        $summaries = [];
+        $summaryFingerprints = [];
+
+        foreach ($sources as $table => $columns) {
             $this->line("  Parsing tabel '{$table}' secara streaming...");
             $counts[$table] = 0;
             foreach ($this->parser->iterateTable($this->sqlPath, $table) as $row) {
@@ -307,17 +309,57 @@ class MigrateSiakadPhaseSix extends Command
 
                     continue;
                 }
-                $dayFingerprint = $invoiceSourceId.'|'.$amount.'|'.substr($date, 0, 10);
-                if ($table === 'keu_bayar_mahasiswa' && ($availableInstallments[$dayFingerprint] ?? []) !== []) {
-                    $canonicalKey = array_shift($availableInstallments[$dayFingerprint]);
-                    $this->paymentPlans[$canonicalKey]['aliases'][] = [$table, $sourceId];
-                    $this->paymentPlans[$canonicalKey]['reference_number'] ??= $this->nullableString($row['no_kwitansi'] ?? null);
-                    $this->paymentPlans[$canonicalKey]['bank_code'] ??= $this->nullableString($row['id_bank'] ?? null);
-                    $this->report('DUPLICATE_PAYMENT_MERGED', 'payment', $sourceId, $this->paymentPlans[$canonicalKey]['source_id'], 'Pembayaran dan cicilan memiliki tagihan, nominal, dan tanggal yang sama.');
+                $fingerprint = $invoiceSourceId.'|'.$amount.'|'.$date;
+                if (isset($summaryFingerprints[$table][$fingerprint])) {
+                    continue;
+                }
+                $summaryFingerprints[$table][$fingerprint] = true;
+                $summaries[$invoiceSourceId][$table]['total'] = ($summaries[$invoiceSourceId][$table]['total'] ?? 0) + $amount;
+                $summaries[$invoiceSourceId][$table]['count'] = ($summaries[$invoiceSourceId][$table]['count'] ?? 0) + 1;
+            }
+        }
+
+        $selectedSources = [];
+        foreach ($summaries as $invoiceSourceId => $summary) {
+            $installments = $summary['keu_cicilan'] ?? null;
+            $payments = $summary['keu_bayar_mahasiswa'] ?? null;
+            if (! $installments) {
+                $selectedSources[$invoiceSourceId] = 'keu_bayar_mahasiswa';
+            } elseif (! $payments) {
+                $selectedSources[$invoiceSourceId] = 'keu_cicilan';
+            } else {
+                $invoiceAmount = $this->invoicePlans[$invoiceSourceId]['amount'];
+                $installmentDifference = abs($invoiceAmount - $installments['total']);
+                $paymentDifference = abs($invoiceAmount - $payments['total']);
+                $selectedSources[$invoiceSourceId] = $paymentDifference < $installmentDifference
+                    ? 'keu_bayar_mahasiswa'
+                    : 'keu_cicilan';
+            }
+        }
+        unset($summaryFingerprints);
+
+        $seenFingerprints = [];
+        foreach ($sources as $table => $columns) {
+            $this->line("  Menyusun transaksi terpilih dari '{$table}'...");
+            foreach ($this->parser->iterateTable($this->sqlPath, $table) as $row) {
+                $sourceId = trim((string) ($row[$columns['id']] ?? ''));
+                $invoiceSourceId = trim((string) ($row[$columns['invoice']] ?? ''));
+                $invoice = $this->invoicePlans[$invoiceSourceId] ?? null;
+                if (! $invoice) {
+                    continue;
+                }
+                $amount = $this->positiveAmount($row[$columns['amount']] ?? null);
+                $date = $this->validDateTime($row[$columns['date']] ?? null);
+                if ($amount === null || $date === null) {
+                    continue;
+                }
+                if (($selectedSources[$invoiceSourceId] ?? null) !== $table) {
+                    $selected = $selectedSources[$invoiceSourceId] ?? 'tidak ada';
+                    $this->report('DUPLICATE_PAYMENT_SOURCE_SKIPPED', 'payment', $sourceId, $invoiceSourceId, "Transaksi {$table} dilewati; sumber {$selected} lebih sesuai dengan nominal tagihan.");
 
                     continue;
                 }
-                $fingerprint = $invoiceSourceId.'|'.$amount.'|'.$date;
+                $fingerprint = $table.'|'.$invoiceSourceId.'|'.$amount.'|'.$date;
                 if (isset($seenFingerprints[$fingerprint])) {
                     $canonicalKey = $seenFingerprints[$fingerprint];
                     $this->paymentPlans[$canonicalKey]['aliases'][] = [$table, $sourceId];
@@ -339,9 +381,6 @@ class MigrateSiakadPhaseSix extends Command
                     'reference_number' => $table === 'keu_bayar_mahasiswa' ? $this->nullableString($row['no_kwitansi'] ?? null) : null,
                     'bank_code' => $table === 'keu_bayar_mahasiswa' ? $this->nullableString($row['id_bank'] ?? null) : null,
                 ];
-                if ($table === 'keu_cicilan') {
-                    $availableInstallments[$dayFingerprint][] = $key;
-                }
                 $this->invoicePlans[$invoiceSourceId]['payments_total'] += $amount;
             }
         }

@@ -86,7 +86,7 @@ SQL);
         $dryRunOutput = Artisan::output();
         $this->assertStringContainsString('Tagihan sumber yang dilewati karena angkatan: 1', $dryRunOutput);
         $report = file_get_contents($this->reportPath);
-        $this->assertStringContainsString('DUPLICATE_PAYMENT_MERGED', $report);
+        $this->assertStringContainsString('DUPLICATE_PAYMENT_SOURCE_SKIPPED,payment,11,101', $report);
         $this->assertStringContainsString('LEGACY_RECEIPT_NOT_COPIED', $report);
         $this->assertStringContainsString('MISSING_STUDENT', $report);
         $this->assertStringContainsString('INVOICE_DATE_INFERRED_FROM_PAYMENT,invoice,104,2020-03-01', $report);
@@ -101,7 +101,7 @@ SQL);
         $this->assertDatabaseHas('invoices', [
             'student_id' => 1, 'total_amount' => 1000000, 'paid_amount' => 1000000, 'status' => 'PAID',
         ]);
-        $this->assertDatabaseHas('payments', ['payment_number' => 'MIG-SIAKAD-CIC-11', 'amount' => 600000]);
+        $this->assertDatabaseHas('payments', ['payment_number' => 'MIG-SIAKAD-BAY-21', 'amount' => 600000]);
         $this->assertDatabaseHas('payments', ['payment_number' => 'MIG-SIAKAD-BAY-22', 'amount' => 400000]);
         $this->assertDatabaseHas('invoices', [
             'invoice_number' => 'MIG-SIAKAD-INV-104',
@@ -110,7 +110,7 @@ SQL);
             'due_date' => '2020-07-31',
         ]);
         $this->assertDatabaseMissing('invoices', ['invoice_number' => 'MIG-SIAKAD-INV-105']);
-        $this->assertDatabaseCount('legacy_migration_maps', 6);
+        $this->assertDatabaseCount('legacy_migration_maps', 5);
 
         DB::table('invoices')->update(['note' => 'Catatan manual ASC']);
         DB::table('payments')->where('payment_number', 'MIG-SIAKAD-BAY-22')->update(['note' => 'Catatan pembayaran manual']);
